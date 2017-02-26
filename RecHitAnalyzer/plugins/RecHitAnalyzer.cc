@@ -24,8 +24,8 @@ Implementation:
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/one/EDAnalyzer.h"
 
-#include "DataFormats/EcalRecHit/interface/EcalRecHit.h"
 #include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
+#include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
 #include "Geometry/CaloTopology/interface/EcalBarrelTopology.h"
 #include "Geometry/CaloGeometry/interface/CaloGeometry.h"
 #include "Geometry/Records/interface/CaloGeometryRecord.h"
@@ -33,6 +33,7 @@ Implementation:
 #include "DataFormats/HcalRecHit/interface/HcalRecHitCollections.h"
 #include "DataFormats/HcalDetId/interface/HcalDetId.h"
 #include "DataFormats/HcalDetId/interface/HcalElectronicsId.h"
+#include "DQM/HcalCommon/interface/Constants.h"
 
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
@@ -71,11 +72,13 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
 		// ----------member data ---------------------------
 		edm::EDGetTokenT<EcalRecHitCollection> EBRecHitCollectionT_;
+		edm::EDGetTokenT<EBDigiCollection>     EBDigiCollectionT_;
 		edm::EDGetTokenT<HBHERecHitCollection> HBHERecHitCollectionT_;
 		//edm::InputTag trackTags_; //used to select what tracks to read from configuration file
 		//TH1D * histo; 
 		TH2D * hEBEnergy; 
 		TH2D * hEBTiming; 
+		TH2D * hEB_adc0; 
 		TH2D * hHBHEEnergy; 
 
 		TH1D * hHBHEDepth; 
@@ -100,6 +103,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 {
 	EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
+	EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("selectedEBDigiCollection"));
 	HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
 	//now do what ever initialization is needed
 	usesResource("TFileService");
@@ -110,9 +114,10 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 	// ECAL
 	hEBEnergy = fs->make<TH2D>("EB_rechitE" , "E(iphi,ieta)" , EBDetId::MAX_IPHI , EBDetId::MIN_IPHI-1 , EBDetId::MAX_IPHI, 2*EBDetId::MAX_IETA , -EBDetId::MAX_IETA , EBDetId::MAX_IETA );
 	hEBTiming = fs->make<TH2D>("EB_rechitT" , "t(iphi,ieta)" , EBDetId::MAX_IPHI , EBDetId::MIN_IPHI-1 , EBDetId::MAX_IPHI, 2*EBDetId::MAX_IETA , -EBDetId::MAX_IETA , EBDetId::MAX_IETA );
+	hEB_adc0 = fs->make<TH2D>("EB_adc0" , "adc0(iphi,ieta)" , EBDetId::MAX_IPHI , EBDetId::MIN_IPHI-1 , EBDetId::MAX_IPHI, 2*EBDetId::MAX_IETA , -EBDetId::MAX_IETA , EBDetId::MAX_IETA );
 	// HCAL
-	hHBHEEnergy = fs->make<TH2D>("HBHE_rechitE" , "E(iphi,ieta)" , 72, 0, 72, 2*41, -41, 41 );
-	hHBHEDepth = fs->make<TH1D>("HBHE_depth" , "E(iphi,ieta)" , 20 , 0. , 0.);
+	hHBHEEnergy = fs->make<TH2D>("HBHE_rechitE" , "E(iphi,ieta)" ,hcaldqm::constants::IPHI_NUM, hcaldqm::constants::IPHI_MIN-1, hcaldqm::constants::IPHI_MAX, hcaldqm::constants::IETA_NUM, -hcaldqm::constants::IETA_MAX, hcaldqm::constants::IETA_MAX );
+	hHBHEDepth = fs->make<TH1D>("HBHE_depth" , "E(iphi,ieta)" , hcaldqm::constants::DEPTH_NUM, hcaldqm::constants::DEPTH_MIN, hcaldqm::constants::DEPTH_MAX+1);
 	hHBHER = fs->make<TH1D>("HB_r" , "r" , 20 , 0. , 0.);
 
 	// Output Tree
@@ -168,6 +173,23 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		idx   = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
 		vEBEnergy_[idx] = iRHit->energy(); // c.f. [iphi][ieta]
 		vEBTiming_[idx] = iRHit->time();   // c.f. [iphi][ieta]
+	}
+	edm::Handle<EBDigiCollection> EBDigisH;
+	iEvent.getByToken(EBDigiCollectionT_, EBDigisH);
+	for(EBDigiCollection::const_iterator iDigi = EBDigisH->begin();
+			iDigi != EBDigisH->end();                      
+			++iDigi) {
+		//DetId id( iDigi->id() );
+		EBDetId ebId( iDigi->id() );
+		iphi_ = ebId.iphi()-1;
+		ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
+		EcalDataFrame df(*iDigi);
+		for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; ++iS) {
+			EcalMGPASample digiSample( df.sample(iS) );
+			hEB_adc0->Fill( iphi_, ieta_, digiSample.adc() );
+			//std::cout<< digiSample.adc()<<std::endl;
+			break;
+		}
 	}
 	
 	
