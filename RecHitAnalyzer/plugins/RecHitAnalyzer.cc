@@ -27,6 +27,8 @@ Implementation:
 #include "DataFormats/EcalRecHit/interface/EcalRecHit.h"
 #include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
 #include "Geometry/CaloTopology/interface/EcalBarrelTopology.h"
+#include "Geometry/CaloGeometry/interface/CaloGeometry.h"
+#include "Geometry/Records/interface/CaloGeometryRecord.h"
 
 #include "DataFormats/HcalRecHit/interface/HcalRecHitCollections.h"
 #include "DataFormats/HcalDetId/interface/HcalDetId.h"
@@ -43,6 +45,7 @@ Implementation:
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "TH1.h"
 #include "TH2.h"
+#include "TTree.h"
 //
 // class declaration
 //
@@ -73,6 +76,14 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 		//TH1D * histo; 
 		TH2D * hEBEnergy; 
 		TH2D * hEBTiming; 
+		TH2D * hHBHEEnergy; 
+
+		TH1D * hHBHEDepth; 
+		TH1D * hHBHER; 
+		TTree* RHTree;
+
+		std::vector<float> vEBEnergy_;
+		std::vector<float> vEBTiming_;
 };
 
 //
@@ -87,8 +98,6 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 // constructors and destructor
 //
 RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
-//	:
-//		trackTags_(iConfig.getUntrackedParameter<edm::InputTag>("tracks"))
 {
 	EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
 	HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
@@ -96,9 +105,20 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 	usesResource("TFileService");
 	edm::Service<TFileService> fs;
 	//histo = fs->make<TH1D>("charge" , "Charges" , 200 , -2 , 2 );
-	hEBEnergy = fs->make<TH2D>("E_rechit" , "E(iphi,ieta)" , EBDetId::MAX_IPHI , EBDetId::MIN_IPHI , EBDetId::MAX_IPHI, EBDetId::MAX_IETA , EBDetId::MIN_IETA , EBDetId::MAX_IETA );
-	hEBTiming = fs->make<TH2D>("t_rechit" , "t(iphi,ieta)" , EBDetId::MAX_IPHI , EBDetId::MIN_IPHI , EBDetId::MAX_IPHI, EBDetId::MAX_IETA , EBDetId::MIN_IETA , EBDetId::MAX_IETA );
 
+	// Histograms
+	// ECAL
+	hEBEnergy = fs->make<TH2D>("EB_rechitE" , "E(iphi,ieta)" , EBDetId::MAX_IPHI , EBDetId::MIN_IPHI-1 , EBDetId::MAX_IPHI, 2*EBDetId::MAX_IETA , -EBDetId::MAX_IETA , EBDetId::MAX_IETA );
+	hEBTiming = fs->make<TH2D>("EB_rechitT" , "t(iphi,ieta)" , EBDetId::MAX_IPHI , EBDetId::MIN_IPHI-1 , EBDetId::MAX_IPHI, 2*EBDetId::MAX_IETA , -EBDetId::MAX_IETA , EBDetId::MAX_IETA );
+	// HCAL
+	hHBHEEnergy = fs->make<TH2D>("HBHE_rechitE" , "E(iphi,ieta)" , 72, 0, 72, 2*41, -41, 41 );
+	hHBHEDepth = fs->make<TH1D>("HBHE_depth" , "E(iphi,ieta)" , 20 , 0. , 0.);
+	hHBHER = fs->make<TH1D>("HB_r" , "r" , 20 , 0. , 0.);
+
+	// Output Tree
+	RHTree    = fs->make<TTree>("RHTree", "RecHit tree");
+	RHTree->Branch("EBenergy",	&vEBEnergy_);
+	RHTree->Branch("EBtime",		&vEBTiming_);
 }
 
 
@@ -121,25 +141,55 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 	using namespace edm;
 
+	// get geometry
+	edm::ESHandle<CaloGeometry> caloGeomH;
+	iSetup.get<CaloGeometryRecord>().get(caloGeomH);
+	const CaloGeometry* caloGeom = caloGeomH.product();
+	//const CaloSubdetectorGeometry* towerGeometry = 
+	//geo->getSubdetectorGeometry(DetId::Calo, CaloTowerDetId::SubdetId);
+
+
+	vEBEnergy_.assign(EBDetId::kSizeForDenseIndexing,0.);
+	vEBTiming_.assign(EBDetId::kSizeForDenseIndexing,0);
 	// ECAL Barrel
+	int iphi_,ieta_,idx;
 	edm::Handle<EcalRecHitCollection> EBRecHitsH;
 	iEvent.getByToken(EBRecHitCollectionT_, EBRecHitsH);
 	for(EcalRecHitCollection::const_iterator iRHit = EBRecHitsH->begin();
 			iRHit != EBRecHitsH->end();                      
 			++iRHit) {
 		EBDetId ebId( iRHit->id() );
-		hEBEnergy->Fill( ebId.iphi(),ebId.ieta(),iRHit->energy() );
-		hEBTiming->Fill( ebId.iphi(),ebId.ieta(),iRHit->time() );
+		iphi_ = ebId.iphi()-1;
+		ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
+		hEBEnergy->Fill( iphi_,ieta_,iRHit->energy() );
+		//hEBEnergy->Fill( iphi_,ieta_ );
+		hEBTiming->Fill( iphi_,ieta_,iRHit->time() );
+		//std::cout << iRHit->time() << std::endl;
+		idx   = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
+		vEBEnergy_[idx] = iRHit->energy(); // c.f. [iphi][ieta]
+		vEBTiming_[idx] = iRHit->time();   // c.f. [iphi][ieta]
 	}
-
-	// HCAL Barrel
+	
+	
+	// HCAL
+	GlobalPoint pos;
 	edm::Handle<HBHERecHitCollection> HBHERecHitsH;
 	iEvent.getByToken(HBHERecHitCollectionT_, HBHERecHitsH);
 	for(HBHERecHitCollection::const_iterator iRHit = HBHERecHitsH->begin();
 			iRHit != HBHERecHitsH->end();                      
 			++iRHit) {
 		HcalDetId hId( iRHit->id() );
+		if (hId.subdet() != HcalSubdetector::HcalBarrel) continue;
+		iphi_ = hId.iphi()-1;
+		ieta_ = hId.ieta() > 0 ? hId.ieta()-1 : hId.ieta();
+		hHBHEEnergy->Fill( iphi_,ieta_,iRHit->energy() );
+		pos = caloGeom->getPosition(hId);
+		hHBHEDepth->Fill( hId.depth() );
+		float x = pos.x();
+		//std::cout << x  << std::endl;
+		//hHBHER->Fill( pos.x() );
 	}
+	
 
 	/*
 	using reco::TrackCollection;
@@ -153,6 +203,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		histo->Fill( charge );
 	}
 	*/
+	RHTree->Fill();
 
 #ifdef THIS_IS_AN_EVENT_EXAMPLE
 	Handle<ExampleData> pIn;

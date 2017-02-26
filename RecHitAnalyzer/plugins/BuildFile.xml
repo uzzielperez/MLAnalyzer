@@ -5,4 +5,7 @@
  <use name="DataFormats/TrackReco"/>
  <use name="DataFormats/EcalRecHit"/>
  <use name="DataFormats/HcalDetId"/>
+ <use name="DataFormats/HcalRecHit"/>
+ <use name="Geometry/CaloGeometry"/>
+ <use name="Geometry/Records"/>
  <use name="CommonTools/UtilAlgos"/>
