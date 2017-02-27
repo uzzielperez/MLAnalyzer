@@ -27,6 +27,7 @@ process.es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
 
 process.demo = cms.EDAnalyzer('RecHitAnalyzer'
 		#, tracks = cms.untracked.InputTag('ctfWithMaterialTracks')
+		, EBRecHitCollection = cms.InputTag('ecalRecHit:EcalRecHitsEB')
 		, reducedEBRecHitCollection = cms.InputTag('reducedEcalRecHitsEB')
 		, selectedEBDigiCollection = cms.InputTag('selectDigi:selectedEcalEBDigiCollection')
 		, reducedHBHERecHitCollection = cms.InputTag('reducedHcalRecHits:hbhereco')
