@@ -11,15 +11,19 @@ process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 #process.load("Geometry.CaloEventSetup.CaloGeometry_cfi");
 #process.load("Geometry.CaloEventSetup.CaloTopology_cfi");
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) )
 
 process.source = cms.Source("PoolSource",
 		# replace 'myfile.root' with the source file you want to use
 		fileNames = cms.untracked.vstring(
 			#'file:myfile.root'
 			#'file:pickevents.root'
-			'file:pickeventsRECO.root'
+			#'file:pickeventsRECO.root'
+			#'file:step3.root'
+			'file:SinglePhotonPt50_FEVTDEBUG.root'
+			#'file:SingleElectronPt50_FEVTDEBUG.root'
 			)
+		, skipEvents = cms.untracked.uint32(0)
 		)
 
 process.GlobalTag.globaltag = cms.string('80X_dataRun2_HLT_v2')
@@ -29,6 +33,7 @@ process.demo = cms.EDAnalyzer('RecHitAnalyzer'
 		#, tracks = cms.untracked.InputTag('ctfWithMaterialTracks')
 		, EBRecHitCollection = cms.InputTag('ecalRecHit:EcalRecHitsEB')
 		, reducedEBRecHitCollection = cms.InputTag('reducedEcalRecHitsEB')
+		, EBDigiCollection = cms.InputTag('simEcalDigis:ebDigis')
 		, selectedEBDigiCollection = cms.InputTag('selectDigi:selectedEcalEBDigiCollection')
 		, reducedHBHERecHitCollection = cms.InputTag('reducedHcalRecHits:hbhereco')
 		)

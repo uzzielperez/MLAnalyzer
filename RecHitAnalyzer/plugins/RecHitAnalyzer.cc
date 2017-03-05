@@ -71,12 +71,14 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 		virtual void endJob() override;
 
 		// ----------member data ---------------------------
+		edm::EDGetTokenT<EcalRecHitCollection> redEBRecHitCollectionT_;
 		edm::EDGetTokenT<EcalRecHitCollection> EBRecHitCollectionT_;
 		edm::EDGetTokenT<EBDigiCollection>     EBDigiCollectionT_;
 		edm::EDGetTokenT<HBHERecHitCollection> HBHERecHitCollectionT_;
 		//edm::InputTag trackTags_; //used to select what tracks to read from configuration file
 		//TH1D * histo; 
 		TH2D * hEBEnergy; 
+		TH2D * hEBEnergyRed; 
 		TH2D * hEBTiming; 
 		//TH2D * hEB_adc0; 
 		TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES]; 
@@ -103,9 +105,10 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 //
 RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 {
-	//EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
+	redEBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
 	EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EBRecHitCollection"));
-	EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("selectedEBDigiCollection"));
+	//EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("selectedEBDigiCollection"));
+	EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("EBDigiCollection"));
 	HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
 	//now do what ever initialization is needed
 	usesResource("TFileService");
@@ -116,6 +119,9 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 	// ECAL
 	// Rechits
 	hEBEnergy = fs->make<TH2D>("EB_rechitE", "E(iphi,ieta)",
+			EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
+			2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
+	hEBEnergyRed = fs->make<TH2D>("EB_rechitEred", "E(rediphi,ieta)",
 			EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
 			2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
 	hEBTiming = fs->make<TH2D>("EB_rechitT", "t(iphi,ieta)",
@@ -191,6 +197,22 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		idx   = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
 		vEBEnergy_[idx] = iRHit->energy(); // c.f. [iphi][ieta]
 		vEBTiming_[idx] = iRHit->time();   // c.f. [iphi][ieta]
+	}
+	edm::Handle<EcalRecHitCollection> redEBRecHitsH;
+	iEvent.getByToken(redEBRecHitCollectionT_, redEBRecHitsH);
+	for(EcalRecHitCollection::const_iterator iRHit = redEBRecHitsH->begin();
+			iRHit != redEBRecHitsH->end();                      
+			++iRHit) {
+		EBDetId ebId( iRHit->id() );
+		iphi_ = ebId.iphi()-1;
+		ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
+		hEBEnergyRed->Fill( iphi_,ieta_,iRHit->energy() );
+		//hEBEnergy->Fill( iphi_,ieta_ );
+		//hEBTiming->Fill( iphi_,ieta_,iRHit->time() );
+		//std::cout << iRHit->time() << std::endl;
+		//idx   = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
+		//vEBEnergy_[idx] = iRHit->energy(); // c.f. [iphi][ieta]
+		//vEBTiming_[idx] = iRHit->time();   // c.f. [iphi][ieta]
 	}
 	// Digis
 	edm::Handle<EBDigiCollection> EBDigisH;
