@@ -10,10 +10,10 @@ skipEvents_=0
 inputTag='TEST_AllEvts'
 
 if not os.path.isdir(inputTag):
-	os.system('mkdir %s'%(inputTag))
-cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d"%(cfg,inputFiles_,maxEvents_,skipEvents_)
-print '%s'%cmd
-os.system(cmd)
-os.system('mv cEB*.eps %s/'%(inputTag))
+  os.system('mkdir %s'%(inputTag))
+  cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d"%(cfg,inputFiles_,maxEvents_,skipEvents_)
+  print '%s'%cmd
+  os.system(cmd)
+  os.system('mv cEB*.eps %s/'%(inputTag))
 
 #os.system('scram b -j8')
