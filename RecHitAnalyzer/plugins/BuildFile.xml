@@ -3,4 +3,10 @@
 <use name="FWCore/ParameterSet"/>
 <flags EDM_PLUGIN="1"/>
  <use name="DataFormats/TrackReco"/>
+ <use name="DataFormats/EcalRecHit"/>
+ <use name="DataFormats/HcalDetId"/>
+ <use name="DataFormats/HcalRecHit"/>
+ <use name="DQM/HcalCommon"/>
+ <use name="Geometry/CaloGeometry"/>
+ <use name="Geometry/Records"/>
  <use name="CommonTools/UtilAlgos"/>
