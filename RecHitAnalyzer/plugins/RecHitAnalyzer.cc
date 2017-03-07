@@ -94,6 +94,8 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 		std::vector<float> vEBTiming_;
 		std::vector<float> vEBEnergyRed_;
 		std::vector<float> vEBTimingRed_;
+	
+		TCanvas *cEB;
 };
 
 //
@@ -123,6 +125,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 	// Histograms
 	// ECAL
 	// Rechits
+	cEB = new TCanvas("cEB","cEB",600,300);
 	hEBEnergy = fs->make<TH2D>("EB_rechitE", "E(i#phi,i#eta);i#phi;i#eta",
 			EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
 			2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
@@ -206,9 +209,11 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		vEBEnergy_[idx] = iRHit->energy(); // c.f. [iphi][ieta]
 		vEBTiming_[idx] = iRHit->time();   // c.f. [iphi][ieta]
 	}
-	TCanvas *cEB = new TCanvas("cEB","cEB",600,300);
-	gPad->SetLogz();
+	cEB->cd();
+	gPad->SetLogz(1);
 	gStyle->SetPalette(1);
+	gStyle->SetOptStat(0);
+	hEBEnergy->GetZaxis()->SetRangeUser(2.e-2, 9.e1);
 	hEBEnergy->Draw("COL Z");
 	char outFile[100];
 	sprintf(outFile,"cEBEnergy_%llu.eps",iEvent.id().event());
@@ -233,6 +238,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		vEBTimingRed_[idx] = iRHit->time();   // c.f. [iphi][ieta]
 	}
 	cEB->Clear();
+	hEBEnergyRed->GetZaxis()->SetRangeUser(2.e-2, 9.e1);
 	hEBEnergyRed->Draw("COL Z");
 	sprintf(outFile,"cEBEnergyRed_%llu.eps",iEvent.id().event());
 	cEB->Print(outFile);
@@ -251,10 +257,13 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; ++iS) {
 			EcalMGPASample digiSample( df.sample(iS) );
 			hEB_adc[iS]->Fill( iphi_, ieta_, digiSample.adc() );
+			//std::cout << digiSample.adc() << std::endl;
 		}
 	}
 	for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; ++iS) {
 		cEB->Clear();
+		gPad->SetLogz(1);
+		hEB_adc[iS]->GetZaxis()->SetRangeUser(190, 1.3e3);
 		hEB_adc[iS]->Draw("COL Z");
 		sprintf(outFile,"cEB_adc%d_%llu.eps",iS,iEvent.id().event());
 		cEB->Print(outFile);
