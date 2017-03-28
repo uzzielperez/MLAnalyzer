@@ -26,6 +26,7 @@ Implementation:
 
 #include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
 #include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
+#include "DataFormats/EcalDetId/interface/EcalTrigTowerDetId.h"
 #include "Geometry/CaloTopology/interface/EcalBarrelTopology.h"
 #include "Geometry/CaloGeometry/interface/CaloGeometry.h"
 #include "Geometry/Records/interface/CaloGeometryRecord.h"
@@ -94,6 +95,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<float> vEBTiming_;
     std::vector<float> vEBEnergyRed_;
     std::vector<float> vEBTimingRed_;
+    std::vector<float> vEB_adc_[EcalDataFrame::MAXSAMPLES];
 
     TCanvas *cEB;
 };
@@ -132,6 +134,9 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   hEBEnergyRed = fs->make<TH2D>("EB_rechitEred", "Ered(i#phi,i#eta);i#phi;i#eta",
       EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
       2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
+  //hEBEnergyRed = fs->make<TH2D>("EB_rechitEred", "Ered(i#phi,i#eta);i#phi;i#eta",
+  //    EcalTrigTowerDetId::kEBTowersInPhi*18  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
+  //    EcalTrigTowerDetId::kEBTowersInEta*2,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
   hEBTiming = fs->make<TH2D>("EB_rechitT", "t(i#phi,i#eta);i#phi;i#eta",
       EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
       2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
@@ -158,6 +163,10 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   RHTree->Branch("EBtime",		&vEBTiming_);
   RHTree->Branch("EBenergyRed",	&vEBEnergyRed_);
   RHTree->Branch("EBtimeRed",		&vEBTimingRed_);
+  for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; iS++){
+    sprintf(hname, "EB_adc%d",iS);
+    RHTree->Branch(hname, &vEB_adc_[iS]);
+  }
 }
 
 
@@ -189,10 +198,11 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   //////////// EB //////////
 
+  int iphi_,ieta_,idx;
+
   // EB rechit collection
   vEBEnergy_.assign(EBDetId::kSizeForDenseIndexing,0.);
   vEBTiming_.assign(EBDetId::kSizeForDenseIndexing,0);
-  int iphi_,ieta_,idx;
   edm::Handle<EcalRecHitCollection> EBRecHitsH;
   iEvent.getByToken(EBRecHitCollectionT_, EBRecHitsH);
   for(EcalRecHitCollection::const_iterator iRHit = EBRecHitsH->begin();
@@ -213,15 +223,17 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   gPad->SetLogz(1);
   gStyle->SetPalette(1);
   gStyle->SetOptStat(0);
-  hEBEnergy->GetZaxis()->SetRangeUser(2.e-2, 9.e1);
-  hEBEnergy->Draw("COL Z");
+  //hEBEnergy->GetZaxis()->SetRangeUser(2.e-2, 9.e1);
+  //hEBEnergy->Draw("COL Z");
   char outFile[100];
   sprintf(outFile,"cEBEnergy_%llu.eps",iEvent.id().event());
-  cEB->Print(outFile);
+  //cEB->Print(outFile);
 
   // EB reduced rechit collection
   vEBEnergyRed_.assign(EBDetId::kSizeForDenseIndexing,0.);
   vEBTimingRed_.assign(EBDetId::kSizeForDenseIndexing,0);
+  //vEBEnergyRed_.assign(EcalTrigTowerDetId::kEBTotalTowers,0.);
+  //vEBTimingRed_.assign(EcalTrigTowerDetId::kEBTotalTowers,0);
   edm::Handle<EcalRecHitCollection> redEBRecHitsH;
   iEvent.getByToken(redEBRecHitCollectionT_, redEBRecHitsH);
   for(EcalRecHitCollection::const_iterator iRHit = redEBRecHitsH->begin();
@@ -231,19 +243,22 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     iphi_ = ebId.iphi()-1;
     ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
     hEBEnergyRed->Fill( iphi_,ieta_,iRHit->energy() );
-    //hEBEnergy->Fill( iphi_,ieta_ );
     //hEBTimingRed->Fill( iphi_,ieta_,iRHit->time() );
     idx   = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
+    //EcalTrigTowerDetId ttId( iRHit->id() );
+    //idx = ttId.hashedIndex();
     vEBEnergyRed_[idx] = iRHit->energy(); // c.f. [iphi][ieta]
     vEBTimingRed_[idx] = iRHit->time();   // c.f. [iphi][ieta]
   }
   cEB->Clear();
-  hEBEnergyRed->GetZaxis()->SetRangeUser(2.e-2, 9.e1);
-  hEBEnergyRed->Draw("COL Z");
+  //hEBEnergyRed->GetZaxis()->SetRangeUser(2.e-2, 9.e1);
+  //hEBEnergyRed->Draw("COL Z");
   sprintf(outFile,"cEBEnergyRed_%llu.eps",iEvent.id().event());
-  cEB->Print(outFile);
+  //cEB->Print(outFile);
 
   // EB digis
+  for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; ++iS)
+    vEB_adc_[iS].assign(EBDetId::kSizeForDenseIndexing,0);
   edm::Handle<EBDigiCollection> EBDigisH;
   iEvent.getByToken(EBDigiCollectionT_, EBDigisH);
   for(EBDigiCollection::const_iterator iDigi = EBDigisH->begin();
@@ -253,20 +268,22 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     EBDetId ebId( iDigi->id() );
     iphi_ = ebId.iphi()-1;
     ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
+    idx = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
     EcalDataFrame df(*iDigi);
     for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; ++iS) {
       EcalMGPASample digiSample( df.sample(iS) );
       hEB_adc[iS]->Fill( iphi_, ieta_, digiSample.adc() );
       //std::cout << digiSample.adc() << std::endl;
+      vEB_adc_[iS][idx] += digiSample.adc(); // c.f. [iphi][ieta]
     }
   }
   for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; ++iS) {
     cEB->Clear();
     gPad->SetLogz(1);
-    hEB_adc[iS]->GetZaxis()->SetRangeUser(190, 1.3e3);
-    hEB_adc[iS]->Draw("COL Z");
+    //hEB_adc[iS]->GetZaxis()->SetRangeUser(190, 1.3e3);
+    //hEB_adc[iS]->Draw("COL Z");
     sprintf(outFile,"cEB_adc%d_%llu.eps",iS,iEvent.id().event());
-    cEB->Print(outFile);
+    //cEB->Print(outFile);
   }
 
   //////////// HBHE //////////
@@ -289,7 +306,6 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //std::cout << x  << std::endl;
     //hHBHER->Fill( pos.x() );
   }
-
 
   /*
      using reco::TrackCollection;

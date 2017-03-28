@@ -9,7 +9,7 @@ skipEvents_=3
 inputTag=inputFiles_.strip('file:').strip('_FEVTDEBUG.root')
 
 #cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d outputFile=%s"%(cfg,inputFiles_,maxEvents_,skipEvents_,outputFile_)
-for ievt in range(10):
+for ievt in range(1):
   if not os.path.isdir(inputTag):
     os.system('mkdir %s'%(inputTag))
     cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d"%(cfg,inputFiles_,maxEvents_,ievt)
