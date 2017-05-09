@@ -49,13 +49,13 @@ process.fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , EBRecHitCollection = cms.InputTag('ecalRecHit:EcalRecHitsEB')
     , reducedEBRecHitCollection = cms.InputTag('reducedEcalRecHitsEB')
     , EBDigiCollection = cms.InputTag('simEcalDigis:ebDigis')
-    , selectedEBDigiCollection = cms.InputTag('selectDigi:selectedEcalEBDigiCollection')
+    #, selectedEBDigiCollection = cms.InputTag('selectDigi:selectedEcalEBDigiCollection')
     , reducedHBHERecHitCollection = cms.InputTag('reducedHcalRecHits:hbhereco')
     )
 
 process.TFileService = cms.Service("TFileService",
-    fileName = cms.string('histo.root')
-    #fileName = cms.string(options.outputFile)
+    #fileName = cms.string('histo.root')
+    fileName = cms.string(options.outputFile)
     )
 
 process.p = cms.Path(process.fevt)

@@ -29,6 +29,7 @@ Implementation:
 #include "DataFormats/EcalDetId/interface/EcalTrigTowerDetId.h"
 #include "Geometry/CaloTopology/interface/EcalBarrelTopology.h"
 #include "Geometry/CaloGeometry/interface/CaloGeometry.h"
+#include "Geometry/CaloGeometry/interface/CaloCellGeometry.h"
 #include "Geometry/Records/interface/CaloGeometryRecord.h"
 
 #include "DataFormats/HcalRecHit/interface/HcalRecHitCollections.h"
@@ -50,6 +51,7 @@ Implementation:
 #include "TTree.h"
 #include "TCanvas.h"
 #include "TStyle.h"
+#include "TMath.h"
 //
 // class declaration
 //
@@ -97,7 +99,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<float> vEBTimingRed_;
     std::vector<float> vEB_adc_[EcalDataFrame::MAXSAMPLES];
 
-    TCanvas *cEB;
+    TCanvas *cEB, *cHBHE;
 };
 
 //
@@ -128,6 +130,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   // ECAL
   // Rechits
   cEB = new TCanvas("cEB","cEB",600,300);
+  cHBHE = new TCanvas("cHBHE","cHBHE",600,300);
   hEBEnergy = fs->make<TH2D>("EB_rechitE", "E(i#phi,i#eta);i#phi;i#eta",
       EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
       2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
@@ -195,9 +198,12 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   const CaloGeometry* caloGeom = caloGeomH.product();
   //const CaloSubdetectorGeometry* towerGeometry = 
   //geo->getSubdetectorGeometry(DetId::Calo, CaloTowerDetId::SubdetId);
+  GlobalPoint pos;
+  const CaloCellGeometry *cell;
 
   //////////// EB //////////
 
+  bool saveImgs = false;
   int iphi_,ieta_,idx;
 
   // EB rechit collection
@@ -215,8 +221,10 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //hEBEnergy->Fill( iphi_,ieta_ );
     hEBTiming->Fill( iphi_,ieta_,iRHit->time() );
     //std::cout << iRHit->time() << std::endl;
+    cell  = caloGeom->getGeometry(ebId);
     idx   = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
-    vEBEnergy_[idx] = iRHit->energy(); // c.f. [iphi][ieta]
+    //vEBEnergy_[idx] = iRHit->energy(); // c.f. [iphi][ieta]
+    vEBEnergy_[idx] = iRHit->energy()/std::abs(cell->etaPos()); // c.f. [iphi][ieta]
     vEBTiming_[idx] = iRHit->time();   // c.f. [iphi][ieta]
   }
   cEB->cd();
@@ -227,7 +235,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //hEBEnergy->Draw("COL Z");
   char outFile[100];
   sprintf(outFile,"cEBEnergy_%llu.eps",iEvent.id().event());
-  //cEB->Print(outFile);
+  if (saveImgs) cEB->Print(outFile);
 
   // EB reduced rechit collection
   vEBEnergyRed_.assign(EBDetId::kSizeForDenseIndexing,0.);
@@ -244,17 +252,21 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
     hEBEnergyRed->Fill( iphi_,ieta_,iRHit->energy() );
     //hEBTimingRed->Fill( iphi_,ieta_,iRHit->time() );
+    cell  = caloGeom->getGeometry(ebId);
     idx   = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
     //EcalTrigTowerDetId ttId( iRHit->id() );
     //idx = ttId.hashedIndex();
-    vEBEnergyRed_[idx] = iRHit->energy(); // c.f. [iphi][ieta]
+    //vEBEnergyRed_[idx] = iRHit->energy(); // c.f. [iphi][ieta]
+    vEBEnergyRed_[idx] = iRHit->energy()/TMath::CosH(cell->etaPos()); // c.f. [iphi][ieta]
     vEBTimingRed_[idx] = iRHit->time();   // c.f. [iphi][ieta]
   }
   cEB->Clear();
   //hEBEnergyRed->GetZaxis()->SetRangeUser(2.e-2, 9.e1);
   //hEBEnergyRed->Draw("COL Z");
+  //char outFile[100];
   sprintf(outFile,"cEBEnergyRed_%llu.eps",iEvent.id().event());
-  //cEB->Print(outFile);
+  if (saveImgs) cEB->Print(outFile);
+
 
   // EB digis
   for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; ++iS)
@@ -269,12 +281,14 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     iphi_ = ebId.iphi()-1;
     ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
     idx = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
+    cell  = caloGeom->getGeometry(ebId);
     EcalDataFrame df(*iDigi);
     for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; ++iS) {
       EcalMGPASample digiSample( df.sample(iS) );
       hEB_adc[iS]->Fill( iphi_, ieta_, digiSample.adc() );
       //std::cout << digiSample.adc() << std::endl;
-      vEB_adc_[iS][idx] += digiSample.adc(); // c.f. [iphi][ieta]
+      vEB_adc_[iS][idx] += digiSample.adc()/TMath::CosH(cell->etaPos()); // c.f. [iphi][ieta]
+      //vEB_adc_[iS][idx] += digiSample.adc(); // c.f. [iphi][ieta]
     }
   }
   for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; ++iS) {
@@ -283,13 +297,14 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //hEB_adc[iS]->GetZaxis()->SetRangeUser(190, 1.3e3);
     //hEB_adc[iS]->Draw("COL Z");
     sprintf(outFile,"cEB_adc%d_%llu.eps",iS,iEvent.id().event());
-    //cEB->Print(outFile);
+    if (saveImgs) cEB->Print(outFile);
   }
 
   //////////// HBHE //////////
 
   // HCAL
-  GlobalPoint pos;
+  cHBHE->cd();
+  float maxEta = 0.;
   edm::Handle<HBHERecHitCollection> HBHERecHitsH;
   iEvent.getByToken(HBHERecHitCollectionT_, HBHERecHitsH);
   for(HBHERecHitCollection::const_iterator iRHit = HBHERecHitsH->begin();
@@ -300,12 +315,25 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     iphi_ = hId.iphi()-1;
     ieta_ = hId.ieta() > 0 ? hId.ieta()-1 : hId.ieta();
     hHBHEEnergy->Fill( iphi_,ieta_,iRHit->energy() );
-    pos = caloGeom->getPosition(hId);
+    pos  = caloGeom->getPosition(hId);
+    cell = caloGeom->getGeometry(hId);
     hHBHEDepth->Fill( hId.depth() );
     float x = pos.x();
-    //std::cout << x  << std::endl;
+    float rho = cell->rhoPos();
+    float eta = cell->etaPos();
+    float phi = cell->phiPos();
+    //if (iRHit->energy() > 0.) {
+      //std::cout << x  << std::endl;
+      //std::cout << rho << ":" << eta << ":" << phi << std::endl;
+    //}
+    //if (eta > std::abs(maxEta)) maxEta = std::abs(eta);
     //hHBHER->Fill( pos.x() );
   }
+  //std::cout << "maxEta: " << maxEta << std::endl;
+  hHBHEEnergy->GetZaxis()->SetRangeUser(2.e-2, 9.e1);
+  hHBHEEnergy->Draw("COL Z");
+  sprintf(outFile,"cHBHEEnergy_%llu.eps",iEvent.id().event());
+  if (saveImgs) cHBHE->Print(outFile);
 
   /*
      using reco::TrackCollection;
