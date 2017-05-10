@@ -15,7 +15,8 @@ decays = [
     ]
 s = 32
 crop_size = int(s*s)
-chunk_size = 9960
+#chunk_size = 9960
+chunk_size = 3000
 n_channels = 14
 ver = 1
 
@@ -29,14 +30,20 @@ def process_chunk(x):
 
     # Energy
     Efull = x[:,0,:]
-    Efull /= E_scale
+    #Efull /= E_scale
+    norm = np.expand_dims(np.linalg.norm(Efull, axis=1), -1)
+    Efull /= norm
+    Efull[np.isnan(Efull)] = 0.
     # Time
     tfull = x[:,1,:]
     tfull /= t_scale
 
     # Energy
     E = x[:,2,:]
-    E /= E_scale
+    #E /= E_scale
+    norm = np.expand_dims(np.linalg.norm(E, axis=1), -1)
+    E /= norm
+    E[np.isnan(E)] = 0.
     # Time
     t = x[:,3,:]
     t /= t_scale
@@ -51,8 +58,13 @@ def process_chunk(x):
 
     # Digi
     digi = x[:,4:,:]
-    pos = (digi > 0.)
-    digi[pos] = np.log10(digi[pos]) - adc_off
+    #pos = (digi > 0.)
+    #digi[pos] = np.log10(digi[pos]) - adc_off
+    digi -= noise
+    norm = np.expand_dims(np.linalg.norm(digi, axis=2), -1)
+    digi /= norm
+    digi[np.isnan(digi)] = 0.
+
 
     X = np.concatenate([rh, digi], axis=1)
     X = X.reshape((-1,X.shape[1],s,s))
@@ -62,7 +74,7 @@ def process_chunk(x):
 
 for j,decay in enumerate(decays):
 
-    file_in_str = "%s/%s_IMGCROPS_n249k.hdf5"%(eosDir,decay)
+    file_in_str = "%s/%s_IMGCROPS_n249k_pT.hdf5"%(eosDir,decay)
     dset = h5py.File(file_in_str)
     X_in = da.from_array(dset['/X'], chunks=chunk_shape)
     y_in = da.from_array(dset['/y'], chunks=(chunk_size,))
@@ -81,7 +93,7 @@ for j,decay in enumerate(decays):
                         dtype=np.float32)\
                         for i in range(0,events,chunk_size)])
 
-    file_out_str = "%s/%s_IMGCROPS_n249k_RHv1+DIGIv5.hdf5"%(eosDir,decay)
+    file_out_str = "%s/%s_IMGCROPS_n249k_pT_RHv5+DIGIv6.hdf5"%(eosDir,decay)
     print " >> Writing to:", file_out_str
     da.to_hdf5(file_out_str, {'/X': X, '/y': y_in}, compression='lzf')
 

@@ -99,6 +99,8 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<float> vEBTimingRed_;
     std::vector<float> vEB_adc_[EcalDataFrame::MAXSAMPLES];
 
+    std::vector<float> vHBHEEnergy[hcaldqm::constants::DEPTH_NUM];
+
     TCanvas *cEB, *cHBHE;
 };
 
