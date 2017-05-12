@@ -2,9 +2,9 @@ import os
 
 cfg='RecHitAnalyzer/python/ConfFile_cfg.py'
 #inputFiles_='file:SinglePhotonPt50_FEVTDEBUG.root'
-#inputFiles_='file:pickeventsRECO.root'
+inputFiles_='file:pickeventsRECO.root'
 #inputFiles_='file:SingleElectronPt50_FEVTDEBUG.root'
-inputFiles_='file:../step_full.root'
+#inputFiles_='file:../step_full.root'
 maxEvents_=1
 skipEvents_=0
 #outputFile_='output.root'

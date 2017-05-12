@@ -88,6 +88,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     TH2D * hEBTiming; 
     TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES]; 
     TH2D * hHBHEEnergy; 
+    TH2D * hHBHEEnergy_EB; 
 
     TH1D * hHBHEDepth; 
     TH1D * hHBHER; 
@@ -99,7 +100,12 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<float> vEBTimingRed_;
     std::vector<float> vEB_adc_[EcalDataFrame::MAXSAMPLES];
 
-    std::vector<float> vHBHEEnergy[hcaldqm::constants::DEPTH_NUM];
+    //std::vector<float> vHBHEEnergy[hcaldqm::constants::DEPTH_NUM];
+    std::vector<float> vHBHEEnergy_EB_;
+  
+    const unsigned HBHE_IETA_MAX = hcaldqm::constants::IETA_MAX_HB + 1;//17
+    //const unsigned HBHE_IETA_MAX = 20;
+
 
     TCanvas *cEB, *cHBHE;
 };
@@ -120,7 +126,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   redEBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
   EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EBRecHitCollection"));
   //EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("selectedEBDigiCollection"));
-  EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("EBDigiCollection"));
+  //EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("EBDigiCollection"));
   HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
 
   //now do what ever initialization is needed
@@ -158,6 +164,9 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   hHBHEEnergy = fs->make<TH2D>("HBHE_rechitE", "E(i#phi,i#eta);i#phi;i#eta",
       hcaldqm::constants::IPHI_NUM, hcaldqm::constants::IPHI_MIN-1,hcaldqm::constants::IPHI_MAX,
       hcaldqm::constants::IETA_NUM,-hcaldqm::constants::IETA_MAX,  hcaldqm::constants::IETA_MAX );
+  hHBHEEnergy_EB = fs->make<TH2D>("HBHE_rechitE_EB", "E(i#phi,i#eta);i#phi;i#eta",
+      hcaldqm::constants::IPHI_NUM, hcaldqm::constants::IPHI_MIN-1,hcaldqm::constants::IPHI_MAX,
+      2*HBHE_IETA_MAX,             -HBHE_IETA_MAX,                 HBHE_IETA_MAX );
   hHBHEDepth = fs->make<TH1D>("HBHE_depth", "E(i#phi,i#eta);i#phi;i#eta",
       hcaldqm::constants::DEPTH_NUM, hcaldqm::constants::DEPTH_MIN, hcaldqm::constants::DEPTH_MAX+1);
   hHBHER = fs->make<TH1D>("HB_r" , "r" , 20 , 0. , 0.);
@@ -172,6 +181,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
     sprintf(hname, "EB_adc%d",iS);
     RHTree->Branch(hname, &vEB_adc_[iS]);
   }
+  RHTree->Branch("HBHEenergy_EB", &vHBHEEnergy_EB_);
 }
 
 
@@ -225,9 +235,9 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //std::cout << iRHit->time() << std::endl;
     cell  = caloGeom->getGeometry(ebId);
     idx   = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
-    //vEBEnergy_[idx] = iRHit->energy(); // c.f. [iphi][ieta]
-    vEBEnergy_[idx] = iRHit->energy()/std::abs(cell->etaPos()); // c.f. [iphi][ieta]
-    vEBTiming_[idx] = iRHit->time();   // c.f. [iphi][ieta]
+    //vEBEnergy_[idx] = iRHit->energy(); // c.f. [ieta][iphi]
+    vEBEnergy_[idx] = iRHit->energy()/std::abs(cell->etaPos()); // c.f. [ieta][iphi]
+    vEBTiming_[idx] = iRHit->time();   // c.f. [ieta][iphi]
   }
   cEB->cd();
   gPad->SetLogz(1);
@@ -258,9 +268,9 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     idx   = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
     //EcalTrigTowerDetId ttId( iRHit->id() );
     //idx = ttId.hashedIndex();
-    //vEBEnergyRed_[idx] = iRHit->energy(); // c.f. [iphi][ieta]
-    vEBEnergyRed_[idx] = iRHit->energy()/TMath::CosH(cell->etaPos()); // c.f. [iphi][ieta]
-    vEBTimingRed_[idx] = iRHit->time();   // c.f. [iphi][ieta]
+    //vEBEnergyRed_[idx] = iRHit->energy(); // c.f. [ieta][iphi]
+    vEBEnergyRed_[idx] = iRHit->energy()/TMath::CosH(cell->etaPos()); // c.f. [ieta][iphi]
+    vEBTimingRed_[idx] = iRHit->time();   // c.f. [ieta][iphi]
   }
   cEB->Clear();
   //hEBEnergyRed->GetZaxis()->SetRangeUser(2.e-2, 9.e1);
@@ -269,7 +279,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   sprintf(outFile,"cEBEnergyRed_%llu.eps",iEvent.id().event());
   if (saveImgs) cEB->Print(outFile);
 
-
+  /*
   // EB digis
   for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; ++iS)
     vEB_adc_[iS].assign(EBDetId::kSizeForDenseIndexing,0);
@@ -289,8 +299,8 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       EcalMGPASample digiSample( df.sample(iS) );
       hEB_adc[iS]->Fill( iphi_, ieta_, digiSample.adc() );
       //std::cout << digiSample.adc() << std::endl;
-      vEB_adc_[iS][idx] += digiSample.adc()/TMath::CosH(cell->etaPos()); // c.f. [iphi][ieta]
-      //vEB_adc_[iS][idx] += digiSample.adc(); // c.f. [iphi][ieta]
+      vEB_adc_[iS][idx] += digiSample.adc()/TMath::CosH(cell->etaPos()); // c.f. [ieta][iphi]
+      //vEB_adc_[iS][idx] += digiSample.adc(); // c.f. [ieta][iphi]
     }
   }
   for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; ++iS) {
@@ -301,29 +311,39 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     sprintf(outFile,"cEB_adc%d_%llu.eps",iS,iEvent.id().event());
     if (saveImgs) cEB->Print(outFile);
   }
+  */
 
   //////////// HBHE //////////
 
   // HCAL
   cHBHE->cd();
   float maxEta = 0.;
+  vHBHEEnergy_EB_.assign( hcaldqm::constants::IPHI_NUM*2*HBHE_IETA_MAX,0. );
   edm::Handle<HBHERecHitCollection> HBHERecHitsH;
   iEvent.getByToken(HBHERecHitCollectionT_, HBHERecHitsH);
   for(HBHERecHitCollection::const_iterator iRHit = HBHERecHitsH->begin();
       iRHit != HBHERecHitsH->end();                      
       ++iRHit) {
     HcalDetId hId( iRHit->id() );
-    if (hId.subdet() != HcalSubdetector::HcalBarrel) continue;
+    //if (hId.subdet() != HcalSubdetector::HcalBarrel) continue;
     iphi_ = hId.iphi()-1;
     ieta_ = hId.ieta() > 0 ? hId.ieta()-1 : hId.ieta();
     hHBHEEnergy->Fill( iphi_,ieta_,iRHit->energy() );
+    hHBHEDepth->Fill( hId.depth() );
+
+    if ( abs(hId.ieta()) > HBHE_IETA_MAX ) continue; 
     pos  = caloGeom->getPosition(hId);
     cell = caloGeom->getGeometry(hId);
-    hHBHEDepth->Fill( hId.depth() );
     float x = pos.x();
     float rho = cell->rhoPos();
     float eta = cell->etaPos();
     float phi = cell->phiPos();
+    hHBHEEnergy_EB->Fill( iphi_,ieta_,iRHit->energy() );
+
+    idx = ( ieta_+(HBHE_IETA_MAX) )*hcaldqm::constants::IPHI_NUM + iphi_;
+    vHBHEEnergy_EB_[idx] += iRHit->energy(); // c.f. [ieta][iphi]
+    //vHBHEEnergy_EB_[idx] = iRHit->energy()/TMath::CosH(cell->etaPos()); // c.f. [ieta][iphi]
+
     //if (iRHit->energy() > 0.) {
       //std::cout << x  << std::endl;
       //std::cout << rho << ":" << eta << ":" << phi << std::endl;
