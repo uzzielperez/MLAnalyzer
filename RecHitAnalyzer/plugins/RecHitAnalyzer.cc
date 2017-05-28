@@ -76,7 +76,6 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     virtual void endJob() override;
 
     // ----------member data ---------------------------
-    edm::EDGetTokenT<EcalRecHitCollection> redEBRecHitCollectionT_;
     edm::EDGetTokenT<EcalRecHitCollection> EBRecHitCollectionT_;
     edm::EDGetTokenT<EBDigiCollection>     EBDigiCollectionT_;
     edm::EDGetTokenT<HBHERecHitCollection> HBHERecHitCollectionT_;
@@ -84,7 +83,6 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
     //TH1D * histo; 
     TH2D * hEBenergy; 
-    TH2D * hEBenergyRed; 
     TH2D * hEBtiming; 
     TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES]; 
 
@@ -96,8 +94,6 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
     std::vector<float> vEBenergy_;
     std::vector<float> vEBtiming_;
-    std::vector<float> vEBenergyRed_;
-    std::vector<float> vEBtimingRed_;
     std::vector<float> vEB_adc_[EcalDataFrame::MAXSAMPLES];
 
     //std::vector<float> vHBHEenergy[hcaldqm::constants::DEPTH_NUM];
@@ -123,8 +119,8 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 //
 RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 {
-  redEBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
-  EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EBRecHitCollection"));
+  //EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EBRecHitCollection"));
+  EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
   //EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("selectedEBDigiCollection"));
   EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("EBDigiCollection"));
   HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
@@ -143,10 +139,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   hEBenergy = fs->make<TH2D>("EB_rechitE", "E(i#phi,i#eta);i#phi;i#eta",
       EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
       2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
-  hEBenergyRed = fs->make<TH2D>("EB_rechitEred", "Ered(i#phi,i#eta);i#phi;i#eta",
-      EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
-      2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
-  //hEBenergyRed = fs->make<TH2D>("EB_rechitEred", "Ered(i#phi,i#eta);i#phi;i#eta",
+  //hEBenergy = fs->make<TH2D>("EB_rechitE", "E(i#phi,i#eta);i#phi;i#eta",
   //    EcalTrigTowerDetId::kEBTowersInPhi*18  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
   //    EcalTrigTowerDetId::kEBTowersInEta*2,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
   hEBtiming = fs->make<TH2D>("EB_rechitT", "t(i#phi,i#eta);i#phi;i#eta",
@@ -175,8 +168,6 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
   RHTree->Branch("EBenergy",    &vEBenergy_);
   RHTree->Branch("EBtime",      &vEBtiming_);
-  RHTree->Branch("EBenergyRed", &vEBenergyRed_);
-  RHTree->Branch("EBtimeRed",   &vEBtimingRed_);
   for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; iS++){
     sprintf(hname, "EB_adc%d",iS);
     RHTree->Branch(hname,       &vEB_adc_[iS]);
@@ -214,24 +205,22 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // Initializer for cell position
   // e.g. provides access to x, y, z coordinates of cell center
-  GlobalPoint pos;
-
-  // Initializer for cell geometry
-  // e.g. provides access, to rho, eta, phi coordinates of cell center
-  const CaloCellGeometry *cell;
+  //GlobalPoint pos;
 
   //////////// EB //////////
 
   bool saveImgs = true;
   int iphi_, ieta_, idx;
 
-  // ----- EB rechit collection ----- //
-  // This contatins the raw EB rechit collection before
+  // ----- EB reduced rechit collection ----- //
+  // This contatins the reduced EB rechit collection after
   // the zero suppression and bad channel clean-up
 
   // Initialize arrays
   vEBenergy_.assign(EBDetId::kSizeForDenseIndexing,0.);
   vEBtiming_.assign(EBDetId::kSizeForDenseIndexing,0);
+  //vEBenergy_.assign(EcalTrigTowerDetId::kEBTotalTowers,0.);
+  //vEBtiming_.assign(EcalTrigTowerDetId::kEBTotalTowers,0);
 
   // Record signal-full entries
   edm::Handle<EcalRecHitCollection> EBRecHitsH;
@@ -242,106 +231,46 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     // Get detector id and convert to histogram-friendly coordinates
     EBDetId ebId( iRHit->id() );
+    //EBDetId ebId( 1, 3 );
+    //EcalTrigTowerDetId ttId( iRHit->id() );
     iphi_ = ebId.iphi()-1;
     ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
+    //std::cout << "ECAL | (ieta,iphi): (" << ebId.ieta() << "," << ebId.iphi() << ")" <<std::endl;
 
     // Fill some histograms to monitor distributions
     // These will contain *cumulative* statistics and as such
     // such be used for monitoring purposes
     hEBenergy->Fill( iphi_,ieta_,iRHit->energy() );
-    //hEBenergy->Fill( iphi_,ieta_ ); // if occupancy is preferred
     hEBtiming->Fill( iphi_,ieta_,iRHit->time() );
 
-    // Get Hashed Index & Cell Geometry
-    // Hashed index provides a convenient index mapping
-    // from [ieta][iphi] -> [idx]
-    idx   = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
-    // Cell geometry provides access to (rho,eta,phi) coordinates of cell center
-    //cell  = caloGeom->getGeometry(ebId);
-
-    // Fill event arrays
-    // These are the actual inputs to the detector images
-    vEBenergy_[idx] += iRHit->energy();
-    //vEBenergy_[idx] = iRHit->energy()/std::abs(cell->etaPos()); // pick out only transverse component
-    vEBtiming_[idx] += iRHit->time();
-
-  } // EB rechits
-
-  // Write out state of histogram
-  // For monitoring purposes only 
-  char outFile[100];
-  if (saveImgs) {
-    cEB->cd();
-    gPad->SetLogz(1);
-    gStyle->SetPalette(1);
-    gStyle->SetOptStat(0);
-    //hEBenergy->GetZaxis()->SetRangeUser(2.e-2, 9.e1);
-    //hEBenergy->Draw("COL Z");
-    sprintf(outFile,"cEBenergy_%llu.eps",iEvent.id().event());
-    cEB->Print(outFile);
-  }
-
-  // ----- EB reduced rechit collection ----- //
-  // This contatins the reduced EB rechit collection after
-  // the zero suppression and bad channel clean-up
-
-  // Initialize arrays
-  vEBenergyRed_.assign(EBDetId::kSizeForDenseIndexing,0.);
-  vEBtimingRed_.assign(EBDetId::kSizeForDenseIndexing,0);
-  //vEBenergyRed_.assign(EcalTrigTowerDetId::kEBTotalTowers,0.);
-  //vEBtimingRed_.assign(EcalTrigTowerDetId::kEBTotalTowers,0);
-
-  // Record signal-full entries
-  edm::Handle<EcalRecHitCollection> redEBRecHitsH;
-  iEvent.getByToken(redEBRecHitCollectionT_, redEBRecHitsH);
-  for(EcalRecHitCollection::const_iterator iRHit = redEBRecHitsH->begin();
-      iRHit != redEBRecHitsH->end();                      
-      ++iRHit) {
-
-    // Get detector id and convert to histogram-friendly coordinates
-    EBDetId ebId( iRHit->id() );
-    //EBDetId ebId( 1, 3 );
-    //EcalTrigTowerDetId ttId( iRHit->id() );
-    iphi_ = ebId.iphi()-1;
-    ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
-    std::cout << "ECAL | (ieta,iphi): (" << ebId.ieta() << "," << ebId.iphi() << ")" <<std::endl;
-
-    // Fill some histograms to monitor distributions
-    // These will contain *cumulative* statistics and as such
-    // such be used for monitoring purposes
-    hEBenergyRed->Fill( iphi_,ieta_,iRHit->energy() );
-    //hEBtimingRed->Fill( iphi_,ieta_,iRHit->time() );
-
-    // Get Hashed Index & Cell Geometry
+    // Get Hashed Index
     // Hashed index provides a convenient index mapping
     // from [ieta][iphi] -> [idx]
     idx   = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
     //idx = ttId.hashedIndex();
-    // Cell geometry provides access to (rho,eta,phi) coordinates of cell center
-    cell  = caloGeom->getGeometry(ebId);
-    float eta = cell->etaPos();
-    float phi = cell->phiPos();
-    std::cout << "ECAL | (eta,phi,E): (" << eta << "," << phi << ","<< iRHit->energy()<<")" <<std::endl;
-    pos  = caloGeom->getPosition(ebId);
-    eta = pos.eta();
-    phi = pos.phi();
-    std::cout << "ECAL | (eta,phi,E): (" << eta << "," << phi << ","<< iRHit->energy()<<")" <<std::endl;
+
+    // Get global position of cell center
+    //pos  = caloGeom->getPosition(ebId);
+    //eta = pos.eta();
+    //phi = pos.phi();
+    //std::cout << "ECAL | (eta,phi,E): (" << eta << "," << phi << ","<< iRHit->energy()<<")" <<std::endl;
 
     // Fill event arrays
     // These are the actual inputs to the detector images
-    //vEBenergyRed_[idx] = iRHit->energy();
-    vEBtimingRed_[idx] += iRHit->time();
-    //vEBenergyRed_[idx] += iRHit->energy()/TMath::CosH(cell->etaPos()); // pick out only transverse component
+    vEBenergy_[idx] += iRHit->energy();
+    vEBtiming_[idx] += iRHit->time();
+    //vEBenergy_[idx] += iRHit->energy()/TMath::CosH(cell->etaPos()); // pick out only transverse component
 
   } // EB reduced rechits
 
   // Write out state of histogram
   // For monitoring purposes only 
+  char outFile[100];
   if (saveImgs) { 
     cEB->Clear();
-    //hEBenergyRed->GetZaxis()->SetRangeUser(2.e-2, 9.e1);
-    //hEBenergyRed->Draw("COL Z");
-    sprintf(outFile,"cEBenergyRed_%llu.eps",iEvent.id().event());
+    //hEBenergy->GetZaxis()->SetRangeUser(2.e-2, 9.e1);
+    //hEBenergy->Draw("COL Z");
+    sprintf(outFile,"cEBenergy_%llu.eps",iEvent.id().event());
     cEB->Print(outFile);
   }
 
@@ -442,8 +371,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //iphi_  = hId.iphi()-1;
     ieta_  = hId.ieta() > 0 ? hId.ieta()-1 : hId.ieta();
     depth_ = hId.depth();
-    //std::cout << "HCAL | (ieta,iphi): (" << hId.ieta() << "," << hId.iphi() << ")" <<std::endl;
-    std::cout << "HCAL | (ieta,iphi): (" << hId.ieta() << "," << iphi_+1 << ")" <<std::endl;
+    //std::cout << "HCAL | (ieta,iphi): (" << hId.ieta() << "," << iphi_+1 << ")" <<std::endl;
 
     // Fill some histograms to monitor distributions
     // These will contain *cumulative* statistics and as such
@@ -469,19 +397,11 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     // Maps from [ieta][iphi] -> [idx]
     idx = ( ieta_+(HBHE_IETA_MAX) )*hcaldqm::constants::IPHI_NUM + iphi_;
 
-    // Get cell geometry
-    // Cell geometry provides access to (rho,eta,phi) coordinates of cell center
-    cell = caloGeom->getGeometry(hId);
-    //float rho = cell->rhoPos();
-    float eta = cell->etaPos();
-    float phi = cell->phiPos();
-    //std::cout << "HCAL | (eta,phi): (" << eta << "," << phi << ")" <<std::endl;
-    std::cout << "HCAL | (eta,phi,E): (" << eta << "," << phi << ","<< iRHit->energy()<<")" <<std::endl;
-    // Cell position provides access to global (x,y,z) coordinates of cell center
-    pos  = caloGeom->getPosition(hId);
-    eta = pos.eta();
-    phi = pos.phi();
-    std::cout << "HCAL > (eta,phi,E): (" << eta << "," << phi << ","<< iRHit->energy()<<")" <<std::endl;
+    // Get global position of cell center
+    //pos = caloGeom->getPosition(hId);
+    //eta = pos.eta();
+    //phi = pos.phi();
+    //std::cout << "HCAL > (eta,phi,E): (" << eta << "," << phi << ","<< iRHit->energy()<<")" <<std::endl;
 
     // Fill event arrays
     // These are the actual inputs to the detector images
