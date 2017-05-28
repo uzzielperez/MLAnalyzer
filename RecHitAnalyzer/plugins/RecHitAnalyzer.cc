@@ -52,6 +52,9 @@ Implementation:
 #include "TCanvas.h"
 #include "TStyle.h"
 #include "TMath.h"
+
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+
 //
 // class declaration
 //
@@ -80,6 +83,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<EBDigiCollection>     EBDigiCollectionT_;
     edm::EDGetTokenT<EcalRecHitCollection> EERecHitCollectionT_;
     edm::EDGetTokenT<HBHERecHitCollection> HBHERecHitCollectionT_;
+    edm::EDGetTokenT<reco::GenParticleCollection> genParticleCollectionT_;
     //edm::InputTag trackTags_; //used to select what tracks to read from configuration file
 
     static const int EE_IZ_MAX = 2;
@@ -104,6 +108,9 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     TH2D * hHBHE_energy; 
     TH2D * hHBHE_energy_EB; 
     TH1D * hHBHE_depth; 
+
+    TH1D * hHgg_pT; 
+    TH1D * hHgg_eta; 
 
     TTree* RHTree;
 
@@ -138,6 +145,8 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("EBDigiCollection"));
   EERecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEERecHitCollection"));
   HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
+
+  genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
 
   //now do what ever initialization is needed
   usesResource("TFileService");
@@ -194,6 +203,10 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   hHBHE_depth = fs->make<TH1D>("HBHE_depth", "E(i#phi,i#eta);i#phi;i#eta",
       hcaldqm::constants::DEPTH_NUM, hcaldqm::constants::DEPTH_MIN, hcaldqm::constants::DEPTH_MAX+1);
 
+  // Kinematics
+  hHgg_pT  = fs->make<TH1D>("Hgg_pT" , "p_{T};p_{T};Events", 150,  0., 150.);
+  hHgg_eta = fs->make<TH1D>("Hgg_eta", "#eta;#eta;Events"  , 150, -3., 3.  );
+
   // Output Tree
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
   RHTree->Branch("EB_energy",    &vEB_energy_);
@@ -231,6 +244,18 @@ void
 RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   using namespace edm;
+
+  edm::Handle<reco::GenParticleCollection> genParticles;
+  iEvent.getByToken(genParticleCollectionT_, genParticles);
+  for (reco::GenParticleCollection::const_iterator iP = genParticles->begin();
+       iP != genParticles->end();
+       ++iP) {
+    if ( std::abs(iP->pdgId()) != 22 ) continue;
+    if ( std::abs(iP->mother()->pdgId()) != 25 ) continue;
+    std::cout << iP->pt() << "," << iP->eta() << std::endl;
+    hHgg_pT->Fill ( iP->pt()  );
+    hHgg_eta->Fill( iP->eta() );
+  }
 
   // ----- Get Calorimeter Geometry ----- //
   // Provides access to global cell position and coordinates below
