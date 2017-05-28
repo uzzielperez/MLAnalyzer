@@ -78,31 +78,44 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     // ----------member data ---------------------------
     edm::EDGetTokenT<EcalRecHitCollection> EBRecHitCollectionT_;
     edm::EDGetTokenT<EBDigiCollection>     EBDigiCollectionT_;
+    edm::EDGetTokenT<EcalRecHitCollection> EERecHitCollectionT_;
     edm::EDGetTokenT<HBHERecHitCollection> HBHERecHitCollectionT_;
     //edm::InputTag trackTags_; //used to select what tracks to read from configuration file
 
-    //TH1D * histo; 
-    TH2D * hEBenergy; 
-    TH2D * hEBtiming; 
-    TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES]; 
+    static const int EE_IZ_MAX = 2;
+    //const unsigned HBHE_IETA_MAX = hcaldqm::constants::IETA_MAX_HB + 1;//17
+    const unsigned HBHE_IETA_MAX = 20;
+    const unsigned EE_NC_PER_ZSIDE = EEDetId::IX_MAX*EEDetId::IY_MAX; // 100*100
 
-    TH2D * hHBHEenergy; 
-    TH2D * hHBHEenergy_EB; 
-    TH1D * hHBHEdepth; 
+    // Initialize Calorimeter Geometry
+    const CaloGeometry* caloGeom;
+    //const CaloSubdetectorGeometry* towerGeom; 
+
+    // Initializer global cell position
+    //GlobalPoint pos;
+
+    //TH1D * histo; 
+    TH2D * hEB_energy; 
+    TH2D * hEB_time; 
+    TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES]; 
+    TH2D * hEE_energy[EE_IZ_MAX]; 
+    TH2D * hEE_time[EE_IZ_MAX]; 
+
+    TH2D * hHBHE_energy; 
+    TH2D * hHBHE_energy_EB; 
+    TH1D * hHBHE_depth; 
 
     TTree* RHTree;
 
-    std::vector<float> vEBenergy_;
-    std::vector<float> vEBtiming_;
+    std::vector<float> vEB_energy_;
+    std::vector<float> vEB_time_;
     std::vector<float> vEB_adc_[EcalDataFrame::MAXSAMPLES];
+    std::vector<float> vEE_energy_[EE_IZ_MAX];
+    std::vector<float> vEE_time_[EE_IZ_MAX];
 
-    //std::vector<float> vHBHEenergy[hcaldqm::constants::DEPTH_NUM];
-    std::vector<float> vHBHEenergy_EB_;
+    //std::vector<float> vHBHE_energy[hcaldqm::constants::DEPTH_NUM];
+    std::vector<float> vHBHE_energy_EB_;
   
-    //const unsigned HBHE_IETA_MAX = hcaldqm::constants::IETA_MAX_HB + 1;//17
-    const unsigned HBHE_IETA_MAX = 20;
-
-
     TCanvas *cEB, *cHBHE;
 };
 
@@ -123,6 +136,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
   //EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("selectedEBDigiCollection"));
   EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("EBDigiCollection"));
+  EERecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEERecHitCollection"));
   HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
 
   //now do what ever initialization is needed
@@ -136,13 +150,13 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 
   // Histograms
   // EB rechits
-  hEBenergy = fs->make<TH2D>("EB_rechitE", "E(i#phi,i#eta);i#phi;i#eta",
+  hEB_energy = fs->make<TH2D>("EB_energy", "E(i#phi,i#eta);i#phi;i#eta",
       EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
       2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
-  //hEBenergy = fs->make<TH2D>("EB_rechitE", "E(i#phi,i#eta);i#phi;i#eta",
+  //hEB_energy = fs->make<TH2D>("EB_energy", "E(i#phi,i#eta);i#phi;i#eta",
   //    EcalTrigTowerDetId::kEBTowersInPhi*18  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
   //    EcalTrigTowerDetId::kEBTowersInEta*2,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
-  hEBtiming = fs->make<TH2D>("EB_rechitT", "t(i#phi,i#eta);i#phi;i#eta",
+  hEB_time = fs->make<TH2D>("EB_time", "t(i#phi,i#eta);i#phi;i#eta",
       EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
       2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
   // EB Digis
@@ -154,25 +168,48 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
         EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
         2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
   }
+
+  // EE rechits
+  for(int iz(0); iz < EE_IZ_MAX; iz++){
+    const char *zside = (iz > 0) ? "p" : "m";
+    sprintf(hname, "EE%s_energy",zside);
+    sprintf(htitle,"E(ix,iy);ix;iy");
+    hEE_energy[iz] = fs->make<TH2D>(hname, htitle,
+      EEDetId::IX_MAX, EEDetId::IX_MIN-1, EEDetId::IX_MAX,
+      EEDetId::IY_MAX, EEDetId::IY_MIN-1, EEDetId::IY_MAX );
+    sprintf(hname, "EE%s_time",zside);
+    sprintf(htitle,"t(ix,iy);ix;iy");
+    hEE_time[iz] = fs->make<TH2D>(hname, htitle,
+      EEDetId::IX_MAX, EEDetId::IX_MIN-1, EEDetId::IX_MAX,
+      EEDetId::IY_MAX, EEDetId::IY_MIN-1, EEDetId::IY_MAX );
+  } 
+
   // HBHE
-  hHBHEenergy = fs->make<TH2D>("HBHE_rechitE", "E(i#phi,i#eta);i#phi;i#eta",
+  hHBHE_energy = fs->make<TH2D>("HBHE_energy", "E(i#phi,i#eta);i#phi;i#eta",
       hcaldqm::constants::IPHI_NUM,      hcaldqm::constants::IPHI_MIN-1, hcaldqm::constants::IPHI_MAX,
       2*hcaldqm::constants::IETA_MAX_HE,-hcaldqm::constants::IETA_MAX_HE,hcaldqm::constants::IETA_MAX_HE );
-  hHBHEenergy_EB = fs->make<TH2D>("HBHE_rechitE_EB", "E(i#phi,i#eta);i#phi;i#eta",
+  hHBHE_energy_EB = fs->make<TH2D>("HBHE_energy_EB", "E(i#phi,i#eta);i#phi;i#eta",
       hcaldqm::constants::IPHI_NUM, hcaldqm::constants::IPHI_MIN-1,hcaldqm::constants::IPHI_MAX,
       2*HBHE_IETA_MAX,             -HBHE_IETA_MAX,                 HBHE_IETA_MAX );
-  hHBHEdepth = fs->make<TH1D>("HBHE_depth", "E(i#phi,i#eta);i#phi;i#eta",
+  hHBHE_depth = fs->make<TH1D>("HBHE_depth", "E(i#phi,i#eta);i#phi;i#eta",
       hcaldqm::constants::DEPTH_NUM, hcaldqm::constants::DEPTH_MIN, hcaldqm::constants::DEPTH_MAX+1);
 
   // Output Tree
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
-  RHTree->Branch("EBenergy",    &vEBenergy_);
-  RHTree->Branch("EBtime",      &vEBtiming_);
+  RHTree->Branch("EB_energy",    &vEB_energy_);
+  RHTree->Branch("EB_time",      &vEB_time_);
   for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; iS++){
     sprintf(hname, "EB_adc%d",iS);
     RHTree->Branch(hname,       &vEB_adc_[iS]);
   }
-  RHTree->Branch("HBHEenergy_EB", &vHBHEenergy_EB_);
+  for(int iz(0); iz < EE_IZ_MAX; iz++){
+    const char *zside = (iz > 0) ? "p" : "m";
+    sprintf(hname, "EE%s_energy",zside);
+    RHTree->Branch(hname,       &vEE_energy_[iz]);
+    sprintf(hname, "EE%s_time",zside);
+    RHTree->Branch(hname,       &vEE_time_[iz]);
+  }
+  RHTree->Branch("HBHE_energy_EB", &vHBHE_energy_EB_);
 }
 
 
@@ -199,13 +236,9 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // Provides access to global cell position and coordinates below
   edm::ESHandle<CaloGeometry> caloGeomH;
   iSetup.get<CaloGeometryRecord>().get(caloGeomH);
-  const CaloGeometry* caloGeom = caloGeomH.product();
-  //const CaloSubdetectorGeometry* towerGeom = caloGeomH.product(); 
+  caloGeom = caloGeomH.product();
+  //towerGeom = caloGeomH.product(); 
   //towerGeom->getSubdetectorGeometry(DetId::Calo, CaloTowerDetId::SubdetId);
-
-  // Initializer for cell position
-  // e.g. provides access to x, y, z coordinates of cell center
-  //GlobalPoint pos;
 
   //////////// EB //////////
 
@@ -217,10 +250,10 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // the zero suppression and bad channel clean-up
 
   // Initialize arrays
-  vEBenergy_.assign(EBDetId::kSizeForDenseIndexing,0.);
-  vEBtiming_.assign(EBDetId::kSizeForDenseIndexing,0);
-  //vEBenergy_.assign(EcalTrigTowerDetId::kEBTotalTowers,0.);
-  //vEBtiming_.assign(EcalTrigTowerDetId::kEBTotalTowers,0);
+  vEB_energy_.assign(EBDetId::kSizeForDenseIndexing,0.);
+  vEB_time_.assign(EBDetId::kSizeForDenseIndexing,0.);
+  //vEB_energy_.assign(EcalTrigTowerDetId::kEBTotalTowers,0.);
+  //vEB_time_.assign(EcalTrigTowerDetId::kEBTotalTowers,0);
 
   // Record signal-full entries
   edm::Handle<EcalRecHitCollection> EBRecHitsH;
@@ -240,8 +273,8 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     // Fill some histograms to monitor distributions
     // These will contain *cumulative* statistics and as such
     // such be used for monitoring purposes
-    hEBenergy->Fill( iphi_,ieta_,iRHit->energy() );
-    hEBtiming->Fill( iphi_,ieta_,iRHit->time() );
+    hEB_energy->Fill( iphi_,ieta_,iRHit->energy() );
+    hEB_time->Fill( iphi_,ieta_,iRHit->time() );
 
     // Get Hashed Index
     // Hashed index provides a convenient index mapping
@@ -257,9 +290,9 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     // Fill event arrays
     // These are the actual inputs to the detector images
-    vEBenergy_[idx] += iRHit->energy();
-    vEBtiming_[idx] += iRHit->time();
-    //vEBenergy_[idx] += iRHit->energy()/TMath::CosH(cell->etaPos()); // pick out only transverse component
+    vEB_energy_[idx] += iRHit->energy();
+    vEB_time_[idx] += iRHit->time();
+    //vEB_energy_[idx] += iRHit->energy()/TMath::CosH(cell->etaPos()); // pick out only transverse component
 
   } // EB reduced rechits
 
@@ -268,12 +301,11 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   char outFile[100];
   if (saveImgs) { 
     cEB->Clear();
-    //hEBenergy->GetZaxis()->SetRangeUser(2.e-2, 9.e1);
-    //hEBenergy->Draw("COL Z");
-    sprintf(outFile,"cEBenergy_%llu.eps",iEvent.id().event());
+    //hEB_energy->GetZaxis()->SetRangeUser(2.e-2, 9.e1);
+    //hEB_energy->Draw("COL Z");
+    sprintf(outFile,"cEB_energy_%llu.eps",iEvent.id().event());
     cEB->Print(outFile);
   }
-
 
   // ----- EB digis ----- //
   // This contains the raw EB digi collection:
@@ -342,6 +374,49 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     } // sample
   }
 
+  // ----- EE reduced rechit collection ----- //
+  // This contatins the reduced EB rechit collection after
+  // the zero suppression and bad channel clean-up
+
+  int ix_, iy_, iz_; // NOTE: rows:iy, columns:ix
+
+  // Initialize arrays
+  for(int iz(0); iz < EE_IZ_MAX; ++iz) {
+    vEE_energy_[iz].assign(EE_NC_PER_ZSIDE,0.);
+    vEE_time_[iz].assign(EE_NC_PER_ZSIDE,0.);
+  }
+
+  // Record signal-full entries
+  edm::Handle<EcalRecHitCollection> EERecHitsH;
+  iEvent.getByToken(EERecHitCollectionT_, EERecHitsH);
+  for(EcalRecHitCollection::const_iterator iRHit = EERecHitsH->begin();
+      iRHit != EERecHitsH->end();                      
+      ++iRHit) {
+
+    // Get detector id and convert to histogram-friendly coordinates
+    EEDetId eeId( iRHit->id() );
+    ix_ = eeId.ix()-1;
+    iy_ = eeId.iy()-1;
+    iz_ = (eeId.zside() > 0) ? 1 : 0;
+    //std::cout << ix_ << "," << iy_ << "," << iz_ << "," << iRHit->energy() << std::endl;
+
+    // Fill some histograms to monitor distributions
+    // These will contain *cumulative* statistics and as such
+    // such be used for monitoring purposes
+    hEE_energy[iz_]->Fill( ix_,iy_,iRHit->energy() );
+    hEE_time[iz_]->Fill( ix_,iy_,iRHit->time() );
+
+    // Create hashed Index
+    // Maps from [iy][ix] -> [idx]
+    idx = ( iy_+EEDetId::IY_MAX )*EEDetId::IX_MAX + ix_; 
+
+    // Fill event arrays
+    // These are the actual inputs to the detector images
+    vEE_energy_[iz_][idx] += iRHit->energy();
+    vEE_time_[iz_][idx] += iRHit->time();
+    //vEE_energy_[iz_][idx] += iRHit->energy()/TMath::CosH(cell->etaPos()); // pick out only transverse component
+
+  } // EE reduced rechits
 
   //////////// HBHE //////////
 
@@ -349,7 +424,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   int depth_;
 
   // Initialize arrays
-  vHBHEenergy_EB_.assign( hcaldqm::constants::IPHI_NUM*2*HBHE_IETA_MAX,0. );
+  vHBHE_energy_EB_.assign( hcaldqm::constants::IPHI_NUM*2*HBHE_IETA_MAX,0. );
 
   // Record signal-full entries
   edm::Handle<HBHERecHitCollection> HBHERecHitsH;
@@ -376,26 +451,26 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     // Fill some histograms to monitor distributions
     // These will contain *cumulative* statistics and as such
     // such be used for monitoring purposes
-    hHBHEdepth->Fill( depth_ );
+    hHBHE_depth->Fill( depth_ );
 
     // Restrict coverage of HBHE
     // HBHE_IETA_MAX == 17: match coverage of EB
     // HBHE_IETA_MAX == 20: match until granularity decreases
     if ( abs(hId.ieta()) > 20 ) {
-      hHBHEenergy->Fill( iphi_  ,ieta_,iRHit->energy()*0.5 );
-      hHBHEenergy->Fill( iphi_+1,ieta_,iRHit->energy()*0.5 );
+      hHBHE_energy->Fill( iphi_  ,ieta_,iRHit->energy()*0.5 );
+      hHBHE_energy->Fill( iphi_+1,ieta_,iRHit->energy()*0.5 );
       continue; 
     } else {
-      hHBHEenergy->Fill( iphi_,ieta_,iRHit->energy() );
+      hHBHE_energy->Fill( iphi_,ieta_,iRHit->energy() );
     }
 
     // Fill restricted coverage histograms
-    hHBHEenergy_EB->Fill( iphi_,ieta_,iRHit->energy() );
+    hHBHE_energy_EB->Fill( iphi_,ieta_,iRHit->energy() );
 
-    // Get array index by hand:
+    // Create hashed Index
     // Effectively sums energies over depth for a given (ieta,iphi)
     // Maps from [ieta][iphi] -> [idx]
-    idx = ( ieta_+(HBHE_IETA_MAX) )*hcaldqm::constants::IPHI_NUM + iphi_;
+    idx = ( ieta_+HBHE_IETA_MAX )*hcaldqm::constants::IPHI_NUM + iphi_;
 
     // Get global position of cell center
     //pos = caloGeom->getPosition(hId);
@@ -405,8 +480,8 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     // Fill event arrays
     // These are the actual inputs to the detector images
-    vHBHEenergy_EB_[idx] += iRHit->energy();
-    //vHBHEenergy_EB_[idx] += iRHit->energy()/TMath::CosH(cell->etaPos()); // pick out only transverse component
+    vHBHE_energy_EB_[idx] += iRHit->energy();
+    //vHBHE_energy_EB_[idx] += iRHit->energy()/TMath::CosH(cell->etaPos()); // pick out only transverse component
 
   }
 
@@ -415,9 +490,9 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   if (saveImgs) {
     cHBHE->cd();
     //std::cout << "maxEta: " << maxEta << std::endl;
-    hHBHEenergy->GetZaxis()->SetRangeUser(2.e-2, 9.e1);
-    hHBHEenergy->Draw("COL Z");
-    sprintf(outFile,"cHBHEenergy_%llu.eps",iEvent.id().event());
+    hHBHE_energy->GetZaxis()->SetRangeUser(2.e-2, 9.e1);
+    hHBHE_energy->Draw("COL Z");
+    sprintf(outFile,"cHBHE_energy_%llu.eps",iEvent.id().event());
     cHBHE->Print(outFile);
   }
 
