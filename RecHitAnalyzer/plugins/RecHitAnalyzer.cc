@@ -103,8 +103,8 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     //std::vector<float> vHBHEenergy[hcaldqm::constants::DEPTH_NUM];
     std::vector<float> vHBHEenergy_EB_;
   
-    const unsigned HBHE_IETA_MAX = hcaldqm::constants::IETA_MAX_HB + 1;//17
-    //const unsigned HBHE_IETA_MAX = 20;
+    //const unsigned HBHE_IETA_MAX = hcaldqm::constants::IETA_MAX_HB + 1;//17
+    const unsigned HBHE_IETA_MAX = 20;
 
 
     TCanvas *cEB, *cHBHE;
@@ -163,8 +163,8 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   }
   // HBHE
   hHBHEenergy = fs->make<TH2D>("HBHE_rechitE", "E(i#phi,i#eta);i#phi;i#eta",
-      hcaldqm::constants::IPHI_NUM, hcaldqm::constants::IPHI_MIN-1,hcaldqm::constants::IPHI_MAX,
-      hcaldqm::constants::IETA_NUM,-hcaldqm::constants::IETA_MAX,  hcaldqm::constants::IETA_MAX );
+      hcaldqm::constants::IPHI_NUM,      hcaldqm::constants::IPHI_MIN-1, hcaldqm::constants::IPHI_MAX,
+      2*hcaldqm::constants::IETA_MAX_HE,-hcaldqm::constants::IETA_MAX_HE,hcaldqm::constants::IETA_MAX_HE );
   hHBHEenergy_EB = fs->make<TH2D>("HBHE_rechitE_EB", "E(i#phi,i#eta);i#phi;i#eta",
       hcaldqm::constants::IPHI_NUM, hcaldqm::constants::IPHI_MIN-1,hcaldqm::constants::IPHI_MAX,
       2*HBHE_IETA_MAX,             -HBHE_IETA_MAX,                 HBHE_IETA_MAX );
@@ -206,19 +206,19 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // ----- Get Calorimeter Geometry ----- //
   // Provides access to global cell position and coordinates below
-  //edm::ESHandle<CaloGeometry> caloGeomH;
-  //iSetup.get<CaloGeometryRecord>().get(caloGeomH);
-  //const CaloGeometry* caloGeom = caloGeomH.product();
-  //const CaloSubdetectorGeometry* towerGeometry = 
-  //geo->getSubdetectorGeometry(DetId::Calo, CaloTowerDetId::SubdetId);
+  edm::ESHandle<CaloGeometry> caloGeomH;
+  iSetup.get<CaloGeometryRecord>().get(caloGeomH);
+  const CaloGeometry* caloGeom = caloGeomH.product();
+  //const CaloSubdetectorGeometry* towerGeom = caloGeomH.product(); 
+  //towerGeom->getSubdetectorGeometry(DetId::Calo, CaloTowerDetId::SubdetId);
 
   // Initializer for cell position
   // e.g. provides access to x, y, z coordinates of cell center
-  //GlobalPoint pos;
+  GlobalPoint pos;
 
   // Initializer for cell geometry
   // e.g. provides access, to rho, eta, phi coordinates of cell center
-  //const CaloCellGeometry *cell;
+  const CaloCellGeometry *cell;
 
   //////////// EB //////////
 
@@ -300,9 +300,11 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     // Get detector id and convert to histogram-friendly coordinates
     EBDetId ebId( iRHit->id() );
+    //EBDetId ebId( 1, 3 );
     //EcalTrigTowerDetId ttId( iRHit->id() );
     iphi_ = ebId.iphi()-1;
     ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
+    std::cout << "ECAL | (ieta,iphi): (" << ebId.ieta() << "," << ebId.iphi() << ")" <<std::endl;
 
     // Fill some histograms to monitor distributions
     // These will contain *cumulative* statistics and as such
@@ -316,7 +318,14 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     idx   = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
     //idx = ttId.hashedIndex();
     // Cell geometry provides access to (rho,eta,phi) coordinates of cell center
-    //cell  = caloGeom->getGeometry(ebId);
+    cell  = caloGeom->getGeometry(ebId);
+    float eta = cell->etaPos();
+    float phi = cell->phiPos();
+    std::cout << "ECAL | (eta,phi,E): (" << eta << "," << phi << ","<< iRHit->energy()<<")" <<std::endl;
+    pos  = caloGeom->getPosition(ebId);
+    eta = pos.eta();
+    phi = pos.phi();
+    std::cout << "ECAL | (eta,phi,E): (" << eta << "," << phi << ","<< iRHit->energy()<<")" <<std::endl;
 
     // Fill event arrays
     // These are the actual inputs to the detector images
@@ -423,21 +432,34 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     // Get detector id and convert to histogram-friendly coordinates
     // NOTE: HBHE detector ids are indexed by (ieta,iphi,depth)!
     HcalDetId hId( iRHit->id() );
+    //HcalDetId hId( HcalSubdetector::HcalBarrel, 1, 71, 1 );
     //if (hId.subdet() != HcalSubdetector::HcalBarrel) continue;
-    iphi_  = hId.iphi()-1;
+    // WARNING: HBHE::iphi() is not aligned with EBRecHit::iphi()!
+    // => Need to shift by 2 HBHE towers: HBHE::iphi: [1,...,71,72]->[3,4,...,71,72,1,2]
+    iphi_  = hId.iphi()+2; // shift
+    iphi_  = iphi_ > 72 ? iphi_-72 : iphi_; // wrap-around
+    iphi_  = iphi_ -1; // make histogram-friendly
+    //iphi_  = hId.iphi()-1;
     ieta_  = hId.ieta() > 0 ? hId.ieta()-1 : hId.ieta();
     depth_ = hId.depth();
+    //std::cout << "HCAL | (ieta,iphi): (" << hId.ieta() << "," << hId.iphi() << ")" <<std::endl;
+    std::cout << "HCAL | (ieta,iphi): (" << hId.ieta() << "," << iphi_+1 << ")" <<std::endl;
 
     // Fill some histograms to monitor distributions
     // These will contain *cumulative* statistics and as such
     // such be used for monitoring purposes
-    hHBHEenergy->Fill( iphi_,ieta_,iRHit->energy() );
     hHBHEdepth->Fill( depth_ );
 
     // Restrict coverage of HBHE
     // HBHE_IETA_MAX == 17: match coverage of EB
     // HBHE_IETA_MAX == 20: match until granularity decreases
-    if ( abs(hId.ieta()) > HBHE_IETA_MAX ) continue; 
+    if ( abs(hId.ieta()) > 20 ) {
+      hHBHEenergy->Fill( iphi_  ,ieta_,iRHit->energy()*0.5 );
+      hHBHEenergy->Fill( iphi_+1,ieta_,iRHit->energy()*0.5 );
+      continue; 
+    } else {
+      hHBHEenergy->Fill( iphi_,ieta_,iRHit->energy() );
+    }
 
     // Fill restricted coverage histograms
     hHBHEenergy_EB->Fill( iphi_,ieta_,iRHit->energy() );
@@ -449,13 +471,17 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     // Get cell geometry
     // Cell geometry provides access to (rho,eta,phi) coordinates of cell center
-    //cell = caloGeom->getGeometry(hId);
+    cell = caloGeom->getGeometry(hId);
     //float rho = cell->rhoPos();
-    //float eta = cell->etaPos();
-    //float phi = cell->phiPos();
+    float eta = cell->etaPos();
+    float phi = cell->phiPos();
+    //std::cout << "HCAL | (eta,phi): (" << eta << "," << phi << ")" <<std::endl;
+    std::cout << "HCAL | (eta,phi,E): (" << eta << "," << phi << ","<< iRHit->energy()<<")" <<std::endl;
     // Cell position provides access to global (x,y,z) coordinates of cell center
-    //pos  = caloGeom->getPosition(hId);
-    //float x = pos.x();
+    pos  = caloGeom->getPosition(hId);
+    eta = pos.eta();
+    phi = pos.phi();
+    std::cout << "HCAL > (eta,phi,E): (" << eta << "," << phi << ","<< iRHit->energy()<<")" <<std::endl;
 
     // Fill event arrays
     // These are the actual inputs to the detector images
