@@ -5,8 +5,10 @@ cfg='RecHitAnalyzer/python/ConfFile_cfg.py'
 #inputFiles_='file:pickeventsRECO.root'
 #inputFiles_='file:SingleElectronPt50_FEVTDEBUG.root'
 #inputFiles_='file:../step_full.root'
-inputFiles_='file:../step3.root'
-maxEvents_=1
+inputFiles_='file:../step_full_17.root'
+#inputFiles_='root://cmseos.fnal.gov:1094//store/user/mba2012/FEVTDEBUG/step_full_17.root'
+#inputFiles_='file:../step3.root'
+maxEvents_=-1
 skipEvents_=0
 #outputFile_='output.root'
 inputTag=inputFiles_.strip('file:').strip('_FEVTDEBUG.root')
@@ -20,7 +22,7 @@ if not os.path.isdir(inputTag):
 cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d"%(cfg,inputFiles_,maxEvents_,skipEvents_)
 print '%s'%cmd
 os.system(cmd)
-os.system('mv c*.eps %s/'%(inputTag))
+#os.system('mv c*.eps %s/'%(inputTag))
 #    os.system('mv cEB*_%d.eps %s/'%(ievt+1,inputTag))
 
 #os.system('scram b -j8')

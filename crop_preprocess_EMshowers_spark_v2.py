@@ -6,14 +6,13 @@ sqlContext = SQLContext(sc)
 
 import numpy as np
 from scipy.ndimage import maximum_position
-from scipy.sparse import csr_matrix
 from pyspark.sql import Row
 
 s = 32
 crop_size = int(s*s)
 w = s//2
-n_rows = 170 # n_phi
-n_cols = 360 # n_eta
+n_rows = 170 # n_eta
+n_cols = 360 # n_phi
 
 def crop_around_max(arr,r,c):
     #global n_rows, n_cols, w
