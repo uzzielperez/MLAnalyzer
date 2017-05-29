@@ -19,7 +19,6 @@ def crop_around_max(b,row0_,col0_):
     global n_rows, n_cols, w
     return np.array(b, dtype=np.float32).reshape(n_rows,n_cols)[row0_-w:row0_+w,col0_-w:col0_+w].flatten()
 
-
 s = 32
 crop_size = int(s*s)
 w = s//2
@@ -45,10 +44,8 @@ print " >> Input branch list:",branch_list
 file_out_str = '%s/IMGs_RAW/%s_CROPS32.root'%(eos_dir,decay)
 file_out = ROOT.TFile(file_out_str, 'RECREATE')
 RHTree = ROOT.TTree("RHTree", "RecHit tree")
-EBenergy    = np.zeros(crop_size, dtype=np.float32)
-EBtime      = np.zeros(crop_size, dtype=np.float32)
-EBenergyRed = np.zeros(crop_size, dtype=np.float32)
-EBtimeRed   = np.zeros(crop_size, dtype=np.float32)
+EB_energy    = np.zeros(crop_size, dtype=np.float32)
+EB_time      = np.zeros(crop_size, dtype=np.float32)
 EB_adc0     = np.zeros(crop_size, dtype=np.float32)
 EB_adc1     = np.zeros(crop_size, dtype=np.float32)
 EB_adc2     = np.zeros(crop_size, dtype=np.float32)
@@ -59,10 +56,8 @@ EB_adc6     = np.zeros(crop_size, dtype=np.float32)
 EB_adc7     = np.zeros(crop_size, dtype=np.float32)
 EB_adc8     = np.zeros(crop_size, dtype=np.float32)
 EB_adc9     = np.zeros(crop_size, dtype=np.float32)
-RHTree.Branch('EBenergy'   ,EBenergy    , 'EBenergy[%d]/F'%crop_size   )
-RHTree.Branch('EBtime'     ,EBtime      , 'EBtime[%d]/F'%crop_size     )
-RHTree.Branch('EBenergyRed',EBenergyRed , 'EBenergyRed[%d]/F'%crop_size)
-RHTree.Branch('EBtimeRed'  ,EBtimeRed   , 'EBtimeRed[%d]/F'%crop_size  )
+RHTree.Branch('EB_energy'  ,EB_energy   , 'EB_energy[%d]/F'%crop_size   )
+RHTree.Branch('EB_time'    ,EB_time     , 'EB_time[%d]/F'%crop_size     )
 RHTree.Branch('EB_adc0'    ,EB_adc0     , 'EB_adc0[%d]/F'%crop_size    )
 RHTree.Branch('EB_adc1'    ,EB_adc1     , 'EB_adc1[%d]/F'%crop_size    )
 RHTree.Branch('EB_adc2'    ,EB_adc2     , 'EB_adc2[%d]/F'%crop_size    )
@@ -115,23 +110,17 @@ for ievt in range(istart,istop):
     #print row0,col0
 
     ### Energy ###
-    b = crop_around_max(tree_in.EBenergy,row0,col0)
+    b = crop_around_max(tree_in.EB_energy,row0,col0)
     for i,val in enumerate(b):
-        EBenergy[i] = val
-    b = crop_around_max(tree_in.EBenergyRed,row0,col0)
-    for i,val in enumerate(b):
-        EBenergyRed[i] = val
+        EB_energy[i] = val
 
     ### Timing ###
-    b = crop_around_max(tree_in.EBtime,row0,col0)
+    b = crop_around_max(tree_in.EB_time,row0,col0)
     for i,val in enumerate(b):
-        EBtime[i] = val
-
-    b = crop_around_max(tree_in.EBtimeRed,row0,col0)
-    for i,val in enumerate(b):
-        EBtimeRed[i] = val
+        EB_time[i] = val
 
     ### Digis ###
+    '''
     b = crop_around_max(tree_in.EB_adc0,row0,col0)
     for i,val in enumerate(b):
         EB_adc0[i] = val
@@ -144,13 +133,14 @@ for ievt in range(istart,istop):
     for i,val in enumerate(b):
         EB_adc2[i] = val
 
-    #EB_adc0_ = crop_around_max(tree_in.EB_adc0,row0,col0)
-    #EB_adc1_ = crop_around_max(tree_in.EB_adc1,row0,col0)
-    #EB_adc2_ = crop_around_max(tree_in.EB_adc2,row0,col0)
+    EB_adc0_ = crop_around_max(tree_in.EB_adc0,row0,col0)
+    EB_adc1_ = crop_around_max(tree_in.EB_adc1,row0,col0)
+    EB_adc2_ = crop_around_max(tree_in.EB_adc2,row0,col0)
 
-    #presample = np.mean([EB_adc0_, EB_adc1_, EB_adc2_], axis=0)
-    #presample = log_noise(presample)
-    #presample = 0. 
+    presample = np.mean([EB_adc0_, EB_adc1_, EB_adc2_], axis=0)
+    presample = log_noise(presample)
+    presample = 0. 
+    '''
 
     b = crop_around_max(tree_in.EB_adc0,row0,col0)
     for i,val in enumerate(b):

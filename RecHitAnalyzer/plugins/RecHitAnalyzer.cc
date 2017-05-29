@@ -143,10 +143,10 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
   //EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("selectedEBDigiCollection"));
   EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("EBDigiCollection"));
-  EERecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEERecHitCollection"));
-  HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
+  //EERecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEERecHitCollection"));
+  //HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
 
-  genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
+  //genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
 
   //now do what ever initialization is needed
   usesResource("TFileService");
@@ -200,12 +200,12 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   hHBHE_energy_EB = fs->make<TH2D>("HBHE_energy_EB", "E(i#phi,i#eta);i#phi;i#eta",
       hcaldqm::constants::IPHI_NUM, hcaldqm::constants::IPHI_MIN-1,hcaldqm::constants::IPHI_MAX,
       2*HBHE_IETA_MAX,             -HBHE_IETA_MAX,                 HBHE_IETA_MAX );
-  hHBHE_depth = fs->make<TH1D>("HBHE_depth", "E(i#phi,i#eta);i#phi;i#eta",
+  hHBHE_depth = fs->make<TH1D>("HBHE_depth", "Depth;depth;Hits",
       hcaldqm::constants::DEPTH_NUM, hcaldqm::constants::DEPTH_MIN, hcaldqm::constants::DEPTH_MAX+1);
 
   // Kinematics
-  hHgg_pT  = fs->make<TH1D>("Hgg_pT" , "p_{T};p_{T};Events", 150,  0., 150.);
-  hHgg_eta = fs->make<TH1D>("Hgg_eta", "#eta;#eta;Events"  , 150, -3., 3.  );
+  hHgg_pT  = fs->make<TH1D>("Hgg_pT" , "p_{T};p_{T};Particles", 50,  0., 150.);
+  hHgg_eta = fs->make<TH1D>("Hgg_eta", "#eta;#eta;Particles"  , 50, -3., 3.  );
 
   // Output Tree
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
@@ -245,6 +245,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   using namespace edm;
 
+/*
   edm::Handle<reco::GenParticleCollection> genParticles;
   iEvent.getByToken(genParticleCollectionT_, genParticles);
   for (reco::GenParticleCollection::const_iterator iP = genParticles->begin();
@@ -256,7 +257,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     hHgg_pT->Fill ( iP->pt()  );
     hHgg_eta->Fill( iP->eta() );
   }
-
+*/
   // ----- Get Calorimeter Geometry ----- //
   // Provides access to global cell position and coordinates below
   edm::ESHandle<CaloGeometry> caloGeomH;
@@ -267,7 +268,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   //////////// EB //////////
 
-  bool saveImgs = true;
+  bool saveImgs = false;
   int iphi_, ieta_, idx;
 
   // ----- EB reduced rechit collection ----- //
@@ -399,6 +400,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     } // sample
   }
 
+  /*
   // ----- EE reduced rechit collection ----- //
   // This contatins the reduced EB rechit collection after
   // the zero suppression and bad channel clean-up
@@ -520,7 +522,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     sprintf(outFile,"cHBHE_energy_%llu.eps",iEvent.id().event());
     cHBHE->Print(outFile);
   }
-
+  */
   /*
      using reco::TrackCollection;
      Handle<TrackCollection> tracks;

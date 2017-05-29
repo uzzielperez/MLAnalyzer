@@ -10,7 +10,8 @@ args = parser.parse_args()
 eosDir='/eos/cms/store/user/mandrews/ML'
 #decay='SinglePhotonPt50_FEVTSIM'
 #decay='SingleElectronPt50_FEVTDEBUG'
-decay='%s_FEVTDEBUG'%args.decay
+#decay='%s_FEVTDEBUG'%args.decay
+decay='%s_FEVTDEBUG_n125k'%args.decay
 
 cfg='RecHitAnalyzer/python/ConfFile_cfg.py'
 #inputFiles_='file:SinglePhotonPt50_FEVTDEBUG.root'
@@ -37,7 +38,7 @@ inputTag=inputFiles_.strip('file:').strip('_FEVTDEBUG.root')
 #if not os.path.isdir(inputTag):
 #  os.system('mkdir %s'%(inputTag))
 #cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d"%(cfg,inputFiles_,maxEvents_,skipEvents_)
-cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d outputFile=%s/IMGs/%s_n250k_IMG_pT.root"%(cfg,inputFiles_,maxEvents_,skipEvents_,eosDir,decay)
+cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d outputFile=%s/IMGs/%s_n250k_IMG.root"%(cfg,inputFiles_,maxEvents_,skipEvents_,eosDir,decay)
 #print '%s'%cmd
 os.system(cmd)
 

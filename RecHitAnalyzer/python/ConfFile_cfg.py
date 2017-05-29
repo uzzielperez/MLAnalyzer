@@ -48,11 +48,11 @@ process.fevt = cms.EDAnalyzer('RecHitAnalyzer'
     #, tracks = cms.untracked.InputTag('ctfWithMaterialTracks')
     #, EBRecHitCollection = cms.InputTag('ecalRecHit:EcalRecHitsEB')
     , reducedEBRecHitCollection = cms.InputTag('reducedEcalRecHitsEB')
-    , reducedEERecHitCollection = cms.InputTag('reducedEcalRecHitsEE')
+    #, reducedEERecHitCollection = cms.InputTag('reducedEcalRecHitsEE')
     , EBDigiCollection = cms.InputTag('simEcalDigis:ebDigis')
     #, selectedEBDigiCollection = cms.InputTag('selectDigi:selectedEcalEBDigiCollection')
-    , reducedHBHERecHitCollection = cms.InputTag('reducedHcalRecHits:hbhereco')
-    , genParticleCollection = cms.InputTag('genParticles')
+    #, reducedHBHERecHitCollection = cms.InputTag('reducedHcalRecHits:hbhereco')
+    #, genParticleCollection = cms.InputTag('genParticles')
     )
 
 process.TFileService = cms.Service("TFileService",
