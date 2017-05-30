@@ -83,7 +83,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<EBDigiCollection>     EBDigiCollectionT_;
     edm::EDGetTokenT<EcalRecHitCollection> EERecHitCollectionT_;
     edm::EDGetTokenT<HBHERecHitCollection> HBHERecHitCollectionT_;
-    edm::EDGetTokenT<reco::GenParticleCollection> genParticleCollectionT_;
+    //edm::EDGetTokenT<reco::GenParticleCollection> genParticleCollectionT_;
     //edm::InputTag trackTags_; //used to select what tracks to read from configuration file
 
     static const int EE_IZ_MAX = 2;
@@ -143,7 +143,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
   //EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("selectedEBDigiCollection"));
   EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("EBDigiCollection"));
-  //EERecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEERecHitCollection"));
+  EERecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEERecHitCollection"));
   //HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
 
   //genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
@@ -245,8 +245,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   using namespace edm;
 
-/*
-  edm::Handle<reco::GenParticleCollection> genParticles;
+/*  edm::Handle<reco::GenParticleCollection> genParticles;
   iEvent.getByToken(genParticleCollectionT_, genParticles);
   for (reco::GenParticleCollection::const_iterator iP = genParticles->begin();
        iP != genParticles->end();
@@ -400,7 +399,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     } // sample
   }
 
-  /*
+
   // ----- EE reduced rechit collection ----- //
   // This contatins the reduced EB rechit collection after
   // the zero suppression and bad channel clean-up
@@ -445,6 +444,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   } // EE reduced rechits
 
+  /*
   //////////// HBHE //////////
 
   // ----- HBHE reduced rechit collection ----- //
