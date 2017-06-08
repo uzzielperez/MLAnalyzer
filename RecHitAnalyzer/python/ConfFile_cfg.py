@@ -27,6 +27,7 @@ process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(options.maxEvents) 
     )
 
+print " >> Loaded",len(options.inputFiles),"input files from list."
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
@@ -36,6 +37,7 @@ process.source = cms.Source("PoolSource",
       #'file:step3.root'
       #'file:SinglePhotonPt50_FEVTDEBUG.root'
       #'file:SingleElectronPt50_FEVTDEBUG.root'
+      #'file:/eos/uscms/store/user/mba2012/FEVTDEBUG/H125GGgluonfusion_13TeV_TuneCUETP8M1_FEVTDEBUG/*/*/step_full_*.root'
       options.inputFiles
       )
     , skipEvents = cms.untracked.uint32(options.skipEvents)
@@ -51,8 +53,8 @@ process.fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , reducedEERecHitCollection = cms.InputTag('reducedEcalRecHitsEE')
     , EBDigiCollection = cms.InputTag('simEcalDigis:ebDigis')
     #, selectedEBDigiCollection = cms.InputTag('selectDigi:selectedEcalEBDigiCollection')
-    #, reducedHBHERecHitCollection = cms.InputTag('reducedHcalRecHits:hbhereco')
-    #, genParticleCollection = cms.InputTag('genParticles')
+    , reducedHBHERecHitCollection = cms.InputTag('reducedHcalRecHits:hbhereco')
+    , genParticleCollection = cms.InputTag('genParticles')
     )
 
 process.TFileService = cms.Service("TFileService",

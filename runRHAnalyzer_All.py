@@ -7,11 +7,11 @@ parser = argparse.ArgumentParser(description='Run RHAnalyzer')
 parser.add_argument('-d','--decay', required=True, help='Decay:Single*Pt50',type=str)
 args = parser.parse_args()
 
-eosDir='/eos/cms/store/user/mandrews/ML'
+eosDir='/eos/uscms/store/user/mba2012'
 #decay='SinglePhotonPt50_FEVTSIM'
 #decay='SingleElectronPt50_FEVTDEBUG'
-#decay='%s_FEVTDEBUG'%args.decay
-decay='%s_FEVTDEBUG_n125k'%args.decay
+decay='%s_FEVTDEBUG'%args.decay
+#decay='%s_FEVTDEBUG_n125k'%args.decay
 
 cfg='RecHitAnalyzer/python/ConfFile_cfg.py'
 #inputFiles_='file:SinglePhotonPt50_FEVTDEBUG.root'
@@ -24,13 +24,16 @@ cfg='RecHitAnalyzer/python/ConfFile_cfg.py'
 #inputFiles_='file:../1489423343_SinglePhotonPt50/SinglePhotonPt50_FEVTDEBUG_n5000.root'
 #inputFiles_ = ['file:%s'%path for path in glob('%s/FEVTSIM/%s/170325_195239/0000/*root'%(eosDir,decay))]
 inputFiles_ = ['file:%s'%path for path in glob('%s/FEVTDEBUG/%s/*/*/step*root'%(eosDir,decay))]
-inputFiles_ = re.sub('[\[ \]]','',str(inputFiles_))
+#inputFiles_ = re.sub('[\[ \]]','',str(inputFiles_))
 #print(inputFiles_)
+with open('list_%s.txt'%decay, 'w') as list_file:
+    for inputFile in inputFiles_:
+        list_file.write("%s\n" % inputFile)
 
 maxEvents_=-1
 skipEvents_=0
 
-inputTag=inputFiles_.strip('file:').strip('_FEVTDEBUG.root')
+#inputTag=inputFiles_.strip('file:').strip('_FEVTDEBUG.root')
 #inputTag='TEST_AllEvts_Ele'
 #inputTag='TEST_AllEvts_Pho'
 #inputTag='TEST'
@@ -38,7 +41,8 @@ inputTag=inputFiles_.strip('file:').strip('_FEVTDEBUG.root')
 #if not os.path.isdir(inputTag):
 #  os.system('mkdir %s'%(inputTag))
 #cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d"%(cfg,inputFiles_,maxEvents_,skipEvents_)
-cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d outputFile=%s/IMGs/%s_n250k_IMG.root"%(cfg,inputFiles_,maxEvents_,skipEvents_,eosDir,decay)
+#cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d outputFile=%s/IMGs/%s_n375k_IMG.root"%(cfg,inputFiles_,maxEvents_,skipEvents_,eosDir,decay)
+cmd="cmsRun %s inputFiles_load=list_%s.txt maxEvents=%d skipEvents=%d outputFile=%s/IMGs/%s_n375k_IMG.root"%(cfg,decay,maxEvents_,skipEvents_,eosDir,decay)
 #print '%s'%cmd
 os.system(cmd)
 

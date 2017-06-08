@@ -83,7 +83,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<EBDigiCollection>     EBDigiCollectionT_;
     edm::EDGetTokenT<EcalRecHitCollection> EERecHitCollectionT_;
     edm::EDGetTokenT<HBHERecHitCollection> HBHERecHitCollectionT_;
-    //edm::EDGetTokenT<reco::GenParticleCollection> genParticleCollectionT_;
+    edm::EDGetTokenT<reco::GenParticleCollection> genParticleCollectionT_;
     //edm::InputTag trackTags_; //used to select what tracks to read from configuration file
 
     static const int EE_IZ_MAX = 2;
@@ -109,8 +109,9 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     TH2D * hHBHE_energy_EB; 
     TH1D * hHBHE_depth; 
 
-    TH1D * hHgg_pT; 
-    TH1D * hHgg_eta; 
+    TH1D * h_pT; 
+    TH1D * h_E; 
+    TH1D * h_eta; 
 
     TTree* RHTree;
 
@@ -144,9 +145,9 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   //EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("selectedEBDigiCollection"));
   EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("EBDigiCollection"));
   EERecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEERecHitCollection"));
-  //HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
+  HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
 
-  //genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
+  genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
 
   //now do what ever initialization is needed
   usesResource("TFileService");
@@ -204,8 +205,9 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
       hcaldqm::constants::DEPTH_NUM, hcaldqm::constants::DEPTH_MIN, hcaldqm::constants::DEPTH_MAX+1);
 
   // Kinematics
-  hHgg_pT  = fs->make<TH1D>("Hgg_pT" , "p_{T};p_{T};Particles", 50,  0., 150.);
-  hHgg_eta = fs->make<TH1D>("Hgg_eta", "#eta;#eta;Particles"  , 50, -3., 3.  );
+  h_pT  = fs->make<TH1D>("h_pT" , "p_{T};p_{T};Particles", 100,  0., 500.);
+  h_E   = fs->make<TH1D>("h_E"  , "E;E;Particles"        , 100,  0., 800.);
+  h_eta = fs->make<TH1D>("h_eta", "#eta;#eta;Particles"  ,  50,-2.4, 2.4);
 
   // Output Tree
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
@@ -245,18 +247,23 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   using namespace edm;
 
-/*  edm::Handle<reco::GenParticleCollection> genParticles;
+  edm::Handle<reco::GenParticleCollection> genParticles;
   iEvent.getByToken(genParticleCollectionT_, genParticles);
   for (reco::GenParticleCollection::const_iterator iP = genParticles->begin();
        iP != genParticles->end();
        ++iP) {
     if ( std::abs(iP->pdgId()) != 22 ) continue;
+    //std::cout << iP->numberOfMothers() << ":" << iP->pt() << "," << iP->eta() << "," << iP->energy() << std::endl;
+    if ( !iP->mother() ) continue;
     if ( std::abs(iP->mother()->pdgId()) != 25 ) continue;
-    std::cout << iP->pt() << "," << iP->eta() << std::endl;
-    hHgg_pT->Fill ( iP->pt()  );
-    hHgg_eta->Fill( iP->eta() );
+    //if ( std::abs(iP->eta()) > 2.3055 ) continue;
+    if ( std::abs(iP->eta()) > 2.3 ) return;
+    //std::cout << iP->pt() << "," << iP->eta() << "," << iP->energy() << std::endl;
+    h_pT-> Fill( iP->pt()      );
+    h_E->  Fill( iP->energy()  );
+    h_eta->Fill( iP->eta()     );
   }
-*/
+
   // ----- Get Calorimeter Geometry ----- //
   // Provides access to global cell position and coordinates below
   edm::ESHandle<CaloGeometry> caloGeomH;
@@ -399,7 +406,6 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     } // sample
   }
 
-
   // ----- EE reduced rechit collection ----- //
   // This contatins the reduced EB rechit collection after
   // the zero suppression and bad channel clean-up
@@ -424,7 +430,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     ix_ = eeId.ix()-1;
     iy_ = eeId.iy()-1;
     iz_ = (eeId.zside() > 0) ? 1 : 0;
-    //std::cout << ix_ << "," << iy_ << "," << iz_ << "," << iRHit->energy() << std::endl;
+    //std::cout << "ECAL | (ix,iy): " << ix_ << "," << iy_ << "," << iz_ << "," << iRHit->energy() << std::endl;
 
     // Fill some histograms to monitor distributions
     // These will contain *cumulative* statistics and as such
@@ -434,7 +440,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     // Create hashed Index
     // Maps from [iy][ix] -> [idx]
-    idx = ( iy_+EEDetId::IY_MAX )*EEDetId::IX_MAX + ix_; 
+    idx = iy_*EEDetId::IX_MAX + ix_; 
 
     // Fill event arrays
     // These are the actual inputs to the detector images
@@ -444,7 +450,6 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   } // EE reduced rechits
 
-  /*
   //////////// HBHE //////////
 
   // ----- HBHE reduced rechit collection ----- //
@@ -522,7 +527,6 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     sprintf(outFile,"cHBHE_energy_%llu.eps",iEvent.id().event());
     cHBHE->Print(outFile);
   }
-  */
   /*
      using reco::TrackCollection;
      Handle<TrackCollection> tracks;
