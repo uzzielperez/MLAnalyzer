@@ -143,7 +143,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   //EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EBRecHitCollection"));
   EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
   //EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("selectedEBDigiCollection"));
-  EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("EBDigiCollection"));
+  //EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("EBDigiCollection"));
   EERecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEERecHitCollection"));
   HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
 
@@ -171,6 +171,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
       2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
   // EB Digis
   char hname[50], htitle[50];
+  /*
   for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; iS++){
     sprintf(hname, "EB_adc%d",iS);
     sprintf(htitle,"adc%d(i#phi,i#eta);i#phi;i#eta",iS);
@@ -178,6 +179,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
         EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
         2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
   }
+  */
 
   // EE rechits
   for(int iz(0); iz < EE_IZ_MAX; iz++){
@@ -213,10 +215,12 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
   RHTree->Branch("EB_energy",    &vEB_energy_);
   RHTree->Branch("EB_time",      &vEB_time_);
+  /*
   for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; iS++){
     sprintf(hname, "EB_adc%d",iS);
     RHTree->Branch(hname,       &vEB_adc_[iS]);
   }
+  */
   for(int iz(0); iz < EE_IZ_MAX; iz++){
     const char *zside = (iz > 0) ? "p" : "m";
     sprintf(hname, "EE%s_energy",zside);
@@ -253,12 +257,18 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        iP != genParticles->end();
        ++iP) {
     if ( std::abs(iP->pdgId()) != 22 ) continue;
-    //std::cout << iP->numberOfMothers() << ":" << iP->pt() << "," << iP->eta() << "," << iP->energy() << std::endl;
-    if ( !iP->mother() ) continue;
-    if ( std::abs(iP->mother()->pdgId()) != 25 ) continue;
-    //if ( std::abs(iP->eta()) > 2.3055 ) continue;
-    if ( std::abs(iP->eta()) > 2.3 ) return;
-    //std::cout << iP->pt() << "," << iP->eta() << "," << iP->energy() << std::endl;
+    
+    //if ( iP->status() != 23 ) continue;
+    if ( iP->status() != 1 ) continue;
+
+    //if ( !iP->mother() ) continue;
+    //if ( std::abs(iP->mother()->pdgId()) != 25 && std::abs(iP->mother()->pdgId()) != 22 ) continue;
+    //if ( std::abs(iP->mother()->status()) != 44 && std::abs(iP->mother()->status()) != 23 ) continue;
+    
+    //if ( std::abs(iP->eta()) > 2.3 ) return;
+    //if ( std::abs(iP->pt()) < 25. ) continue;
+    //std::cout << "status:" <<iP->status() << " pT:" << iP->pt() << " eta:" << iP->eta() << " E:" << iP->energy() << " mothId:" << iP->mother()->pdgId() << std::endl;
+    std::cout << "status:" <<iP->status() << " pT:" << iP->pt() << " eta:" << iP->eta() << " E:" << iP->energy() << std::endl;
     h_pT-> Fill( iP->pt()      );
     h_E->  Fill( iP->energy()  );
     h_eta->Fill( iP->eta()     );
@@ -339,6 +349,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     cEB->Print(outFile);
   }
 
+  /*
   // ----- EB digis ----- //
   // This contains the raw EB digi collection:
   // Each digi is unpacked as a data frame containing info
@@ -405,6 +416,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       cEB->Print(outFile);
     } // sample
   }
+  */
 
   // ----- EE reduced rechit collection ----- //
   // This contatins the reduced EB rechit collection after

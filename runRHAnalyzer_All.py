@@ -23,12 +23,12 @@ cfg='RecHitAnalyzer/python/ConfFile_cfg.py'
 #inputFiles_='file:/eos/cms/store/user/mandrews/ML/1489488713_SingleElectronPt50/SingleElectronPt50_FEVTDEBUG_n10000.root'
 #inputFiles_='file:../1489423343_SinglePhotonPt50/SinglePhotonPt50_FEVTDEBUG_n5000.root'
 #inputFiles_ = ['file:%s'%path for path in glob('%s/FEVTSIM/%s/170325_195239/0000/*root'%(eosDir,decay))]
-#inputFiles_ = ['file:%s'%path for path in glob('%s/FEVTDEBUG/%s/*/*/step*root'%(eosDir,decay))]
-inputFiles_ = ['file:%s'%path for path in glob('%s/FEVTDEBUG/%s/170529_103138/*/step*root'%(eosDir,decay))]
+inputFiles_ = ['file:%s'%path for path in glob('%s/FEVTDEBUG/%s/*/*/step*root'%(eosDir,decay))]
+#inputFiles_ = ['file:%s'%path for path in glob('%s/FEVTDEBUG/%s/170529_103138/*/step*root'%(eosDir,decay))]
 #inputFiles_ = ['file:%s'%path for path in glob('%s/FEVTDEBUG/%s/170530_111429/*/step*root'%(eosDir,decay))]
 #inputFiles_ = re.sub('[\[ \]]','',str(inputFiles_))
 #print(inputFiles_)
-listname = 'list_%s_1.txt'%decay
+listname = 'list_%s.txt'%decay
 with open(listname, 'w') as list_file:
     for inputFile in inputFiles_:
         list_file.write("%s\n" % inputFile)
@@ -44,8 +44,8 @@ skipEvents_=0
 #if not os.path.isdir(inputTag):
 #  os.system('mkdir %s'%(inputTag))
 #cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d"%(cfg,inputFiles_,maxEvents_,skipEvents_)
-#cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d outputFile=%s/IMGs/%s_n375k_IMG.root"%(cfg,inputFiles_,maxEvents_,skipEvents_,eosDir,decay)
-cmd="cmsRun %s inputFiles_load=%s maxEvents=%d skipEvents=%d outputFile=%s/IMGs/%s_n375k_IMG_1.root"%(cfg,listname,maxEvents_,skipEvents_,eosDir,decay)
+#cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d outputFile=%s/IMGs/%s_n350k_IMG.root"%(cfg,inputFiles_,maxEvents_,skipEvents_,eosDir,decay)
+cmd="cmsRun %s inputFiles_load=%s maxEvents=%d skipEvents=%d outputFile=%s/IMGs/%s_n260k_IMG.root"%(cfg,listname,maxEvents_,skipEvents_,eosDir,decay)
 #print '%s'%cmd
 os.system(cmd)
 

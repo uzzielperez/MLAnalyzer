@@ -8,9 +8,10 @@ eosDir='/eos/uscms/store/user/mba2012/IMGs'
 #eosDir='/eos/cms/store/user/mandrews/ML/IMGs'
 #eosDir='/eos/cms/store/user/mandrews/ML/IMGs_RAW'
 decays = ["DoublePhotonGaussPt55_StdDev20_FEVTDEBUG_HighLumiPileUp"]
+#decays = ["H125GGgluonfusion_13TeV_TuneCUETP8M1_HighLumiPileUp"]
 #decays = ["SinglePhotonPt50","SingleElectronPt50"]
 #decays = ["DoublePhotonFlatPt10To60","DoubleElectronFlatPt10To60"]
-chunk_size = 100
+chunk_size = 250
 
 @delayed
 def load_X(tree, start_, stop_, branches_, readouts):
@@ -20,9 +21,10 @@ def load_X(tree, start_, stop_, branches_, readouts):
     # 2: reshape the flat array into a stacked array: (branches, readouts)
     # 3: embed each stacked array as a single row entry in a list via list comprehension
     # 4: convert this list into an array with shape (events, branches, readouts) 
-    X = np.array([np.concatenate(x).reshape(len(branches_),readouts) for x in X])
+    X = np.array([np.concatenate(x).reshape(len(branches_),readouts[0]*readouts[1]) for x in X])
     #print "X.shape:",X.shape
-    X = X.reshape((-1,len(branches_),readouts))
+    X = X.reshape((-1,len(branches_),readouts[0],readouts[1]))
+    X = np.transpose(X, [0,2,3,1])
     X /= 1000. 
     return X
 
@@ -32,52 +34,55 @@ for j,decay in enumerate(decays):
     #tfile_str = '%s/%s_FEVTDEBUG_n250k_IMG_pT_CROPS32.root'%(eosDir,decay)
     #tfile_str = '%s/%s_FEVTDEBUG_n250k_IMG.root'%(eosDir,decay)
     tfile_str = '%s/%s_n250k_IMG.root'%(eosDir,decay)
+    #tfile_str = '%s/%s_FEVTDEBUG_n350k_IMG.root'%(eosDir,decay)
     #tfile_str = 'output_n10.root'
     tfile = ROOT.TFile(tfile_str)
     tree = tfile.Get('fevt/RHTree')
     nevts = tree.GetEntries()
     neff = (nevts//chunk_size)*chunk_size
     neff = 250000 
+    #neff = 233000
     print " >> Doing decay:", decay
     print " >> Input file:", tfile_str
     print " >> Total events:", nevts
     print " >> Effective events:", neff
 
     # EB
-    readouts = 170*360
+    readouts = [170,360]
     branches = ["EB_energy"]
     X_EB = da.concatenate([\
                 da.from_delayed(\
                     load_X(tree,i,i+chunk_size, branches, readouts),\
-                    shape=(chunk_size, len(branches), readouts),\
+                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
                     dtype=np.float32)\
                 for i in range(0,neff,chunk_size)])
     print " >> Expected shape:", X_EB.shape
 
     # EE-
-    readouts = 100*100
+    readouts = [100,100]
     branches = ["EEm_energy"]
     X_EEm = da.concatenate([\
                 da.from_delayed(\
                     load_X(tree,i,i+chunk_size, branches, readouts),\
-                    shape=(chunk_size, len(branches), readouts),\
+                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
                     dtype=np.float32)\
                 for i in range(0,neff,chunk_size)])
     print " >> Expected shape:", X_EEm.shape
 
     # EE+
-    readouts = 100*100
+    readouts = [100,100]
     branches = ["EEp_energy"]
     X_EEp = da.concatenate([\
                 da.from_delayed(\
                     load_X(tree,i,i+chunk_size, branches, readouts),\
-                    shape=(chunk_size, len(branches), readouts),\
+                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
                     dtype=np.float32)\
                 for i in range(0,neff,chunk_size)])
     print " >> Expected shape:", X_EEp.shape
 
     # Class label
-    label = 1
+    label = j
+    #label = 1
     print " >> Class label:",label
     y = da.from_array(\
             np.full(X_EB.shape[0], label, dtype=np.float32),\
