@@ -45,7 +45,8 @@ skipEvents_=0
 #  os.system('mkdir %s'%(inputTag))
 #cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d"%(cfg,inputFiles_,maxEvents_,skipEvents_)
 #cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d outputFile=%s/IMGs/%s_n350k_IMG.root"%(cfg,inputFiles_,maxEvents_,skipEvents_,eosDir,decay)
-cmd="cmsRun %s inputFiles_load=%s maxEvents=%d skipEvents=%d outputFile=%s/IMGs/%s_n260k_IMG.root"%(cfg,listname,maxEvents_,skipEvents_,eosDir,decay)
+#cmd="cmsRun %s inputFiles_load=%s maxEvents=%d skipEvents=%d outputFile=%s/IMGs/%s_n260k_IMG.root"%(cfg,listname,maxEvents_,skipEvents_,eosDir,decay)
+cmd="cmsRun %s inputFiles_load=%s maxEvents=%d skipEvents=%d outputFile=%s/IMGs/%s_nXXX_IMG.root"%(cfg,listname,maxEvents_,skipEvents_,eosDir,decay)
 #print '%s'%cmd
 os.system(cmd)
 

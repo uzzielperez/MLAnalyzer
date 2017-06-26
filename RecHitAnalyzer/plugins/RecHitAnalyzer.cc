@@ -251,28 +251,74 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   using namespace edm;
 
+  int nPho = 0;
+  bool applyCuts = true;
+  bool isHiggs = false;
+  float etaCut = 1.4;
+  float ptCut = 25.;
   edm::Handle<reco::GenParticleCollection> genParticles;
   iEvent.getByToken(genParticleCollectionT_, genParticles);
   for (reco::GenParticleCollection::const_iterator iP = genParticles->begin();
        iP != genParticles->end();
        ++iP) {
+
+    // PDG ID cut
     if ( std::abs(iP->pdgId()) != 22 ) continue;
     
+    // Decay status
     //if ( iP->status() != 23 ) continue;
     if ( iP->status() != 1 ) continue;
 
-    //if ( !iP->mother() ) continue;
-    //if ( std::abs(iP->mother()->pdgId()) != 25 && std::abs(iP->mother()->pdgId()) != 22 ) continue;
-    //if ( std::abs(iP->mother()->status()) != 44 && std::abs(iP->mother()->status()) != 23 ) continue;
+    if ( applyCuts ) {
+        // Check ancestry
+        if ( !iP->mother() ) continue;
+        if ( isHiggs ) {
+            if ( std::abs(iP->mother()->pdgId()) != 25 && std::abs(iP->mother()->pdgId()) != 22 ) continue;
+        } else {
+            if ( std::abs(iP->mother()->status()) != 44 && std::abs(iP->mother()->status()) != 23 ) continue;
+        }
+        // Kinematic cuts
+        if ( std::abs(iP->eta()) > etaCut ) continue;
+        if ( std::abs(iP->pt()) < ptCut ) continue;
+    } // apply cuts
+
+    nPho++;
+
+  } // count good gen photons
+  if ( nPho != 2 ) return; 
+  for (reco::GenParticleCollection::const_iterator iP = genParticles->begin();
+       iP != genParticles->end();
+       ++iP) {
+
+    // PDG ID cut
+    if ( std::abs(iP->pdgId()) != 22 ) continue;
     
-    //if ( std::abs(iP->eta()) > 2.3 ) return;
-    //if ( std::abs(iP->pt()) < 25. ) continue;
-    //std::cout << "status:" <<iP->status() << " pT:" << iP->pt() << " eta:" << iP->eta() << " E:" << iP->energy() << " mothId:" << iP->mother()->pdgId() << std::endl;
-    std::cout << "status:" <<iP->status() << " pT:" << iP->pt() << " eta:" << iP->eta() << " E:" << iP->energy() << std::endl;
+    // Decay status
+    //if ( iP->status() != 23 ) continue;
+    if ( iP->status() != 1 ) continue;
+
+    if ( applyCuts ) {
+        // Check ancestry
+        if ( isHiggs ) {
+            if ( std::abs(iP->mother()->pdgId()) != 25 && std::abs(iP->mother()->pdgId()) != 22 ) continue;
+        } else {
+            if ( std::abs(iP->mother()->status()) != 44 && std::abs(iP->mother()->status()) != 23 ) continue;
+        }
+        // Kinematic cuts
+        if ( std::abs(iP->eta()) > etaCut ) continue;
+        if ( std::abs(iP->pt()) < ptCut ) continue;
+    } // apply cuts
+
+    if ( applyCuts ) { 
+        std::cout << "status:" <<iP->status() << " pT:" << iP->pt() << " eta:" << iP->eta() << " E:" << iP->energy() << " mothId:" << iP->mother()->pdgId() << std::endl;
+    } else {
+        std::cout << "status:" <<iP->status() << " pT:" << iP->pt() << " eta:" << iP->eta() << " E:" << iP->energy() << std::endl;
+    }
+    // Fill histograms
     h_pT-> Fill( iP->pt()      );
     h_E->  Fill( iP->energy()  );
     h_eta->Fill( iP->eta()     );
-  }
+  } // fill hist loop
 
   // ----- Get Calorimeter Geometry ----- //
   // Provides access to global cell position and coordinates below

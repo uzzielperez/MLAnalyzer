@@ -6,15 +6,21 @@ histname = "h_pT"
 #histname = "h_eta"
 hist = "fevt/%s"%histname
 
+t_Hgg = ROOT.TFile('~/eos/IMGs/TEST_eta23/H125GGgluonfusion_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUp_FEVTDEBUG_TEST_IMG.root', 'READ')
 #t_Hgg = ROOT.TFile('~/eos/IMGs/TEST_eta14/SingleHiggsPt10to90_eta14_pythia8_FEVTDEBUG_TEST_IMG.root', 'READ')
-t_Hgg = ROOT.TFile('~/eos/IMGs/TEST_eta14/SingleHiggsPt10to80_eta14_pythia8_FEVTDEBUG_TEST_IMG.root', 'READ')
+#t_Hgg = ROOT.TFile('~/eos/IMGs/TEST_eta14/SingleHiggsPt10to80_eta14_pythia8_FEVTDEBUG_TEST_IMG.root', 'READ')
 #t_Hgg = ROOT.TFile('~/eos/IMGs/TEST_eta14/SingleHiggsPt10to75_eta14_pythia8_FEVTDEBUG_TEST_IMG.root', 'READ')
 #t_Hgg = ROOT.TFile('~/eos/IMGs/H125GGgluonfusion_13TeV_TuneCUETP8M1_HighLumiPileUp_FEVTDEBUG_n350k_IMG.root', 'READ')
 #t_Hgg = ROOT.TFile('~/eos/IMGs/TEST_eta23/SingleHiggsPt10to100_pythia8_FEVTDEBUG_TEST_IMG.root', 'READ')
 #t_Hgg = ROOT.TFile('~/eos/IMGs/H125GGgluonfusion_13TeV_TuneCUETP8M1_FEVTDEBUG_n175k_IMG.root', 'READ')
 h_Hgg = ROOT.gDirectory.Get(hist)
 print " >> Hgg entries:",h_Hgg.GetEntries()
-t_Ggg = ROOT.TFile('~/eos/IMGs/TEST_eta14/DoublePhotonGaussPt55_StdDev20_FEVTDEBUG_TEST_IMG.root', 'READ')
+#t_Ggg = ROOT.TFile('~/eos/IMGs/TEST_eta23/PromptDiPhoton_PtHat50_MGG80toInf_Pt25_Eta23_13TeV_TuneCUETP8M1_FEVTDEBUG_TEST_IMG.root', 'READ')
+t_Ggg = ROOT.TFile('~/eos/IMGs/TEST_eta23/PromptDiPhoton_PtHat45_MGG80toInf_Pt25_Eta23_13TeV_TuneCUETP8M1_FEVTDEBUG_TEST_IMG.root', 'READ')
+#t_Ggg = ROOT.TFile('~/eos/IMGs/TEST_eta23/PromptDiPhoton_PtHat40_MGG80toInf_Pt25_Eta23_13TeV_TuneCUETP8M1_FEVTDEBUG_TEST_IMG.root', 'READ')
+#t_Ggg = ROOT.TFile('~/eos/IMGs/TEST_eta23/PromptDiPhoton_PtHat30_MGG80toInf_Pt25_Eta23_13TeV_TuneCUETP8M1_FEVTDEBUG_TEST_IMG.root', 'READ')
+#t_Ggg = ROOT.TFile('~/eos/IMGs/TEST_eta23/PromptDiPhoton_PtHat5_MGG80toInf_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUp_FEVTDEBUG_TEST_IMG.root', 'READ')
+#t_Ggg = ROOT.TFile('~/eos/IMGs/TEST_eta14/DoublePhotonGaussPt55_StdDev20_FEVTDEBUG_TEST_IMG.root', 'READ')
 #t_Ggg = ROOT.TFile('~/eos/IMGs/TEST_eta23/PromptDiPhoton_PtHat10_MGG80toInf_Pt25_Eta23_13TeV_TuneCUETP8M1_FEVTDEBUG_TEST_IMG.root', 'READ')
 #t_Ggg = ROOT.TFile('~/eos/IMGs/DoublePhotonGaussPt55_StdDev20_FEVTDEBUG_HighLumiPileUp_n250k_IMG.root', 'READ')
 #t_Ggg = ROOT.TFile('~/eos/IMGs/DoublePhotonGaussPt55_StdDev20_FEVTDEBUG_HighLumiPileUp_n175k_IMG_numEvent9216.root', 'READ')
