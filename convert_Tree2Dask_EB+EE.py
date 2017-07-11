@@ -5,16 +5,13 @@ from dask.delayed import delayed
 import dask.array as da
 
 eosDir='/eos/uscms/store/user/mba2012/IMGs'
-#eosDir='/eos/cms/store/user/mandrews/ML/IMGs'
-#eosDir='/eos/cms/store/user/mandrews/ML/IMGs_RAW'
-decays = ["DoublePhotonGaussPt55_StdDev20_FEVTDEBUG_HighLumiPileUp"]
-#decays = ["H125GGgluonfusion_13TeV_TuneCUETP8M1_HighLumiPileUp"]
-#decays = ["SinglePhotonPt50","SingleElectronPt50"]
-#decays = ["DoublePhotonFlatPt10To60","DoubleElectronFlatPt10To60"]
+decays = ["H125GGgluonfusion_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUpv2", "PromptDiPhoton_MGG80toInf_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUp"]
+
 chunk_size = 250
+scale = [100., 150.]
 
 @delayed
-def load_X(tree, start_, stop_, branches_, readouts):
+def load_X(tree, start_, stop_, branches_, readouts, scale):
     X = tree2array(tree, start=start_, stop=stop_, branches=branches_) 
     # Convert the object array X to a multidim array:
     # 1: for each event x in X, concatenate the object columns (branches) into a flat array of shape (readouts*branches)
@@ -25,22 +22,23 @@ def load_X(tree, start_, stop_, branches_, readouts):
     #print "X.shape:",X.shape
     X = X.reshape((-1,len(branches_),readouts[0],readouts[1]))
     X = np.transpose(X, [0,2,3,1])
-    X /= 1000. 
+
+    # Rescale
+    X /= scale 
     return X
 
 for j,decay in enumerate(decays):
 
-    #tfile_str = '%s/%s_FEVTDEBUG_n250k_IMG_CROPS32.root'%(eosDir,decay)
-    #tfile_str = '%s/%s_FEVTDEBUG_n250k_IMG_pT_CROPS32.root'%(eosDir,decay)
+    if j == 1:
+        continue
+
+    tfile_str = '%s/%s_FEVTDEBUG_nXXX_IMG.root'%(eosDir,decay)
     #tfile_str = '%s/%s_FEVTDEBUG_n250k_IMG.root'%(eosDir,decay)
-    tfile_str = '%s/%s_n250k_IMG.root'%(eosDir,decay)
-    #tfile_str = '%s/%s_FEVTDEBUG_n350k_IMG.root'%(eosDir,decay)
-    #tfile_str = 'output_n10.root'
     tfile = ROOT.TFile(tfile_str)
     tree = tfile.Get('fevt/RHTree')
     nevts = tree.GetEntries()
-    neff = (nevts//chunk_size)*chunk_size
-    neff = 250000 
+    neff = (nevts//1000)*1000
+    #neff = 250000 
     #neff = 233000
     print " >> Doing decay:", decay
     print " >> Input file:", tfile_str
@@ -52,7 +50,7 @@ for j,decay in enumerate(decays):
     branches = ["EB_energy"]
     X_EB = da.concatenate([\
                 da.from_delayed(\
-                    load_X(tree,i,i+chunk_size, branches, readouts),\
+                    load_X(tree,i,i+chunk_size, branches, readouts, scale[0]),\
                     shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
                     dtype=np.float32)\
                 for i in range(0,neff,chunk_size)])
@@ -63,7 +61,7 @@ for j,decay in enumerate(decays):
     branches = ["EEm_energy"]
     X_EEm = da.concatenate([\
                 da.from_delayed(\
-                    load_X(tree,i,i+chunk_size, branches, readouts),\
+                    load_X(tree,i,i+chunk_size, branches, readouts, scale[1]),\
                     shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
                     dtype=np.float32)\
                 for i in range(0,neff,chunk_size)])
@@ -74,7 +72,7 @@ for j,decay in enumerate(decays):
     branches = ["EEp_energy"]
     X_EEp = da.concatenate([\
                 da.from_delayed(\
-                    load_X(tree,i,i+chunk_size, branches, readouts),\
+                    load_X(tree,i,i+chunk_size, branches, readouts, scale[1]),\
                     shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
                     dtype=np.float32)\
                 for i in range(0,neff,chunk_size)])
@@ -88,13 +86,10 @@ for j,decay in enumerate(decays):
             np.full(X_EB.shape[0], label, dtype=np.float32),\
             chunks=(chunk_size,))
 
-    #file_out_str = "test.hdf5"
     #file_out_str = "%s/%s_IMG_RHraw_n%dk.hdf5"%(eosDir,decay,neff//1000.)
-    file_out_str = "%s/%s_IMG_RHv1_n%dk.hdf5"%(eosDir,decay,neff//1000.)
-    #file_out_str = "%s/%s_n%dk_IMG_RHraw.hdf5"%(eosDir,decay,neff//1000)
-    #file_out_str = "%s/%s_IMGCROPS_n%dk_pT.hdf5"%(eosDir,decay,neff//1000)
-    #file_out_str = "%s/%s_IMGCROPS_n%dk.hdf5"%(eosDir,decay,neff//1000)
-    #file_out_str = "%s/%s_IMGCROPS_n%dk_DIGI.hdf5"%(eosDir,decay,neff//1000)
+    #file_out_str = "%s/%s_IMG_RHv1_n%dk.hdf5"%(eosDir,decay,neff//1000.)
+    #file_out_str = "%s/%s_IMG_RH%d_n%dk.hdf5"%(eosDir,decay,int(rescaler),neff//1000.)
+    file_out_str = "%s/%s_IMG_RH%d-%d_n%dk.hdf5"%(eosDir,decay,int(scale[0]),int(scale[1]),neff//1000.)
     print " >> Writing to:", file_out_str
     #da.to_hdf5(file_out_str, {'/X': X, '/y': y}, chunks=(chunk_size,s,s,2), compression='lzf')
     da.to_hdf5(file_out_str, {'/X_EB': X_EB, 'X_EEm': X_EEm, 'X_EEp': X_EEp, '/y': y}, compression='lzf')

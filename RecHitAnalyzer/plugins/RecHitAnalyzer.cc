@@ -145,6 +145,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   //EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("selectedEBDigiCollection"));
   //EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("EBDigiCollection"));
   EERecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEERecHitCollection"));
+  //EERecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EERecHitCollection"));
   HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
 
   genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
@@ -252,8 +253,8 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   using namespace edm;
 
   int nPho = 0;
-  bool applyCuts = true;
-  bool isHiggs = false;
+  bool isDecayed = true;
+  bool isHiggs = true;
   float etaCut = 1.4;
   float ptCut = 25.;
   edm::Handle<reco::GenParticleCollection> genParticles;
@@ -269,7 +270,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //if ( iP->status() != 23 ) continue;
     if ( iP->status() != 1 ) continue;
 
-    if ( applyCuts ) {
+    if ( isDecayed ) {
         // Check ancestry
         if ( !iP->mother() ) continue;
         if ( isHiggs ) {
@@ -297,7 +298,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //if ( iP->status() != 23 ) continue;
     if ( iP->status() != 1 ) continue;
 
-    if ( applyCuts ) {
+    if ( isDecayed ) {
         // Check ancestry
         if ( isHiggs ) {
             if ( std::abs(iP->mother()->pdgId()) != 25 && std::abs(iP->mother()->pdgId()) != 22 ) continue;
@@ -309,7 +310,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         if ( std::abs(iP->pt()) < ptCut ) continue;
     } // apply cuts
 
-    if ( applyCuts ) { 
+    if ( isDecayed ) { 
         std::cout << "status:" <<iP->status() << " pT:" << iP->pt() << " eta:" << iP->eta() << " E:" << iP->energy() << " mothId:" << iP->mother()->pdgId() << std::endl;
     } else {
         std::cout << "status:" <<iP->status() << " pT:" << iP->pt() << " eta:" << iP->eta() << " E:" << iP->energy() << std::endl;

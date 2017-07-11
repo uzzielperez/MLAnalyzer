@@ -50,6 +50,7 @@ process.fevt = cms.EDAnalyzer('RecHitAnalyzer'
     #, tracks = cms.untracked.InputTag('ctfWithMaterialTracks')
     #, EBRecHitCollection = cms.InputTag('ecalRecHit:EcalRecHitsEB')
     , reducedEBRecHitCollection = cms.InputTag('reducedEcalRecHitsEB')
+    #, EERecHitCollection = cms.InputTag('ecalRecHit:EcalRecHitsEE')
     , reducedEERecHitCollection = cms.InputTag('reducedEcalRecHitsEE')
     #, EBDigiCollection = cms.InputTag('simEcalDigis:ebDigis')
     #, selectedEBDigiCollection = cms.InputTag('selectDigi:selectedEcalEBDigiCollection')
