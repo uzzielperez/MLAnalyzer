@@ -112,9 +112,12 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     TH1D * h_pT; 
     TH1D * h_E; 
     TH1D * h_eta; 
+    TH1D * h_m0; 
 
     TTree* RHTree;
 
+    float eventId_;
+    float m0_;
     std::vector<float> vEB_energy_;
     std::vector<float> vEB_time_;
     std::vector<float> vEB_adc_[EcalDataFrame::MAXSAMPLES];
@@ -211,9 +214,12 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   h_pT  = fs->make<TH1D>("h_pT" , "p_{T};p_{T};Particles", 100,  0., 500.);
   h_E   = fs->make<TH1D>("h_E"  , "E;E;Particles"        , 100,  0., 800.);
   h_eta = fs->make<TH1D>("h_eta", "#eta;#eta;Particles"  ,  50,-2.4, 2.4);
+  h_m0  = fs->make<TH1D>("h_m0" , "m0;m0;Events"        ,   72, 50., 950.);
 
   // Output Tree
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
+  RHTree->Branch("eventId",      &eventId_);
+  RHTree->Branch("m0",           &m0_);
   RHTree->Branch("EB_energy",    &vEB_energy_);
   RHTree->Branch("EB_time",      &vEB_time_);
   /*
@@ -254,7 +260,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   int nPho = 0;
   bool isDecayed = true;
-  bool isHiggs = true;
+  bool isHiggs = false;
   float etaCut = 1.4;
   float ptCut = 25.;
   edm::Handle<reco::GenParticleCollection> genParticles;
@@ -268,7 +274,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     
     // Decay status
     //if ( iP->status() != 23 ) continue;
-    if ( iP->status() != 1 ) continue;
+    if ( iP->status() != 1 ) continue; // NOT the same as Pythia status
 
     if ( isDecayed ) {
         // Check ancestry
@@ -285,8 +291,14 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     nPho++;
 
-  } // count good gen photons
+  } // genParticle loop: count good photons
+
+  // Require exactly 2 gen-level photons
+  // Indifferent about photons of status != 1
   if ( nPho != 2 ) return; 
+  
+  // Fill loop
+  math::XYZTLorentzVector vDiPho;
   for (reco::GenParticleCollection::const_iterator iP = genParticles->begin();
        iP != genParticles->end();
        ++iP) {
@@ -315,11 +327,14 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     } else {
         std::cout << "status:" <<iP->status() << " pT:" << iP->pt() << " eta:" << iP->eta() << " E:" << iP->energy() << std::endl;
     }
+    vDiPho += iP->p4();
     // Fill histograms
     h_pT-> Fill( iP->pt()      );
     h_E->  Fill( iP->energy()  );
     h_eta->Fill( iP->eta()     );
-  } // fill hist loop
+  } // genParticle loop: fill hist
+  h_m0->Fill( vDiPho.T() );
+  std::cout << " m0: " << vDiPho.T() << std::endl;
 
   // ----- Get Calorimeter Geometry ----- //
   // Provides access to global cell position and coordinates below
@@ -598,6 +613,10 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      histo->Fill( charge );
      }
      */
+  // Write out event ID
+  eventId_ = iEvent.id().event();
+  m0_ = vDiPho.T();
+
   RHTree->Fill();
 
 #ifdef THIS_IS_AN_EVENT_EXAMPLE
