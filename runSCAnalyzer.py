@@ -1,11 +1,11 @@
 import os
 
-cfg='RecHitAnalyzer/python/ConfFile_cfg.py'
+cfg='RecHitAnalyzer/python/SCAnalyzer_cfg.py'
 #inputFiles_='file:SinglePhotonPt50_FEVTDEBUG.root'
 #inputFiles_='file:pickeventsRECO.root'
 #inputFiles_='file:SingleElectronPt50_FEVTDEBUG.root'
-#inputFiles_='file:../step_full.root'
-inputFiles_='file:../step_full_H2GG_MoriondPU.root'
+inputFiles_='file:../step_full.root'
+#inputFiles_='file:../step_full_H2GG_MoriondPU.root'
 #inputFiles_='file:../step_full_H2GG_noPU.root'
 #inputFiles_='file:../step_full_H2GG_HLPU.root'
 #inputFiles_='file:/eos/uscms/store/user/mba2012/FEVTDEBUG/H125GGgluonfusion_13TeV_TuneCUETP8M1_FEVTDEBUG/170529_103138/0000/step_full_1.root'
@@ -13,7 +13,7 @@ inputFiles_='file:../step_full_H2GG_MoriondPU.root'
 #inputFiles_='file:/uscms/home/mba2012/work/MLHEP/GUN/CMSSW_8_0_24_patch1/src/step_full.root'
 #inputFiles_='root://cmseos.fnal.gov:1094//store/user/mba2012/FEVTDEBUG/step_full_17.root'
 #inputFiles_='file:../step3.root'
-maxEvents_=-1
+maxEvents_=1
 skipEvents_=0
 #outputFile_='output.root'
 inputTag=inputFiles_.strip('file:').strip('_FEVTDEBUG.root')

@@ -46,15 +46,11 @@ process.source = cms.Source("PoolSource",
 process.GlobalTag.globaltag = cms.string('80X_dataRun2_HLT_v12')
 process.es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
 
-process.fevt = cms.EDAnalyzer('RecHitAnalyzer'
-    #, tracks = cms.untracked.InputTag('ctfWithMaterialTracks')
+process.fevt = cms.EDAnalyzer('SCAnalyzer'
     #, EBRecHitCollection = cms.InputTag('ecalRecHit:EcalRecHitsEB')
+    , gsfElectronCollection = cms.InputTag('gedGsfElectrons')
+    , gedPhotonCollection = cms.InputTag('gedPhotons')
     , reducedEBRecHitCollection = cms.InputTag('reducedEcalRecHitsEB')
-    #, EERecHitCollection = cms.InputTag('ecalRecHit:EcalRecHitsEE')
-    , reducedEERecHitCollection = cms.InputTag('reducedEcalRecHitsEE')
-    #, EBDigiCollection = cms.InputTag('simEcalDigis:ebDigis')
-    #, selectedEBDigiCollection = cms.InputTag('selectDigi:selectedEcalEBDigiCollection')
-    , reducedHBHERecHitCollection = cms.InputTag('reducedHcalRecHits:hbhereco')
     , genParticleCollection = cms.InputTag('genParticles')
     )
 
