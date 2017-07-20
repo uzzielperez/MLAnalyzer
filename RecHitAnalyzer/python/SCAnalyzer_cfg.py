@@ -49,6 +49,7 @@ process.es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
 process.fevt = cms.EDAnalyzer('SCAnalyzer'
     #, EBRecHitCollection = cms.InputTag('ecalRecHit:EcalRecHitsEB')
     , gsfElectronCollection = cms.InputTag('gedGsfElectrons')
+    , gedPhotonCollection = cms.InputTag('gedPhotons')
     , reducedEBRecHitCollection = cms.InputTag('reducedEcalRecHitsEB')
     , genParticleCollection = cms.InputTag('genParticles')
     )

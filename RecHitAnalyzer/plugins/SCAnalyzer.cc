@@ -33,6 +33,8 @@ Implementation:
 #include "Geometry/Records/interface/CaloGeometryRecord.h"
 
 #include "DataFormats/EgammaCandidates/interface/GsfElectron.h"
+#include "DataFormats/EgammaCandidates/interface/Photon.h"
+#include "DataFormats/EgammaCandidates/interface/PhotonFwd.h" // reco::PhotonCollection defined here
 
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
@@ -73,7 +75,9 @@ class SCAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     virtual void endJob() override;
 
     // ----------member data ---------------------------
-    edm::EDGetTokenT<edm::View<reco::GsfElectron>> electronCollectionT_;
+    //edm::EDGetTokenT<edm::View<reco::GsfElectron>> electronCollectionT_;
+    edm::EDGetTokenT<reco::GsfElectronCollection> electronCollectionT_;
+    edm::EDGetTokenT<reco::PhotonCollection> photonCollectionT_;
     edm::EDGetTokenT<EcalRecHitCollection> EBRecHitCollectionT_;
     edm::EDGetTokenT<reco::GenParticleCollection> genParticleCollectionT_;
 
@@ -100,7 +104,9 @@ class SCAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 SCAnalyzer::SCAnalyzer(const edm::ParameterSet& iConfig)
 {
   //EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EBRecHitCollection"));
-  electronCollectionT_ = consumes<edm::View<reco::GsfElectron>>(iConfig.getParameter<edm::InputTag>("gsfElectronCollection"));
+  //electronCollectionT_ = consumes<edm::View<reco::GsfElectron>>(iConfig.getParameter<edm::InputTag>("gsfElectronCollection"));
+  electronCollectionT_ = consumes<reco::GsfElectronCollection>(iConfig.getParameter<edm::InputTag>("gsfElectronCollection"));
+  photonCollectionT_ = consumes<reco::PhotonCollection>(iConfig.getParameter<edm::InputTag>("gedPhotonCollection"));
   EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
   genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
 
@@ -146,14 +152,17 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   int iphi_, ieta_;
   int nEle = 0;
 
-  edm::Handle<edm::View<reco::GsfElectron>> electrons;
+  //edm::Handle<edm::View<reco::GsfElectron>> electrons;
+  edm::Handle<reco::GsfElectronCollection> electrons;
   iEvent.getByToken(electronCollectionT_, electrons);
-  for(edm::View<reco::GsfElectron>::const_iterator iEle = electrons->begin();
+  //for(edm::View<reco::GsfElectron>::const_iterator iEle = electrons->begin();
+  std::cout << "EleCol.size: " << electrons->size() << std::endl;
+  for(reco::GsfElectronCollection::const_iterator iEle = electrons->begin();
       iEle != electrons->end();
       ++iEle) {
 
-    reco::SuperClusterRef eSC = iEle->superCluster();
-    std::vector<std::pair<DetId, float>> const& SCHits( eSC->hitsAndFractions() );
+    reco::SuperClusterRef iSC = iEle->superCluster();
+    std::vector<std::pair<DetId, float>> const& SCHits( iSC->hitsAndFractions() );
     std::cout << "SChits.size: " << SCHits.size() << std::endl;
     for(unsigned iH(0); iH != SCHits.size(); ++iH) {
       if ( SCHits[iH].first.subdetId() != EcalBarrel ) continue;
@@ -162,11 +171,37 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       EBDetId ebId( iRHit->id() );
       iphi_ = ebId.iphi()-1;
       ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
-      std::cout << "iphi_,ieta_:" << iphi_ << "," << ieta_ << std::endl; 
-      if ( nEle == 0 ) hEB_energy->Fill( iphi_,ieta_,iRHit->energy() );
+      //std::cout << "iphi_,ieta_:" << iphi_ << "," << ieta_ << std::endl; 
+      //if ( nEle == 0 ) hEB_energy->Fill( iphi_,ieta_,iRHit->energy() );
     } // SC hits
     nEle++;
   } // electrons
+
+  int nPho = 0;
+  edm::Handle<reco::PhotonCollection> photons;
+  iEvent.getByToken(photonCollectionT_, photons);
+  std::cout << "PhoCol.size: " << photons->size() << std::endl;
+  for(reco::PhotonCollection::const_iterator iPho = photons->begin();
+      iPho != photons->end();
+      ++iPho) {
+
+    std::cout << "pho pT: " << iPho->pt() << std::endl;
+    reco::SuperClusterRef iSC = iPho->superCluster();
+    std::vector<std::pair<DetId, float>> const& SCHits( iSC->hitsAndFractions() );
+    std::cout << "SChits.size: " << SCHits.size() << std::endl;
+    for(unsigned iH(0); iH != SCHits.size(); ++iH) {
+      if ( SCHits[iH].first.subdetId() != EcalBarrel ) continue;
+      EcalRecHitCollection::const_iterator iRHit( EBRecHitsH->find(SCHits[iH].first) );
+      if ( iRHit == EBRecHitsH->end() ) continue;
+      EBDetId ebId( iRHit->id() );
+      iphi_ = ebId.iphi()-1;
+      ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
+      //std::cout << "iphi_,ieta_:" << iphi_ << "," << ieta_ << std::endl; 
+      //if ( nPho == 0 ) hEB_energy->Fill( iphi_,ieta_,iRHit->energy() );
+      hEB_energy->Fill( iphi_,ieta_,iRHit->energy() );
+    } // SC hits
+    nPho++;
+  } // photons
 
   eventId_ = iEvent.id().event();
 
