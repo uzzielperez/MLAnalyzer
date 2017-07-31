@@ -260,8 +260,10 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   int nPho = 0;
   bool isDecayed = true;
+  //bool isHiggs = true;
   bool isHiggs = false;
-  float etaCut = 1.4;
+  //float etaCut = 1.4;
+  float etaCut = 2.3;
   float ptCut = 25.;
   edm::Handle<reco::GenParticleCollection> genParticles;
   iEvent.getByToken(genParticleCollectionT_, genParticles);
@@ -333,8 +335,8 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     h_E->  Fill( iP->energy()  );
     h_eta->Fill( iP->eta()     );
   } // genParticle loop: fill hist
-  h_m0->Fill( vDiPho.T() );
-  std::cout << " m0: " << vDiPho.T() << std::endl;
+  h_m0->Fill( vDiPho.mass() );
+  std::cout << " m0: " << vDiPho.mass() <<" (" << vDiPho.T() << ")" << std::endl;
 
   // ----- Get Calorimeter Geometry ----- //
   // Provides access to global cell position and coordinates below
@@ -615,7 +617,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      */
   // Write out event ID
   eventId_ = iEvent.id().event();
-  m0_ = vDiPho.T();
+  m0_ = vDiPho.mass();
 
   RHTree->Fill();
 
