@@ -4,14 +4,14 @@ from root_numpy import tree2array
 from dask.delayed import delayed
 import dask.array as da
 
-#eosDir='/eos/uscms/store/user/mba2012/IMGs/HighLumiPileUp_ROOT'
+#eosDir='/eos/uscms/store/user/mba2012/IMGs/HighLumi_ROOTv2'
 eosDir='/eos/uscms/store/user/mba2012/IMGs'
-#decays = ["H125GGgluonfusion_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUpv2", "PromptDiPhoton_MGG80toInf_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUp"]
-#decays = ["H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv2", "PromptDiPhotonAll_MGG80toInf_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp"]
-#decays = ["H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv2", "PromptDiPhotonAll_PtHat45_MGG80toInf_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp"]
-#decays = ['H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv2']
+#decays = ["H125GGgluonfusion_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUpv3", "PromptDiPhoton_MGG80toInf_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUp"]
+#decays = ["H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3", "PromptDiPhotonAll_MGG80toInf_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp"]
+decays = ["H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3", "PromptDiPhotonAll_PtHat45_MGG80toInf_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp"]
+#decays = ['H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
 #decays = ['H150GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp']
-decays = ['H200GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp']
+#decays = ['H200GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp']
 #decays = ['H100GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp']
 
 chunk_size = 250
@@ -45,7 +45,7 @@ for j,decay in enumerate(decays):
 
     if j == 0:
         pass
-        #continue
+        continue
 
     tfile_str = '%s/%s_FEVTDEBUG_IMG.root'%(eosDir,decay)
     #tfile_str = '%s/%s_FEVTDEBUG_nXXX_IMG.root'%(eosDir,decay)
