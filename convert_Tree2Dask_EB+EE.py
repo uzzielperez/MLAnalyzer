@@ -4,9 +4,10 @@ from root_numpy import tree2array
 from dask.delayed import delayed
 import dask.array as da
 
-eosDir='/eos/uscms/store/user/mba2012/IMGs/HighLumiPileUp_ROOT'
-#decays = ["H125GGgluonfusion_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUpv2", "PromptDiPhoton_MGG80toInf_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUp"]
-decays = ["H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv2", "PromptDiPhoton_MGG80toInf_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp"]
+#eosDir='/eos/uscms/store/user/mba2012/IMGs/HighLumiPileUp_ROOT'
+eosDir='/eos/uscms/store/user/mba2012/IMGs'
+#decays = ["H125GGgluonfusion_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUpv2", "PromptDiPhotonAll_MGG80toInf_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUp"]
+decays = ["H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv2", "PromptDiPhotonAll_MGG80toInf_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp"]
 
 chunk_size = 250
 scale = [100., 100.]
@@ -33,8 +34,8 @@ for j,decay in enumerate(decays):
     #if j == 1:
     #    continue
 
-    tfile_str = '%s/%s_FEVTDEBUG_nXXX_IMG.root'%(eosDir,decay)
-    #tfile_str = '%s/%s_FEVTDEBUG_n250k_IMG.root'%(eosDir,decay)
+    #tfile_str = '%s/%s_FEVTDEBUG_IMG_EE.root'%(eosDir,decay)
+    tfile_str = '%s/%s_FEVTDEBUG_IMG.root'%(eosDir,decay)
     tfile = ROOT.TFile(tfile_str)
     tree = tfile.Get('fevt/RHTree')
     nevts = tree.GetEntries()
@@ -87,12 +88,11 @@ for j,decay in enumerate(decays):
             np.full(X_EB.shape[0], label, dtype=np.float32),\
             chunks=(chunk_size,))
 
-    #file_out_str = "%s/%s_IMG_RHraw_n%dk.hdf5"%(eosDir,decay,neff//1000.)
-    #file_out_str = "%s/%s_IMG_RHv1_n%dk.hdf5"%(eosDir,decay,neff//1000.)
-    #file_out_str = "%s/%s_IMG_RH%d_n%dk.hdf5"%(eosDir,decay,int(rescaler),neff//1000.)
-    file_out_str = "%s/%s_IMG_RH%d-%d_n%dk.hdf5"%(eosDir,decay,int(scale[0]),int(scale[1]),neff//1000.)
+    #file_out_str = "%s/%s_IMG_RH%d-%d_n%dk.hdf5"%(eosDir,decay,int(scale[0]),int(scale[1]),neff//1000.)
+    file_out_str = "%s/%s_IMG_EE_RH%d_n%dk.hdf5"%(eosDir,decay,int(scale[1]),neff//1000.)
     print " >> Writing to:", file_out_str
     #da.to_hdf5(file_out_str, {'/X': X, '/y': y}, chunks=(chunk_size,s,s,2), compression='lzf')
-    da.to_hdf5(file_out_str, {'/X_EB': X_EB, 'X_EEm': X_EEm, 'X_EEp': X_EEp, '/y': y}, compression='lzf')
+    #da.to_hdf5(file_out_str, {'/X_EB': X_EB, 'X_EEm': X_EEm, 'X_EEp': X_EEp, '/y': y}, compression='lzf')
+    da.to_hdf5(file_out_str, {'X_EEm': X_EEm, 'X_EEp': X_EEp, '/y': y}, compression='lzf')
 
     print " >> Done.\n"

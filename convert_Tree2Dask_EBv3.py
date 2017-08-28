@@ -7,10 +7,11 @@ import dask.array as da
 #eosDir='/eos/uscms/store/user/mba2012/IMGs/HighLumiPileUp_ROOT'
 eosDir='/eos/uscms/store/user/mba2012/IMGs'
 #decays = ["H125GGgluonfusion_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUpv2", "PromptDiPhoton_MGG80toInf_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUp"]
-decays = ["H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv2", "PromptDiPhoton_MGG80toInf_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp"]
+#decays = ["H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv2", "PromptDiPhotonAll_MGG80toInf_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp"]
+#decays = ["H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv2", "PromptDiPhotonAll_PtHat45_MGG80toInf_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp"]
 #decays = ['H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv2']
 #decays = ['H150GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp']
-#decays = ['H200GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp']
+decays = ['H200GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp']
 #decays = ['H100GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp']
 
 chunk_size = 250
@@ -43,7 +44,8 @@ def load_single(tree, start_, stop_, branches_):
 for j,decay in enumerate(decays):
 
     if j == 0:
-        continue
+        pass
+        #continue
 
     tfile_str = '%s/%s_FEVTDEBUG_IMG.root'%(eosDir,decay)
     #tfile_str = '%s/%s_FEVTDEBUG_nXXX_IMG.root'%(eosDir,decay)
@@ -97,14 +99,11 @@ for j,decay in enumerate(decays):
             np.full(X.shape[0], label, dtype=np.float32),\
             chunks=(chunk_size,))
 
-    #file_out_str = "%s/%s_IMG_RHraw_n%dk.hdf5"%(eosDir,decay,neff//1000.)
-    #file_out_str = "%s/%s_IMG_RHv1_n%dk.hdf5"%(eosDir,decay,neff//1000.)
     file_out_str = "%s/%s_IMG_RH%d_n%dk.hdf5"%(eosDir,decay,int(scale),neff//1000.)
     #file_out_str = "%s/%s_IMG_RH%d-%d_n%dk.hdf5"%(eosDir,decay,int(scale[0]),int(scale[1]),neff//1000.)
     #file_out_str = "test.hdf5"
     print " >> Writing to:", file_out_str
     #da.to_hdf5(file_out_str, {'/X': X, '/y': y}, chunks=(chunk_size,s,s,2), compression='lzf')
     da.to_hdf5(file_out_str, {'/X': X, '/y': y, 'eventId': eventId, 'm0': m0}, compression='lzf')
-    #da.to_hdf5(file_out_str, {'/X': X, '/y': y}, compression='lzf')
 
     print " >> Done.\n"

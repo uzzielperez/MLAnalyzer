@@ -80,7 +80,7 @@ for j,decay in enumerate(decays):
 
     # HBHE
     readouts = [40,72]
-    branches = ["HBHE_energy_EB"]
+    branches = ["HBHE_energy_iEta20"]
     X_HBHE = da.concatenate([\
                 da.from_delayed(\
                     load_X(tree,i,i+chunk_size, branches, readouts, scale[1]),\
