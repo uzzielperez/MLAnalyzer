@@ -90,8 +90,8 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     //edm::InputTag trackTags_; //used to select what tracks to read from configuration file
 
     static const int EE_IZ_MAX = 2;
-    //const unsigned HBHE_IETA_MAX = hcaldqm::constants::IETA_MAX_HB + 1;//17
-    const unsigned HBHE_IETA_MAX = 20;
+    const int HBHE_IETA_MAX = hcaldqm::constants::IETA_MAX_HB + 1;//17
+    //const int HBHE_IETA_MAX = 20;
     const unsigned EE_NC_PER_ZSIDE = EEDetId::IX_MAX*EEDetId::IY_MAX; // 100*100
 
     // Initialize Calorimeter Geometry
@@ -266,8 +266,8 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   bool isDecayed = true;
   bool isHiggs = true;
   //bool isHiggs = false;
-  //float etaCut = 1.4;
-  float etaCut = 2.3;
+  float etaCut = 1.4;
+  //float etaCut = 2.3;
   float ptCut = 25.;
   float dRCut = 0.4;
   float dR, dEta, dPhi;
@@ -592,6 +592,8 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     } else {
       hHBHE_energy->Fill( iphi_,ieta_,iRHit->energy() );
     }
+
+    if ( abs(hId.ieta()) > HBHE_IETA_MAX ) continue;
 
     // Fill restricted coverage histograms
     hHBHE_energy_EB->Fill( iphi_,ieta_,iRHit->energy() );

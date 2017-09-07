@@ -8,11 +8,14 @@ import dask.array as da
 eosDir='/eos/uscms/store/user/mba2012/IMGs'
 #decays = ["H125GGgluonfusion_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUpv3", "PromptDiPhoton_MGG80toInf_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUp"]
 #decays = ["H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3", "PromptDiPhotonAll_MGG80toInf_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp"]
-decays = ["H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3", "PromptDiPhotonAll_PtHat45_MGG80toInf_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp"]
+#decays = ["H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3", "PromptDiPhotonAll_PtHat45_MGG80toInf_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp"]
 #decays = ['H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
-#decays = ['H150GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp']
-#decays = ['H200GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp']
-#decays = ['H100GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp']
+#decays = ['H100GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
+#decays = ['H112GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
+#decays = ['H137GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
+#decays = ['H150GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
+#decays = ['H175GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
+decays = ['H162GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
 
 chunk_size = 250
 scale = 100.
@@ -45,7 +48,7 @@ for j,decay in enumerate(decays):
 
     if j == 0:
         pass
-        continue
+        #continue
 
     tfile_str = '%s/%s_FEVTDEBUG_IMG.root'%(eosDir,decay)
     #tfile_str = '%s/%s_FEVTDEBUG_nXXX_IMG.root'%(eosDir,decay)
