@@ -90,8 +90,9 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     //edm::InputTag trackTags_; //used to select what tracks to read from configuration file
 
     static const int EE_IZ_MAX = 2;
-    const int HBHE_IETA_MAX = hcaldqm::constants::IETA_MAX_HB + 1;//17
-    //const int HBHE_IETA_MAX = 20;
+    //const unsigned HBHE_IETA_MAX = hcaldqm::constants::IETA_MAX_HB + 1;//17
+    const int HBHE_IETA_MAX_EB = hcaldqm::constants::IETA_MAX_HB + 1;//17
+    const int HBHE_IETA_MAX_iEta20 = 20;
     const unsigned EE_NC_PER_ZSIDE = EEDetId::IX_MAX*EEDetId::IY_MAX; // 100*100
 
     // Initialize Calorimeter Geometry
@@ -108,7 +109,8 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     TH2D * hEE_energy[EE_IZ_MAX]; 
     TH2D * hEE_time[EE_IZ_MAX]; 
 
-    TH2D * hHBHE_energy; 
+    TH2D * hHBHE_energy;
+    TH2D * hHBHE_energy_iEta20;
     TH2D * hHBHE_energy_EB; 
     TH1D * hHBHE_depth; 
 
@@ -128,6 +130,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<float> vEE_time_[EE_IZ_MAX];
 
     //std::vector<float> vHBHE_energy[hcaldqm::constants::DEPTH_NUM];
+    std::vector<float> vHBHE_energy_iEta20_;
     std::vector<float> vHBHE_energy_EB_;
   
     TCanvas *cEB, *cHBHE;
@@ -208,9 +211,12 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   hHBHE_energy = fs->make<TH2D>("HBHE_energy", "E(i#phi,i#eta);i#phi;i#eta",
       hcaldqm::constants::IPHI_NUM,      hcaldqm::constants::IPHI_MIN-1, hcaldqm::constants::IPHI_MAX,
       2*hcaldqm::constants::IETA_MAX_HE,-hcaldqm::constants::IETA_MAX_HE,hcaldqm::constants::IETA_MAX_HE );
+  hHBHE_energy_iEta20 = fs->make<TH2D>("HBHE_energy_iEta20", "E(i#phi,i#eta);i#phi;i#eta",
+      hcaldqm::constants::IPHI_NUM, hcaldqm::constants::IPHI_MIN-1,hcaldqm::constants::IPHI_MAX,
+      2*HBHE_IETA_MAX_iEta20,      -HBHE_IETA_MAX_iEta20,          HBHE_IETA_MAX_iEta20 );
   hHBHE_energy_EB = fs->make<TH2D>("HBHE_energy_EB", "E(i#phi,i#eta);i#phi;i#eta",
       hcaldqm::constants::IPHI_NUM, hcaldqm::constants::IPHI_MIN-1,hcaldqm::constants::IPHI_MAX,
-      2*HBHE_IETA_MAX,             -HBHE_IETA_MAX,                 HBHE_IETA_MAX );
+      2*HBHE_IETA_MAX_EB,          -HBHE_IETA_MAX_EB,              HBHE_IETA_MAX_EB );
   hHBHE_depth = fs->make<TH1D>("HBHE_depth", "Depth;depth;Hits",
       hcaldqm::constants::DEPTH_NUM, hcaldqm::constants::DEPTH_MIN, hcaldqm::constants::DEPTH_MAX+1);
 
@@ -239,7 +245,8 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
     sprintf(hname, "EE%s_time",zside);
     RHTree->Branch(hname,       &vEE_time_[iz]);
   }
-  RHTree->Branch("HBHE_energy_EB", &vHBHE_energy_EB_);
+  RHTree->Branch("HBHE_energy_iEta20", &vHBHE_energy_iEta20_);
+  RHTree->Branch("HBHE_energy_EB",     &vHBHE_energy_EB_);
 }
 
 
@@ -266,8 +273,8 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   bool isDecayed = true;
   bool isHiggs = true;
   //bool isHiggs = false;
-  float etaCut = 1.4;
-  //float etaCut = 2.3;
+  //float etaCut = 1.4;
+  float etaCut = 2.3;
   float ptCut = 25.;
   float dRCut = 0.4;
   float dR, dEta, dPhi;
@@ -504,7 +511,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   */
 
   // ----- EE reduced rechit collection ----- //
-  // This contatins the reduced EB rechit collection after
+  // This contatins the reduced EE rechit collection after
   // the zero suppression and bad channel clean-up
 
   int ix_, iy_, iz_; // NOTE: rows:iy, columns:ix
@@ -553,13 +560,14 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   int depth_;
 
   // Initialize arrays
-  vHBHE_energy_EB_.assign( hcaldqm::constants::IPHI_NUM*2*HBHE_IETA_MAX,0. );
+  vHBHE_energy_iEta20_.assign( hcaldqm::constants::IPHI_NUM*2*HBHE_IETA_MAX_iEta20,0. );
+  vHBHE_energy_EB_.assign( hcaldqm::constants::IPHI_NUM*2*HBHE_IETA_MAX_EB,0. );
 
   // Record signal-full entries
   edm::Handle<HBHERecHitCollection> HBHERecHitsH;
   iEvent.getByToken(HBHERecHitCollectionT_, HBHERecHitsH);
   for(HBHERecHitCollection::const_iterator iRHit = HBHERecHitsH->begin();
-      iRHit != HBHERecHitsH->end();                      
+      iRHit != HBHERecHitsH->end();
       ++iRHit) {
 
     // Get detector id and convert to histogram-friendly coordinates
@@ -582,38 +590,48 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     // such be used for monitoring purposes
     hHBHE_depth->Fill( depth_ );
 
-    // Restrict coverage of HBHE
-    // HBHE_IETA_MAX == 17: match coverage of EB
-    // HBHE_IETA_MAX == 20: match until granularity decreases
-    if ( abs(hId.ieta()) > 20 ) {
-      hHBHE_energy->Fill( iphi_  ,ieta_,iRHit->energy()*0.5 );
-      hHBHE_energy->Fill( iphi_+1,ieta_,iRHit->energy()*0.5 );
-      continue; 
-    } else {
-      hHBHE_energy->Fill( iphi_,ieta_,iRHit->energy() );
-    }
-
-    if ( abs(hId.ieta()) > HBHE_IETA_MAX ) continue;
-
-    // Fill restricted coverage histograms
-    hHBHE_energy_EB->Fill( iphi_,ieta_,iRHit->energy() );
-
-    // Create hashed Index
-    // Effectively sums energies over depth for a given (ieta,iphi)
-    // Maps from [ieta][iphi] -> [idx]
-    idx = ( ieta_+HBHE_IETA_MAX )*hcaldqm::constants::IPHI_NUM + iphi_;
-
     // Get global position of cell center
     //pos = caloGeom->getPosition(hId);
     //eta = pos.eta();
     //phi = pos.phi();
     //std::cout << "HCAL > (eta,phi,E): (" << eta << "," << phi << ","<< iRHit->energy()<<")" <<std::endl;
 
+    // Fill histos/arrays by ieta coverage of HBHE
+    // hId.ieta() <= 17: match coverage of EB
+    // hId.ieta() <= 20: match until iphi granularity decreases
+    // hId.ieta()  > 20: match till end of HE
+
+    // Full HBHE coverage: hId.ieta()  > 20
+    // After iphi granularity drop, fill adjacent iphi and split energy evenly
+    if ( abs(hId.ieta()) > HBHE_IETA_MAX_iEta20 ) {
+      hHBHE_energy->Fill( iphi_  ,ieta_,iRHit->energy()*0.5 );
+      hHBHE_energy->Fill( iphi_+1,ieta_,iRHit->energy()*0.5 );
+      continue;
+    } else {
+      hHBHE_energy->Fill( iphi_,ieta_,iRHit->energy() );
+    }
+
+    // Fill HBHE coverage with uniform iphi granularity: hId.ieta() <= 20
+    hHBHE_energy_iEta20->Fill( iphi_,ieta_,iRHit->energy() );
+
+    // Create hashed Index
+    // Effectively sums energies over depth for a given (ieta,iphi)
+    // Maps from [ieta][iphi] -> [idx]
+    idx = ( ieta_+HBHE_IETA_MAX_iEta20 )*hcaldqm::constants::IPHI_NUM + iphi_;
+
     // Fill event arrays
     // These are the actual inputs to the detector images
-    vHBHE_energy_EB_[idx] += iRHit->energy();
-    //vHBHE_energy_EB_[idx] += iRHit->energy()/TMath::CosH(cell->etaPos()); // pick out only transverse component
+    vHBHE_energy_iEta20_[idx] += iRHit->energy();
+    //vHBHE_energy_iEta20_[idx] += iRHit->energy()/TMath::CosH(cell->etaPos()); // pick out only transverse component
 
+    // Fill HBHE coverage with EB overlap: hId.ieta() <= 17
+    if ( abs(hId.ieta()) > HBHE_IETA_MAX_EB ) continue;
+
+    hHBHE_energy_EB->Fill( iphi_,ieta_,iRHit->energy() );
+    // Create hashed Index
+    idx = ( ieta_+HBHE_IETA_MAX_EB )*hcaldqm::constants::IPHI_NUM + iphi_;
+    // Fill event arrays
+    vHBHE_energy_EB_[idx] += iRHit->energy();
   }
 
   // Write out state of histogram
