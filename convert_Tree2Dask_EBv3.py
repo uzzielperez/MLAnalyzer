@@ -15,7 +15,8 @@ eosDir='/eos/uscms/store/user/mba2012/IMGs'
 #decays = ['H137GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
 #decays = ['H150GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
 #decays = ['H175GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
-decays = ['H162GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
+#decays = ['H162GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
+decays = ['H087GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
 
 chunk_size = 250
 scale = 100.

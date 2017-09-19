@@ -273,8 +273,8 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   bool isDecayed = true;
   bool isHiggs = true;
   //bool isHiggs = false;
-  //float etaCut = 1.4;
-  float etaCut = 2.3;
+  float etaCut = 1.4;
+  //float etaCut = 2.3;
   float ptCut = 25.;
   float dRCut = 0.4;
   float dR, dEta, dPhi;
@@ -328,6 +328,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // Require exactly 2 gen-level photons
   // Indifferent about photons of status != 1
   if ( nPho != 2 ) return; 
+  //if ( vDiPho.mass() < 80. ) return;
   
   // Fill loop
   for (reco::GenParticleCollection::const_iterator iP = genParticles->begin();
