@@ -193,6 +193,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<float> vHBHE_EMenergy_;
   
     bool runSelections( edm::Handle<reco::PhotonCollection> &, edm::Handle<reco::GenParticleCollection> & );
+    bool runSelections_H2GG( edm::Handle<reco::PhotonCollection> &, edm::Handle<reco::GenParticleCollection> &, bool );
     void fillEBrechits( edm::Handle<edm::SortedCollection<EcalRecHit> >&, const CaloGeometry* &, TH2D* & );
     void fillEErechits( edm::Handle<edm::SortedCollection<EcalRecHit> >&, const CaloGeometry* &, TH2D* & , TH2D* (&)[EE_IZ_MAX]);
     void fillHBHErechits( edm::Handle<HBHERecHitCollection> &, const CaloGeometry* & );

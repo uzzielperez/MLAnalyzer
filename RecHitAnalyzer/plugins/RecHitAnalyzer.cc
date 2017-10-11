@@ -90,13 +90,13 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   h_pT  = fs->make<TH1D>("h_pT" , "p_{T};p_{T};Particles", 100,  0., 500.);
   h_E   = fs->make<TH1D>("h_E"  , "E;E;Particles"        , 100,  0., 800.);
   h_eta = fs->make<TH1D>("h_eta", "#eta;#eta;Particles"  ,  50,-2.4, 2.4);
-  //h_m0  = fs->make<TH1D>("h_m0" , "m0;m0;Events"        ,   72, 50., 950.);
+  h_m0  = fs->make<TH1D>("h_m0" , "m0;m0;Events"        ,   72, 50., 950.);
 
   // Output Tree
   // These will be use to create the actual images later on
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
   RHTree->Branch("eventId",      &eventId_);
-  //RHTree->Branch("m0",           &m0_);
+  RHTree->Branch("m0",           &m0_);
   RHTree->Branch("ECAL_energy",  &vECAL_energy_);
   RHTree->Branch("EB_energy",    &vEB_energy_);
   RHTree->Branch("EB_time",      &vEB_time_);
@@ -136,7 +136,8 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   iEvent.getByToken(genParticleCollectionT_, genParticles);
 
   bool passedSelection = false;
-  passedSelection = runSelections( photons, genParticles );
+  //passedSelection = runSelections( photons, genParticles );
+  passedSelection = runSelections_H2GG( photons, genParticles, true );
 
   if ( !passedSelection ) return;
 
@@ -249,6 +250,107 @@ RecHitAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
 }
 
 //____ Apply event selection cuts _____//
+bool RecHitAnalyzer::runSelections_H2GG ( edm::Handle<reco::PhotonCollection> &photons, edm::Handle<reco::GenParticleCollection> &genParticles, bool isHiggs ) {
+
+  int nPho = 0;
+  bool isDecayed = true;
+  float etaCut = 1.4;
+  //float etaCut = 2.3;
+  float ptCut = 25.;
+  float dRCut = 0.4;
+  float dR, dEta, dPhi;
+  std::cout << "PhoCol.size: " << photons->size() << std::endl;
+  math::XYZTLorentzVector vDiPho;
+  for(reco::PhotonCollection::const_iterator iPho = photons->begin();
+      iPho != photons->end();
+      ++iPho) {
+
+      // Kinematic cuts
+      if ( std::abs(iPho->eta()) > etaCut ) continue;
+      if ( std::abs(iPho->pt()) < ptCut ) continue;
+
+      for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
+           iGen != genParticles->end();
+           ++iGen) {
+
+          // ID cuts
+          if ( std::abs(iGen->pdgId()) != 22 ) continue;
+          if ( iGen->status() != 1 ) continue; // NOT the same as Pythia status
+          if ( !iGen->mother() ) continue;
+          if ( isHiggs ) {
+              if ( std::abs(iGen->mother()->pdgId()) != 25 && std::abs(iGen->mother()->pdgId()) != 22 ) continue;
+          } else {
+              if ( std::abs(iGen->mother()->status()) != 44 && std::abs(iGen->mother()->status()) != 23 ) continue;
+          }
+
+          // Kinematic cuts
+          if ( std::abs(iGen->eta()) > etaCut ) continue;
+          if ( std::abs(iGen->pt()) < ptCut ) continue;
+
+          // Match by dR
+          dEta = std::abs( iPho->eta() - iGen->eta() );
+          dPhi = std::abs( iPho->phi() - iGen->phi() );
+          dR = TMath::Power(dEta,2.) + TMath::Power(dPhi,2.);
+          dR = TMath::Sqrt(dR);
+          if ( dR < dRCut ) {
+             nPho++;
+             vDiPho += iPho->p4();
+             break;
+          }
+
+      } // genParticle loop: count good photons
+
+  } // recoPhotons
+
+  // Require exactly 2 gen-level photons
+  // Indifferent about photons of status != 1
+  if ( nPho != 2 ) return false;
+  //if ( vDiPho.mass() < 80. ) return false;
+
+  // Fill loop
+  for (reco::GenParticleCollection::const_iterator iP = genParticles->begin();
+       iP != genParticles->end();
+       ++iP) {
+
+    // PDG ID cut
+    if ( std::abs(iP->pdgId()) != 22 ) continue;
+
+    // Decay status
+    //if ( iP->status() != 23 ) continue;
+    if ( iP->status() != 1 ) continue;
+
+    if ( isDecayed ) {
+        // Check ancestry
+        if ( isHiggs ) {
+            if ( std::abs(iP->mother()->pdgId()) != 25 && std::abs(iP->mother()->pdgId()) != 22 ) continue;
+        } else {
+            if ( std::abs(iP->mother()->status()) != 44 && std::abs(iP->mother()->status()) != 23 ) continue;
+        }
+        // Kinematic cuts
+        if ( std::abs(iP->eta()) > etaCut ) continue;
+        if ( std::abs(iP->pt()) < ptCut ) continue;
+    } // apply cuts
+
+    if ( isDecayed ) {
+        std::cout << "status:" <<iP->status() << " pT:" << iP->pt() << " eta:" << iP->eta() << " E:" << iP->energy() << " mothId:" << iP->mother()->pdgId() << std::endl;
+    } else {
+        std::cout << "status:" <<iP->status() << " pT:" << iP->pt() << " eta:" << iP->eta() << " E:" << iP->energy() << std::endl;
+    }
+    // Fill histograms
+    h_pT-> Fill( iP->pt()      );
+    h_E->  Fill( iP->energy()  );
+    h_eta->Fill( iP->eta()     );
+  } // genParticle loop: fill hist
+  h_m0->Fill( vDiPho.mass() );
+  std::cout << " m0: " << vDiPho.mass() <<" (" << vDiPho.T() << ")" << std::endl;
+
+  m0_ = vDiPho.mass();
+
+  return true;
+
+} // runSelections_H2GG()
+
+//____ Apply event selection cuts _____//
 bool RecHitAnalyzer::runSelections ( edm::Handle<reco::PhotonCollection> &photons, edm::Handle<reco::GenParticleCollection> &genParticles ) {
 
   int nPho = 0;
@@ -326,8 +428,6 @@ bool RecHitAnalyzer::runSelections ( edm::Handle<reco::PhotonCollection> &photon
     } // genParticle loop: count good photons
 
   } // recoPhotons
-
-  //m0_ = vDiPho.mass();
 
   return true;
 
