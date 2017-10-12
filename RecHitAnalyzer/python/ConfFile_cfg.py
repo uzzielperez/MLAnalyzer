@@ -56,6 +56,7 @@ process.fevt = cms.EDAnalyzer('RecHitAnalyzer'
     #, selectedEBDigiCollection = cms.InputTag('selectDigi:selectedEcalEBDigiCollection')
     , reducedHBHERecHitCollection = cms.InputTag('reducedHcalRecHits:hbhereco')
     , genParticleCollection = cms.InputTag('genParticles')
+    , gedPhotonCollection = cms.InputTag('gedPhotons')
     )
 
 process.TFileService = cms.Service("TFileService",

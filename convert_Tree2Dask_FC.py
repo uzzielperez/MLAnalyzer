@@ -4,21 +4,11 @@ from root_numpy import tree2array
 from dask.delayed import delayed
 import dask.array as da
 
-#eosDir='/eos/uscms/store/user/mba2012/IMGs/HighLumi_ROOTv2'
-eosDir='/eos/uscms/store/user/mba2012/IMGs'
-#decays = ["H125GGgluonfusion_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUpv3", "PromptDiPhoton_MGG80toInf_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUp"]
-#decays = ["H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3", "PromptDiPhotonAll_MGG80toInf_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp"]
-#decays = ["H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3", "PromptDiPhotonAll_PtHat45_MGG80toInf_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp"]
-#decays = ['H125GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
-#decays = ['H100GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
-#decays = ['H112GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
-#decays = ['H137GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
-#decays = ['H150GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
-#decays = ['H175GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
-#decays = ['H162GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
-decays = ['H087GGgluonfusion_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUpv3']
+eosDir='/eos/uscms/store/user/mba2012/FCs'
+#decays = ['H125GGgluonfusion_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUpv3_FEVTDEBUG_FC','PromptDiPhotonAll_MGG80toInf_Pt25_Eta23_13TeV_TuneCUETP8M1_HighLumiPileUp_FEVTDEBUG_FC']
+decays = ['dummy','PromptDiPhotonAll_MGG80toInf_Pt25_Eta14_13TeV_TuneCUETP8M1_HighLumiPileUp_FEVTDEBUG_FC']
 
-chunk_size = 250
+chunk_size = 1000
 scale = 100.
 
 @delayed
@@ -49,28 +39,26 @@ for j,decay in enumerate(decays):
 
     if j == 0:
         pass
-        #continue
+        continue
 
-    tfile_str = '%s/%s_FEVTDEBUG_IMG.root'%(eosDir,decay)
-    #tfile_str = '%s/%s_FEVTDEBUG_nXXX_IMG.root'%(eosDir,decay)
+    tfile_str = '%s/%s.root'%(eosDir,decay)
     tfile = ROOT.TFile(tfile_str)
     tree = tfile.Get('fevt/RHTree')
     nevts = tree.GetEntries()
     neff = (nevts//1000)*1000
-    #neff = 1000 
+    #neff = 40 
     #neff = 233000
     print " >> Doing decay:", decay
     print " >> Input file:", tfile_str
     print " >> Total events:", nevts
     print " >> Effective events:", neff
 
-    # EB
-    readouts = [170,360]
-    branches = ["EB_energy"]
+    # FC inputs 
+    branches = ["FC_inputs"]
     X = da.concatenate([\
                 da.from_delayed(\
-                    load_X(tree,i,i+chunk_size, branches, readouts, scale),\
-                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
+                    load_single(tree,i,i+chunk_size, branches),\
+                    shape=(chunk_size,5),\
                     dtype=np.float32)\
                 for i in range(0,neff,chunk_size)])
     print " >> Expected shape:", X.shape
@@ -103,11 +91,9 @@ for j,decay in enumerate(decays):
             np.full(X.shape[0], label, dtype=np.float32),\
             chunks=(chunk_size,))
 
-    file_out_str = "%s/%s_IMG_RH%d_n%dk.hdf5"%(eosDir,decay,int(scale),neff//1000.)
-    #file_out_str = "%s/%s_IMG_RH%d-%d_n%dk.hdf5"%(eosDir,decay,int(scale[0]),int(scale[1]),neff//1000.)
+    file_out_str = "%s/%s_n%dk.hdf5"%(eosDir,decay,neff//1000.)
     #file_out_str = "test.hdf5"
     print " >> Writing to:", file_out_str
-    #da.to_hdf5(file_out_str, {'/X': X, '/y': y}, chunks=(chunk_size,s,s,2), compression='lzf')
     da.to_hdf5(file_out_str, {'/X': X, '/y': y, 'eventId': eventId, 'm0': m0}, compression='lzf')
 
     print " >> Done.\n"
