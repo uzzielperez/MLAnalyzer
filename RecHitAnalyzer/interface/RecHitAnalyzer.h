@@ -75,6 +75,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     virtual void endJob() override;
 
     // ----------member data ---------------------------
+    // Tokens
     edm::EDGetTokenT<EcalRecHitCollection> EBRecHitCollectionT_;
     edm::EDGetTokenT<EBDigiCollection>     EBDigiCollectionT_;
     edm::EDGetTokenT<EcalRecHitCollection> EERecHitCollectionT_;
@@ -156,28 +157,29 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     // Initializer global cell position
     GlobalPoint pos;
 
-    //TH1D * histo; 
+    // Diagnostic histograms
+    // Cumulative:
     TH2D * hEB_energy; 
     TH2D * hEB_time; 
     TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES]; 
     TH2D * hEE_energy[EE_IZ_MAX]; 
     TH2D * hEE_time[EE_IZ_MAX]; 
-
     TH2D * hHBHE_energy; 
     TH2D * hHBHE_energy_EB; 
     //TH1D * hHBHE_depth; 
-
     TH1D * h_pT; 
     TH1D * h_E; 
     TH1D * h_eta; 
     TH1D * h_m0; 
-    //TH2D * hEvt_HBHE_EMenergy;
-    //TH2D * hEvt_HBHE_energy;
-    //TH2D * hEvt_EEm_energy;
-    //TH2D * hEvt_EEp_energy;
+    // Single-event:
+    TH2D * hEvt_HBHE_EMenergy;
+    TH2D * hEvt_EE_energy[EE_IZ_MAX];
+    TH2D * hEvt_HBHE_energy;
 
+    // Main TTree
     TTree* RHTree;
 
+    // Objects used to fill RHTree branches
     float eventId_;
     float m0_;
     std::vector<float> vECAL_energy_;
@@ -186,22 +188,22 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<float> vEB_adc_[EcalDataFrame::MAXSAMPLES];
     std::vector<float> vEE_energy_[EE_IZ_MAX];
     std::vector<float> vEE_time_[EE_IZ_MAX];
-
     //std::vector<float> vHBHE_energy[hcaldqm::constants::DEPTH_NUM];
     std::vector<float> vHBHE_energy_EB_;
     std::vector<float> vHBHE_energy_;
     std::vector<float> vHBHE_EMenergy_;
   
-    bool runSelections( edm::Handle<reco::PhotonCollection> &, edm::Handle<reco::GenParticleCollection> & );
-    bool runSelections_H2GG( edm::Handle<reco::PhotonCollection> &, edm::Handle<reco::GenParticleCollection> &, bool );
-    void fillEBrechits( edm::Handle<edm::SortedCollection<EcalRecHit> >&, const CaloGeometry* &, TH2D* & );
-    void fillEErechits( edm::Handle<edm::SortedCollection<EcalRecHit> >&, const CaloGeometry* &, TH2D* & , TH2D* (&)[EE_IZ_MAX]);
-    void fillHBHErechits( edm::Handle<HBHERecHitCollection> &, const CaloGeometry* & );
-    void fillECALatHCAL( TH2D* & );
-    void fillECALstitched( TH2D* (&)[EE_IZ_MAX] );
-    void fillEBdigis( edm::Handle<EBDigiCollection> &, const CaloGeometry* &caloGeom );
+    // Selection and filling functions
+    bool runSelections( const edm::Event&, const edm::EventSetup& );
+    bool runSelections_H2GG( const edm::Event&, const edm::EventSetup& );
+    void fillEBrechits( const edm::Event&, const edm::EventSetup& );
+    void fillEErechits( const edm::Event&, const edm::EventSetup& );
+    void fillHBHErechits( const edm::Event&, const edm::EventSetup& );
+    void fillECALatHCAL();
+    void fillECALstitched();
+    void fillEBdigis( const edm::Event&, const edm::EventSetup& );
 
-};
+}; // class RecHitAnalyzer
 
 //
 // constants, enums and typedefs
