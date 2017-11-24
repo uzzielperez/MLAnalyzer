@@ -239,6 +239,7 @@ RecHitAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
 //____ Apply event selection cuts _____//
 bool RecHitAnalyzer::runSelections_H2GG ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
+  // Initialize data collection pointers
   edm::Handle<reco::PhotonCollection> photons;
   iEvent.getByToken(photonCollectionT_, photons);
   edm::Handle<reco::GenParticleCollection> genParticles;
@@ -346,6 +347,7 @@ bool RecHitAnalyzer::runSelections_H2GG ( const edm::Event& iEvent, const edm::E
 //____ Apply event selection cuts _____//
 bool RecHitAnalyzer::runSelections ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
+  // Initialize data collection pointers
   edm::Handle<reco::PhotonCollection> photons;
   iEvent.getByToken(photonCollectionT_, photons);
   edm::Handle<reco::GenParticleCollection> genParticles;
