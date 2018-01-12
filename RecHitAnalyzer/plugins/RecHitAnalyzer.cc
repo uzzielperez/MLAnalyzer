@@ -239,65 +239,41 @@ RecHitAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
 //____ Apply event selection cuts _____//
 bool RecHitAnalyzer::runSelections_H2GG ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
-  // Initialize data collection pointers
   edm::Handle<reco::PhotonCollection> photons;
   iEvent.getByToken(photonCollectionT_, photons);
   edm::Handle<reco::GenParticleCollection> genParticles;
   iEvent.getByToken(genParticleCollectionT_, genParticles);
 
   int nPho = 0;
-  bool isHiggs = true;
-  bool isDecayed = true;
-  float etaCut = 1.4;
+  //bool isHiggs = true;
+  //bool isDecayed = true;
+  //float etaCut = 1.4;
   //float etaCut = 2.3;
-  float ptCut = 25.;
-  float dRCut = 0.4;
-  float dR, dEta, dPhi;
+  //float etaCut = 5.;
+  //float ptCut = 0.;
+  //float dRCut = 0.4;
+  //float dR, dEta, dPhi;
   std::cout << "PhoCol.size: " << photons->size() << std::endl;
   math::XYZTLorentzVector vDiPho;
-  for(reco::PhotonCollection::const_iterator iPho = photons->begin();
-      iPho != photons->end();
-      ++iPho) {
 
-      // Kinematic cuts
-      if ( std::abs(iPho->eta()) > etaCut ) continue;
-      if ( std::abs(iPho->pt()) < ptCut ) continue;
+  for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
+       iGen != genParticles->end();
+       ++iGen) {
 
-      for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
-           iGen != genParticles->end();
-           ++iGen) {
+    // ID cuts
+    if ( std::abs(iGen->pdgId()) != 22 ) continue;
+    if ( iGen->status() != 1 ) continue; // NOT the same as Pythia status
+    if ( !iGen->mother() ) continue;
+    if ( iGen->mother()->pdgId() != 25 && iGen->mother()->pdgId() != 22 ) continue;
+    //std::cout << "status:" <<iGen->status() << " pT:" << iGen->pt() << " eta:" << iGen->eta() << " E:" << iGen->energy() << " mothId:" << iGen->mother()->pdgId() << std::endl;
+    nPho++;
+    vDiPho += iGen->p4();
 
-          // ID cuts
-          if ( std::abs(iGen->pdgId()) != 22 ) continue;
-          if ( iGen->status() != 1 ) continue; // NOT the same as Pythia status
-          if ( !iGen->mother() ) continue;
-          if ( isHiggs ) {
-              if ( std::abs(iGen->mother()->pdgId()) != 25 && std::abs(iGen->mother()->pdgId()) != 22 ) continue;
-          } else {
-              if ( std::abs(iGen->mother()->status()) != 44 && std::abs(iGen->mother()->status()) != 23 ) continue;
-          }
-
-          // Kinematic cuts
-          if ( std::abs(iGen->eta()) > etaCut ) continue;
-          if ( std::abs(iGen->pt()) < ptCut ) continue;
-
-          // Match by dR
-          dEta = std::abs( iPho->eta() - iGen->eta() );
-          dPhi = std::abs( iPho->phi() - iGen->phi() );
-          dR = TMath::Power(dEta,2.) + TMath::Power(dPhi,2.);
-          dR = TMath::Sqrt(dR);
-          if ( dR < dRCut ) {
-             nPho++;
-             vDiPho += iPho->p4();
-             break;
-          }
-
-      } // genParticle loop: count good photons
-
-  } // recoPhotons
+  } // genParticle loop: count good photons
 
   // Require exactly 2 gen-level photons
   // Indifferent about photons of status != 1
+  std::cout << nPho << std::endl;
   if ( nPho != 2 ) return false;
   //if ( vDiPho.mass() < 80. ) return false;
 
@@ -308,28 +284,10 @@ bool RecHitAnalyzer::runSelections_H2GG ( const edm::Event& iEvent, const edm::E
 
     // PDG ID cut
     if ( std::abs(iGen->pdgId()) != 22 ) continue;
+    if ( iGen->status() != 1 ) continue; // NOT the same as Pythia status
+    if ( !iGen->mother() ) continue;
+    if ( iGen->mother()->pdgId() != 25 && iGen->mother()->pdgId() != 22 ) continue;
 
-    // Decay status
-    //if ( iGen->status() != 23 ) continue;
-    if ( iGen->status() != 1 ) continue;
-
-    if ( isDecayed ) {
-        // Check ancestry
-        if ( isHiggs ) {
-            if ( std::abs(iGen->mother()->pdgId()) != 25 && std::abs(iGen->mother()->pdgId()) != 22 ) continue;
-        } else {
-            if ( std::abs(iGen->mother()->status()) != 44 && std::abs(iGen->mother()->status()) != 23 ) continue;
-        }
-        // Kinematic cuts
-        if ( std::abs(iGen->eta()) > etaCut ) continue;
-        if ( std::abs(iGen->pt()) < ptCut ) continue;
-    } // apply cuts
-
-    if ( isDecayed ) {
-        std::cout << "status:" <<iGen->status() << " pT:" << iGen->pt() << " eta:" << iGen->eta() << " E:" << iGen->energy() << " mothId:" << iGen->mother()->pdgId() << std::endl;
-    } else {
-        std::cout << "status:" <<iGen->status() << " pT:" << iGen->pt() << " eta:" << iGen->eta() << " E:" << iGen->energy() << std::endl;
-    }
     // Fill histograms
     h_pT-> Fill( iGen->pt()      );
     h_E->  Fill( iGen->energy()  );
