@@ -143,6 +143,8 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   RHTree->Branch("HBHE_energy",    &vHBHE_energy_);
   RHTree->Branch("HBHE_EMenergy",  &vHBHE_EMenergy_);
 
+  RHTree->Branch("FC_inputs",      &vFC_inputs_);
+
 } // constructor
 
 //
@@ -171,7 +173,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // EB reduced rechit collection //
   // This contatins the reduced EB rechit collection after
   // the selective readout and bad channel clean-up
-  fillEBrechits( iEvent, iSetup );
+  //fillEBrechits( iEvent, iSetup );
 
   // EB digis //
   // This contains the raw EB digi collection:
@@ -188,20 +190,20 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // EE reduced rechit collection //
   // This contatins the reduced EE rechit collection after
   // the selective readout and bad channel clean-up
-  fillEErechits( iEvent, iSetup );
+  //fillEErechits( iEvent, iSetup );
 
   //////////// ECAL //////////
 
   // ECAL @HCAL granularity
-  fillECALatHCAL();
+  //fillECALatHCAL();
 
   // EB stitched to EEs(ieta,iphi)
-  fillECALstitched();
+  //fillECALstitched();
 
   //////////// HBHE //////////
 
   // HBHE reduced rechit collection //
-  fillHBHErechits( iEvent, iSetup );
+  //fillHBHErechits( iEvent, iSetup );
 
   //////////// Bookkeeping //////////
 
@@ -242,6 +244,79 @@ RecHitAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //descriptions.addDefault(desc);
 }
 
+//____ Apply event selection cuts _____//
+void RecHitAnalyzer::fillFC ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
+
+  edm::Handle<reco::PhotonCollection> photons;
+  iEvent.getByToken(photonCollectionT_, photons);
+
+  float etaCut = 1.44;
+  //math::XYZTLorentzVector vDiPho;
+  //float vPt[2], vEta[2], vPhi[2];
+  //std::vector<float> vPt, vEta, vPhi;
+  //std::vector<float> vPt;
+
+  int i_ = 0;
+  vFC_inputs_.assign(5, 0.);
+  for(reco::PhotonCollection::const_iterator iPho = photons->begin();
+      iPho != photons->end();
+      ++iPho) {
+
+    // Kinematic cuts
+    if ( std::abs(iPho->eta()) > etaCut ) continue;
+    //if ( std::abs(iPho->eta()) > 1.44 && std::abs(iPho->eta()) < 1.57 ) continue;
+    if ( std::abs(iPho->pt()) < m0_/4. ) continue;
+
+    // Record kinematics
+    //vDiPho += iPho->p4();
+    //vPt.push_back(  iPho->pt()     );
+    //vEta.push_back( iPho->eta()    );
+    //vPhi.push_back( iPho->phi()    );
+    //vPt[i_] = iPho->pt(); 
+    //vEta[i_] = iPho->eta();
+    //vPhi[i_] = iPho->phi();
+    vFC_inputs_[i_] += iPho->pt();
+    i_++;
+    
+  } // recoPhotons
+
+  //vFC_inputs_.assign(5, 0.);
+  //int j;
+  //std::cout << vPt[0] << std::endl;
+  //for(int i = 0; i < 2; i++) {
+    //if ( vPt[0] > vPt[1] ) j = i;
+    //else j = 1-i;
+    //std::cout << vPt[i] << std::endl;
+    //std::cout << vPhi[j] << std::endl;
+    //std::cout << vEta[i] << std::endl;
+    //vFC_inputs_[2*i] = vPt[j]/vDiPho.mass();
+    //vFC_inputs_[2*i + 1] = vEta[j];
+    //vFC_inputs_.push_back( vPt[j]/m0_ );
+    //vFC_inputs_.push_back( vEta[j] );
+  //}
+  //vFC_inputs_[4] = TMath::Cos(vPhi[0] - vPhi[1]);
+  //vFC_inputs_.push_back( TMath::Cos(vPhi[0] - vPhi[1]) );
+  //vFC_inputs_.clear();
+  //vFC_inputs_[0] = 10.;
+
+  /*
+  int ptOrder[2] = {0, 1};
+  if ( vPt[1] > vPt[0] ) {
+      ptOrder[0] = 1;
+      ptOrder[1] = 0;
+  }
+  for ( int i = 0; i < 2; i++ ) {
+    //vFC_inputs_.push_back( vPt[i]/m0_ );
+    //vFC_inputs_.push_back( vEta[i] );
+    vFC_inputs_.push_back( vDiPho.mass() );
+    //vFC_inputs_[i] = vPt[i]/vDiPho.mass();
+    //vFC_inputs_[2*i + 1] = vEta[i];
+  }
+  vFC_inputs_.push_back( TMath::Cos(vPhi[0] - vPhi[1]) );
+  if ( vFC_inputs_.size() != 5 ) return false;
+  */
+
+}
 //____ Apply event selection cuts _____//
 bool RecHitAnalyzer::runSelections_H24G ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
