@@ -83,11 +83,13 @@ class SCAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
     //TH1D * histo; 
     TH2D * hEB_energy; 
+    TH2D * hEB_SCenergy; 
 
     TTree* RHTree;
 
     float eventId_;
     std::vector<float> vEB_energy_;
+    std::vector<float> vEB_SCenergy_;
 };
 
 //
@@ -120,10 +122,14 @@ SCAnalyzer::SCAnalyzer(const edm::ParameterSet& iConfig)
   hEB_energy = fs->make<TH2D>("EB_energy", "E(i#phi,i#eta);i#phi;i#eta",
       EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
       2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
+  hEB_SCenergy = fs->make<TH2D>("EB_SCenergy", "E(i#phi,i#eta);i#phi;i#eta",
+      32, 0, 32,
+      32, 0, 32);
   // Output Tree
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
   RHTree->Branch("eventId",      &eventId_);
   RHTree->Branch("EB_energy",    &vEB_energy_);
+  RHTree->Branch("EB_SCenergy",  &vEB_SCenergy_);
 }
 
 
@@ -149,14 +155,16 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle<EcalRecHitCollection> EBRecHitsH;
   iEvent.getByToken(EBRecHitCollectionT_, EBRecHitsH);
 
+  vEB_SCenergy_.assign(32*32,0.);
   int iphi_, ieta_;
-  int nEle = 0;
 
+  /*
   //edm::Handle<edm::View<reco::GsfElectron>> electrons;
   edm::Handle<reco::GsfElectronCollection> electrons;
   iEvent.getByToken(electronCollectionT_, electrons);
   //for(edm::View<reco::GsfElectron>::const_iterator iEle = electrons->begin();
   std::cout << "EleCol.size: " << electrons->size() << std::endl;
+  int nEle = 0;
   for(reco::GsfElectronCollection::const_iterator iEle = electrons->begin();
       iEle != electrons->end();
       ++iEle) {
@@ -176,6 +184,7 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     } // SC hits
     nEle++;
   } // electrons
+  */
 
   int nPho = 0;
   edm::Handle<reco::PhotonCollection> photons;
@@ -185,10 +194,19 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       iPho != photons->end();
       ++iPho) {
 
+    if ( nPho < 2 ) {
+      nPho++;
+      continue;
+    }
     std::cout << "pho pT: " << iPho->pt() << std::endl;
     reco::SuperClusterRef iSC = iPho->superCluster();
+    //EcalRecHitCollection::const_iterator iRHit_( EBRecHitsH->find(iSC->seed()->seed()) );
+    //std::cout << "Seed E: " << iRHit_->energy() << std::endl;
+
     std::vector<std::pair<DetId, float>> const& SCHits( iSC->hitsAndFractions() );
     std::cout << "SChits.size: " << SCHits.size() << std::endl;
+    // Get Seed
+    /*
     for(unsigned iH(0); iH != SCHits.size(); ++iH) {
       if ( SCHits[iH].first.subdetId() != EcalBarrel ) continue;
       EcalRecHitCollection::const_iterator iRHit( EBRecHitsH->find(SCHits[iH].first) );
@@ -196,10 +214,72 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       EBDetId ebId( iRHit->id() );
       iphi_ = ebId.iphi()-1;
       ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
-      //std::cout << "iphi_,ieta_:" << iphi_ << "," << ieta_ << std::endl; 
+      std::cout << " >> " << iH << ": iphi_,ieta_,E: " << iphi_ << ", " << ieta_ << ", " << iRHit->energy() << std::endl; 
       //if ( nPho == 0 ) hEB_energy->Fill( iphi_,ieta_,iRHit->energy() );
       hEB_energy->Fill( iphi_,ieta_,iRHit->energy() );
     } // SC hits
+    */
+    float Emax = 0.;
+    int iphi_Emax = -1, ieta_Emax = -1;
+    for(unsigned iH(0); iH != SCHits.size(); ++iH) {
+      if ( SCHits[iH].first.subdetId() != EcalBarrel ) continue;
+      EcalRecHitCollection::const_iterator iRHit( EBRecHitsH->find(SCHits[iH].first) );
+      if ( iRHit == EBRecHitsH->end() ) continue;
+      EBDetId ebId( iRHit->id() );
+
+      // Convert to ordinals
+      iphi_ = ebId.iphi()-1; // [0,...,359]
+      ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta(); // [-85,...,-1,1,...,85]
+      ieta_ += EBDetId::MAX_IETA; // [0,...,169]
+
+      if ( iRHit->energy() > Emax ) {
+        Emax = iRHit->energy();
+        iphi_Emax = iphi_;
+        ieta_Emax = ieta_;
+      }
+      std::cout << " >> " << iH << ": iphi_,ieta_,E: " << iphi_ << ", " << ieta_ << ", " << iRHit->energy() << std::endl; 
+    } // SC hits
+    
+    // Get offset
+    std::cout << " >> iphi_Emax,ieta_Emax: " << iphi_Emax << ", " << ieta_Emax << std::endl;
+    int iphi_shift = iphi_Emax - 15;
+    int ieta_shift = ieta_Emax - 15;
+
+    // Fill array
+    int idx_;
+    for(unsigned iH(0); iH != SCHits.size(); ++iH) {
+      if ( SCHits[iH].first.subdetId() != EcalBarrel ) continue;
+      EcalRecHitCollection::const_iterator iRHit( EBRecHitsH->find(SCHits[iH].first) );
+      if ( iRHit == EBRecHitsH->end() ) continue;
+      EBDetId ebId( iRHit->id() );
+
+      // Convert to ordinals
+      iphi_ = ebId.iphi()-1; // [0,...,359]
+      ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta(); // [-85,...,-1,1,...,85]
+      ieta_ += EBDetId::MAX_IETA; // [0,...,169]
+
+      // Convert to [0,...,31][0,...,31]
+      ieta_ = ieta_ - ieta_shift;
+      iphi_ = iphi_ - iphi_shift;
+      if ( iphi_ >= EBDetId::MAX_IPHI ) iphi_ = iphi_ - EBDetId::MAX_IPHI; // get wrap-around hits
+      
+      // Convert to [0,...,32*32-1] 
+      idx_ = ieta_*32 + iphi_;
+
+      // Fill
+      vEB_SCenergy_[idx_] = iRHit->energy();
+      std::cout << " >> " << iH << ": iphi_,ieta_,E: " << iphi_ << ", " << ieta_ << ", " << iRHit->energy() << std::endl; 
+    } // SC hits
+
+    // Verify with histogram
+    for(unsigned iD(0); iD < 32*32; ++iD) {
+      ieta_ = std::floor(iD/32.);
+      iphi_ = iD % 32;
+      std::cout << " >> " << iD << ": iphi_,ieta_,E: " << iphi_ << ", " << ieta_ << ", " << vEB_SCenergy_[iD] << std::endl; 
+      hEB_SCenergy->Fill( iphi_,ieta_,vEB_SCenergy_[iD] );
+    }
+
+    if ( nPho == 2 ) break;
     nPho++;
   } // photons
 
