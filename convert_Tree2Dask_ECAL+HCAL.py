@@ -14,7 +14,7 @@ decays = ['h22gammaSM_1j_1M_noPU', 'h24gamma_1j_1M_100MeV_noPU']
 #chunk_size_ = 250
 chunk_size_ = 100
 #scale = [100., 150.]
-scale = [100., 100.]
+scale = [1., 1.]
 
 @delayed
 def load_X(tree, start_, stop_, branches_, readouts, scale):
