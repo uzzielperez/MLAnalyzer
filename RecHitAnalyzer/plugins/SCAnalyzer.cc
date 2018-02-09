@@ -93,11 +93,16 @@ class SCAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
     float eventId_;
     std::vector<float> vEB_energy_;
-    std::vector<float> vEB_SCenergy_[nPhotons];
-    std::vector<float> vEB_SCtime_[nPhotons];
+    std::vector<float> vEB_SCenergy_;
+    std::vector<float> vSC_energy_[nPhotons];
+    std::vector<float> vSC_time_[nPhotons];
     std::vector<int> vGoodPhotonIdxs_;
     std::vector<float> vIphi_Emax;
     std::vector<float> vIeta_Emax;
+    float vPho_pT_[nPhotons];
+    float vPho_E_[nPhotons];
+    float vPho_eta_[nPhotons];
+    float vPho_phi_[nPhotons];
 
 };
 
@@ -148,12 +153,20 @@ SCAnalyzer::SCAnalyzer(const edm::ParameterSet& iConfig)
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
   RHTree->Branch("eventId",      &eventId_);
   RHTree->Branch("EB_energy",    &vEB_energy_);
-  //RHTree->Branch("EB_SCenergy",  &vEB_SCenergy_);
+  //RHTree->Branch("EB_SCenergy",  &vSC_energy_);
   for(int iPho (0); iPho < nPhotons; iPho++) {
-    sprintf(hname, "EB_SCenergy%d",iPho);
-    RHTree->Branch(hname,          &vEB_SCenergy_[iPho]);
-    sprintf(hname, "EB_SCtime%d",iPho);
-    RHTree->Branch(hname,          &vEB_SCtime_[iPho]);
+    sprintf(hname, "SC_energy%d",iPho);
+    RHTree->Branch(hname,          &vSC_energy_[iPho]);
+    sprintf(hname, "SC_time%d",iPho);
+    RHTree->Branch(hname,          &vSC_time_[iPho]);
+    sprintf(hname, "pho_pT%d",iPho);
+    RHTree->Branch(hname,      &vPho_pT_[iPho]);
+    sprintf(hname, "pho_E%d",iPho);
+    RHTree->Branch(hname,      &vPho_E_[iPho]);
+    sprintf(hname, "pho_eta%d",iPho);
+    RHTree->Branch(hname,      &vPho_eta_[iPho]);
+    sprintf(hname, "pho_phi%d",iPho);
+    RHTree->Branch(hname,      &vPho_phi_[iPho]);
   }
 }
 
@@ -181,9 +194,11 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   iEvent.getByToken(EBRecHitCollectionT_, EBRecHitsH);
 
   for(int iPho (0); iPho < nPhotons; iPho++) {
-    vEB_SCenergy_[iPho].assign(crop_size*crop_size,0.);
-    vEB_SCtime_[iPho].assign(crop_size*crop_size,0.);
+    vSC_energy_[iPho].assign(crop_size*crop_size,0.);
+    vSC_time_[iPho].assign(crop_size*crop_size,0.);
   }
+  vEB_SCenergy_.assign(EBDetId::kSizeForDenseIndexing,0.);
+
   int iphi_, ieta_;
 
   vGoodPhotonIdxs_.clear();
@@ -260,22 +275,27 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   ////////// Store each shower crop //////////
   int idx;
   int iphi_shift, ieta_shift;
+  int i = 0;
   int iP = 0;
-  nPho = 0;
   for(reco::PhotonCollection::const_iterator iPho = photons->begin();
       iPho != photons->end();
       ++iPho) {
 
     // Skip failed photons
-    if ( std::find(vGoodPhotonIdxs_.begin(), vGoodPhotonIdxs_.end(), iP) == vGoodPhotonIdxs_.end() ) {
-      iP++;
+    if ( std::find(vGoodPhotonIdxs_.begin(), vGoodPhotonIdxs_.end(), i) == vGoodPhotonIdxs_.end() ) {
+      i++;
       continue;
     }
 
+    vPho_pT_[iP] = iPho->pt();
+    vPho_E_[iP] = iPho->energy();
+    vPho_eta_[iP] = iPho->eta();
+    vPho_phi_[iP] = iPho->phi();
+
     // Get offset
-    std::cout << " >> Storing: iphi_Emax,ieta_Emax: " << vIphi_Emax[iP] << ", " << vIeta_Emax[iP] << std::endl;
-    iphi_shift = vIphi_Emax[iP] - 15;
-    ieta_shift = vIeta_Emax[iP] - 15;
+    std::cout << " >> Storing: iphi_Emax,ieta_Emax: " << vIphi_Emax[i] << ", " << vIeta_Emax[i] << std::endl;
+    iphi_shift = vIphi_Emax[i] - 15;
+    ieta_shift = vIeta_Emax[i] - 15;
 
     // Get underlying super cluster
     reco::SuperClusterRef iSC = iPho->superCluster();
@@ -305,8 +325,9 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       idx = ieta_*crop_size + iphi_;
 
       // Fill branch arrays 
-      vEB_SCenergy_[nPho][idx] = iRHit->energy();
-      vEB_SCtime_[nPho][idx] = iRHit->time();
+      vSC_energy_[iP][idx] = iRHit->energy();
+      vSC_time_[iP][idx] = iRHit->time();
+      vEB_SCenergy_[ebId.hashedIndex()] = iRHit->energy();
       //std::cout << " >> " << iH << ": iphi_,ieta_,E: " << iphi_ << ", " << ieta_ << ", " << iRHit->energy() << std::endl; 
     } // SC hits
 
@@ -314,13 +335,13 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     for(unsigned iD(0); iD < crop_size*crop_size; ++iD) {
       ieta_ = std::floor(1.*iD/crop_size);
       iphi_ = iD % crop_size;
-      //std::cout << " >> " << iD << ": iphi_,ieta_,E: " << iphi_ << ", " << ieta_ << ", " << vEB_SCenergy_[nPho][iD] << std::endl; 
-      hEB_SCenergy[nPho]->Fill( iphi_,ieta_,vEB_SCenergy_[nPho][iD] );
-      hEB_SCtime[nPho]->Fill( iphi_,ieta_,vEB_SCtime_[nPho][iD] );
+      //std::cout << " >> " << iD << ": iphi_,ieta_,E: " << iphi_ << ", " << ieta_ << ", " << vSC_energy_[iP][iD] << std::endl; 
+      hEB_SCenergy[iP]->Fill( iphi_,ieta_,vSC_energy_[iP][iD] );
+      hEB_SCtime[iP]->Fill( iphi_,ieta_,vSC_time_[iP][iD] );
     }
 
+    i++;
     iP++;
-    nPho++;
   } // photons
 
   // Fill full EB for comparison
