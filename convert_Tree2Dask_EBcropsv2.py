@@ -103,6 +103,36 @@ for j,decay in enumerate(decays):
     #            for i in range(0,neff,chunk_size)])
     #print " >> Expected shape:", X_crop1.shape
 
+    # pho_pT0 
+    branches = ["pho_pT0"]
+    pho_pT0 = da.concatenate([\
+                da.from_delayed(\
+                    load_single(tree,i,i+chunk_size, branches),\
+                    shape=(chunk_size,),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> Expected shape:", pho_pT0.shape
+
+    # pho_E0 
+    branches = ["pho_E0"]
+    pho_E0 = da.concatenate([\
+                da.from_delayed(\
+                    load_single(tree,i,i+chunk_size, branches),\
+                    shape=(chunk_size,),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> Expected shape:", pho_E0.shape
+
+    # pho_eta0 
+    branches = ["pho_eta0"]
+    pho_eta0 = da.concatenate([\
+                da.from_delayed(\
+                    load_single(tree,i,i+chunk_size, branches),\
+                    shape=(chunk_size,),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> Expected shape:", pho_eta0.shape
+
     # eventId
     branches = ["eventId"]
     eventId = da.concatenate([\
@@ -113,15 +143,15 @@ for j,decay in enumerate(decays):
                 for i in range(0,neff,chunk_size)])
     print " >> Expected shape:", eventId.shape
 
-    # Kinematics
-    branches = ["pho_pT", "pho_E", "pho_eta", "pho_phi"]
-    X_p4 = da.concatenate([\
-                da.from_delayed(\
-                    load_single(tree,i,i+chunk_size, branches),\
-                    shape=(chunk_size,len(branches)),\
-                    dtype=np.float32)\
-                for i in range(0,neff,chunk_size)])
-    print " >> Expected shape:", X_p4.shape
+    ## Kinematics
+    #branches = ["pho_pT", "pho_E", "pho_eta", "pho_phi"]
+    #X_p4 = da.concatenate([\
+    #            da.from_delayed(\
+    #                load_single(tree,i,i+chunk_size, branches),\
+    #                shape=(chunk_size,len(branches)),\
+    #                dtype=np.float32)\
+    #            for i in range(0,neff,chunk_size)])
+    #print " >> Expected shape:", X_p4.shape
 
     # Class label
     label = j
@@ -138,8 +168,11 @@ for j,decay in enumerate(decays):
     da.to_hdf5(file_out_str, {'/X': X, '/y': y,
                               'eventId': eventId,
                               'X_crop0': X_crop0,
-                              #'X_crop1': X_crop1,
-                              'X_p4': X_p4
+                              #'X_crop1': X_crop1
+                              #'X_p4': X_p4
+                              'pho_pT0': pho_pT0,
+                              'pho_E0': pho_E0,
+                              'pho_eta0': pho_eta0
                               }, compression='lzf')
 
     print " >> Done.\n"

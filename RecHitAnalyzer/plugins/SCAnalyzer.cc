@@ -86,8 +86,8 @@ class SCAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
     //TH1D * histo; 
     TH2D * hEB_energy; 
-    TH2D * hEB_SCenergy[nPhotons]; 
-    TH2D * hEB_SCtime[nPhotons]; 
+    TH2D * hSC_energy[nPhotons]; 
+    TH2D * hSC_time[nPhotons]; 
 
     TTree* RHTree;
 
@@ -95,6 +95,7 @@ class SCAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<float> vEB_energy_;
     std::vector<float> vEB_SCenergy_;
     std::vector<float> vSC_energy_[nPhotons];
+    std::vector<float> vSC_energyT_[nPhotons];
     std::vector<float> vSC_time_[nPhotons];
     std::vector<int> vGoodPhotonIdxs_;
     std::vector<float> vIphi_Emax;
@@ -104,6 +105,8 @@ class SCAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     float vPho_eta_[nPhotons];
     float vPho_phi_[nPhotons];
 
+    // Initialize Calorimeter Geometry
+    const CaloGeometry* caloGeom;
 };
 
 //
@@ -138,14 +141,14 @@ SCAnalyzer::SCAnalyzer(const edm::ParameterSet& iConfig)
       2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
   // EB SCs
   for(int iPho (0); iPho < nPhotons; iPho++) {
-    sprintf(hname, "EE_SCenergy%d",iPho);
+    sprintf(hname, "SC_energy%d",iPho);
     sprintf(htitle,"E(i#phi,i#eta);iphi;ieta");
-    hEB_SCenergy[iPho] = fs->make<TH2D>(hname, htitle,
+    hSC_energy[iPho] = fs->make<TH2D>(hname, htitle,
         crop_size, 0, crop_size,
         crop_size, 0, crop_size );
-    sprintf(hname, "EE_SCtime%d",iPho);
+    sprintf(hname, "SC_time%d",iPho);
     sprintf(htitle,"t(i#phi,i#eta);iphi;ieta");
-    hEB_SCtime[iPho] = fs->make<TH2D>(hname, htitle,
+    hSC_time[iPho] = fs->make<TH2D>(hname, htitle,
         crop_size, 0, crop_size,
         crop_size, 0, crop_size );
   }
@@ -157,6 +160,8 @@ SCAnalyzer::SCAnalyzer(const edm::ParameterSet& iConfig)
   for(int iPho (0); iPho < nPhotons; iPho++) {
     sprintf(hname, "SC_energy%d",iPho);
     RHTree->Branch(hname,          &vSC_energy_[iPho]);
+    sprintf(hname, "SC_energyT%d",iPho);
+    RHTree->Branch(hname,          &vSC_energyT_[iPho]);
     sprintf(hname, "SC_time%d",iPho);
     RHTree->Branch(hname,          &vSC_time_[iPho]);
     sprintf(hname, "pho_pT%d",iPho);
@@ -195,6 +200,7 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   for(int iPho (0); iPho < nPhotons; iPho++) {
     vSC_energy_[iPho].assign(crop_size*crop_size,0.);
+    vSC_energyT_[iPho].assign(crop_size*crop_size,0.);
     vSC_time_[iPho].assign(crop_size*crop_size,0.);
   }
   vEB_SCenergy_.assign(EBDetId::kSizeForDenseIndexing,0.);
@@ -241,9 +247,9 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if ( SCHits[iH].first.subdetId() != EcalBarrel ) continue;
       EcalRecHitCollection::const_iterator iRHit( EBRecHitsH->find(SCHits[iH].first) );
       if ( iRHit == EBRecHitsH->end() ) continue;
-      EBDetId ebId( iRHit->id() );
 
       // Convert coordinates to ordinals
+      EBDetId ebId( iRHit->id() );
       ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta(); // [-85,...,-1,1,...,85]
       ieta_ += EBDetId::MAX_IETA; // [0,...,169]
       iphi_ = ebId.iphi()-1; // [0,...,359]
@@ -273,8 +279,6 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   std::cout << " >> Passed selection. " << std::endl;
     
   ////////// Store each shower crop //////////
-  int idx;
-  int iphi_shift, ieta_shift;
   int i = 0;
   int iP = 0;
   for(reco::PhotonCollection::const_iterator iPho = photons->begin();
@@ -287,16 +291,68 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       continue;
     }
 
+    // Fill branch arrays
     vPho_pT_[iP] = iPho->pt();
     vPho_E_[iP] = iPho->energy();
     vPho_eta_[iP] = iPho->eta();
     vPho_phi_[iP] = iPho->phi();
+    i++;
+    iP++;
 
-    // Get offset
-    std::cout << " >> Storing: iphi_Emax,ieta_Emax: " << vIphi_Emax[i] << ", " << vIeta_Emax[i] << std::endl;
-    iphi_shift = vIphi_Emax[i] - 15;
-    ieta_shift = vIeta_Emax[i] - 15;
+  } // photons
 
+  int idx;
+  int iphi_shift, ieta_shift;
+  int iphi_crop, ieta_crop;
+  // Provides access to global cell position and coordinates below
+  edm::ESHandle<CaloGeometry> caloGeomH;
+  iSetup.get<CaloGeometryRecord>().get(caloGeomH);
+  caloGeom = caloGeomH.product();
+  for(EcalRecHitCollection::const_iterator iRHit = EBRecHitsH->begin();
+      iRHit != EBRecHitsH->end();
+      ++iRHit) {
+
+    // Convert detector coordinates to ordinals
+    EBDetId ebId( iRHit->id() );
+    iphi_ = ebId.iphi()-1; // [0,...,359]
+    ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta(); // [-85,...,-1,0,...,84]
+    ieta_ += EBDetId::MAX_IETA; // [0,...,169]
+
+    for(unsigned iP(0); iP < nPhotons; iP++) {
+
+      iphi_shift = vIphi_Emax[iP] - 15;
+      ieta_shift = vIeta_Emax[iP] - 15;
+      //std::cout << " >> Storing: iphi_Emax,ieta_Emax: " << vIphi_Emax[iP] << ", " << vIeta_Emax[iP] << std::endl;
+
+      // Convert to [0,...,31][0,...,31]
+      ieta_crop = ieta_ - ieta_shift;
+      iphi_crop = iphi_ - iphi_shift;
+      if ( iphi_crop >= EBDetId::MAX_IPHI ) iphi_crop = iphi_crop - EBDetId::MAX_IPHI; // get wrap-around hits
+
+      if ( ieta_crop < 0 || ieta_crop > crop_size-1 ) continue;
+      if ( iphi_crop < 0 || iphi_crop > crop_size-1 ) continue;
+      
+      // Convert to [0,...,32*32-1] 
+      idx = ieta_crop*crop_size + iphi_crop;
+
+      // Cell geometry provides access to (rho,eta,phi) coordinates of cell center
+      auto cell = caloGeom->getGeometry(ebId);
+      
+      // Fill branch arrays 
+      vSC_energy_[iP][idx] = iRHit->energy();
+      vSC_energyT_[iP][idx] = iRHit->energy()/TMath::CosH(cell->etaPos());
+      vSC_time_[iP][idx] = iRHit->time();
+      vEB_SCenergy_[ebId.hashedIndex()] = iRHit->energy();
+      //std::cout << " >> " << iP << ": iphi_,ieta_,E: " << iphi_crop << ", " << ieta_crop << ", " << iRHit->energy() << std::endl; 
+
+      // Fill histograms to monitor cumulative distributions
+      hSC_energy[iP]->Fill( iphi_crop,ieta_crop,iRHit->energy() );
+      hSC_time[iP]->Fill( iphi_crop,ieta_crop,iRHit->time() );
+
+    } // EB rechits
+  } // photons
+
+    /*
     // Get underlying super cluster
     reco::SuperClusterRef iSC = iPho->superCluster();
     //EcalRecHitCollection::const_iterator iRHit_( EBRecHitsH->find(iSC->seed()->seed()) );
@@ -309,9 +365,9 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if ( SCHits[iH].first.subdetId() != EcalBarrel ) continue;
       EcalRecHitCollection::const_iterator iRHit( EBRecHitsH->find(SCHits[iH].first) );
       if ( iRHit == EBRecHitsH->end() ) continue;
-      EBDetId ebId( iRHit->id() );
 
       // Convert detector coordinates to ordinals
+      EBDetId ebId( iRHit->id() );
       iphi_ = ebId.iphi()-1; // [0,...,359]
       ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta(); // [-85,...,-1,0,...,84]
       ieta_ += EBDetId::MAX_IETA; // [0,...,169]
@@ -343,6 +399,7 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     i++;
     iP++;
   } // photons
+  */
 
   // Fill full EB for comparison
   vEB_energy_.assign(EBDetId::kSizeForDenseIndexing,0.);
@@ -364,7 +421,8 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     // Fill branch arrays
     idx = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
     vEB_energy_[idx] = iRHit->energy();
-  }
+  } // EB rechits
+
   /*
   //edm::Handle<edm::View<reco::GsfElectron>> electrons;
   edm::Handle<reco::GsfElectronCollection> electrons;
