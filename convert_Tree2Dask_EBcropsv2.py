@@ -35,7 +35,11 @@ def load_X(tree, start_, stop_, branches_, readouts, scale):
 @delayed
 def load_single(tree, start_, stop_, branches_):
     X = tree2array(tree, start=start_, stop=stop_, branches=branches_) 
-    X = np.array([x[0] for x in X])
+    if len(branches_) > 1:
+      X = np.array([np.concatenate(x).reshape(len(branches_),1) for x in X])
+      X = X.reshape((-1,len(branches_)))
+    else:
+      X = np.array([x[0] for x in X])
 
     return X
 
@@ -79,7 +83,7 @@ for j,decay in enumerate(decays):
 
     # SC0
     readouts = [32,32]
-    branches = ["EB_SCenergy0"]
+    branches = ["SC_energy0"]
     X_crop0 = da.concatenate([\
                 da.from_delayed(\
                     load_X(tree,i,i+chunk_size, branches, readouts, scale),\
@@ -88,16 +92,46 @@ for j,decay in enumerate(decays):
                 for i in range(0,neff,chunk_size)])
     print " >> Expected shape:", X_crop0.shape
 
-    # SC1
-    readouts = [32,32]
-    branches = ["EB_SCenergy1"]
-    X_crop1 = da.concatenate([\
+    ## SC1
+    #readouts = [32,32]
+    #branches = ["SC_energy1"]
+    #X_crop1 = da.concatenate([\
+    #            da.from_delayed(\
+    #                load_X(tree,i,i+chunk_size, branches, readouts, scale),\
+    #                shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
+    #                dtype=np.float32)\
+    #            for i in range(0,neff,chunk_size)])
+    #print " >> Expected shape:", X_crop1.shape
+
+    # pho_pT0 
+    branches = ["pho_pT0"]
+    pho_pT0 = da.concatenate([\
                 da.from_delayed(\
-                    load_X(tree,i,i+chunk_size, branches, readouts, scale),\
-                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
+                    load_single(tree,i,i+chunk_size, branches),\
+                    shape=(chunk_size,),\
                     dtype=np.float32)\
                 for i in range(0,neff,chunk_size)])
-    print " >> Expected shape:", X_crop1.shape
+    print " >> Expected shape:", pho_pT0.shape
+
+    # pho_E0 
+    branches = ["pho_E0"]
+    pho_E0 = da.concatenate([\
+                da.from_delayed(\
+                    load_single(tree,i,i+chunk_size, branches),\
+                    shape=(chunk_size,),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> Expected shape:", pho_E0.shape
+
+    # pho_eta0 
+    branches = ["pho_eta0"]
+    pho_eta0 = da.concatenate([\
+                da.from_delayed(\
+                    load_single(tree,i,i+chunk_size, branches),\
+                    shape=(chunk_size,),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> Expected shape:", pho_eta0.shape
 
     # eventId
     branches = ["eventId"]
@@ -108,6 +142,16 @@ for j,decay in enumerate(decays):
                     dtype=np.int32)\
                 for i in range(0,neff,chunk_size)])
     print " >> Expected shape:", eventId.shape
+
+    ## Kinematics
+    #branches = ["pho_pT", "pho_E", "pho_eta", "pho_phi"]
+    #X_p4 = da.concatenate([\
+    #            da.from_delayed(\
+    #                load_single(tree,i,i+chunk_size, branches),\
+    #                shape=(chunk_size,len(branches)),\
+    #                dtype=np.float32)\
+    #            for i in range(0,neff,chunk_size)])
+    #print " >> Expected shape:", X_p4.shape
 
     # Class label
     label = j
@@ -120,7 +164,15 @@ for j,decay in enumerate(decays):
     #file_out_str = "%s/%s_IMG_RH%d_n%dk_label%d.hdf5"%(eosDir,decay,int(scale),neff//1000.,label)
     file_out_str = "test.hdf5"
     print " >> Writing to:", file_out_str
-    #da.to_hdf5(file_out_str, {'/X': X, '/y': y, 'eventId': eventId, 'm0': m0, 'diPhoE': diPhoE, 'diPhoPt': diPhoPt}, compression='lzf')
-    da.to_hdf5(file_out_str, {'/X': X, '/y': y, 'eventId': eventId, 'X_crop0': X_crop0, 'X_crop1': X_crop1}, compression='lzf')
+    #da.to_hdf5(file_out_str, {'/X': X, '/y': y, 'eventId': eventId, 'X_crop0': X_crop0, 'X_crop1': X_crop1}, compression='lzf')
+    da.to_hdf5(file_out_str, {'/X': X, '/y': y,
+                              'eventId': eventId,
+                              'X_crop0': X_crop0,
+                              #'X_crop1': X_crop1
+                              #'X_p4': X_p4
+                              'pho_pT0': pho_pT0,
+                              'pho_E0': pho_E0,
+                              'pho_eta0': pho_eta0
+                              }, compression='lzf')
 
     print " >> Done.\n"
