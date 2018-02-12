@@ -106,7 +106,7 @@ class SCAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     float vPho_phi_[nPhotons];
 
     // Initialize Calorimeter Geometry
-    const CaloGeometry* caloGeom;
+    //const CaloGeometry* caloGeom;
 };
 
 //
@@ -304,10 +304,12 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   int idx;
   int iphi_shift, ieta_shift;
   int iphi_crop, ieta_crop;
+  /*
   // Provides access to global cell position and coordinates below
   edm::ESHandle<CaloGeometry> caloGeomH;
   iSetup.get<CaloGeometryRecord>().get(caloGeomH);
   caloGeom = caloGeomH.product();
+  */
   for(EcalRecHitCollection::const_iterator iRHit = EBRecHitsH->begin();
       iRHit != EBRecHitsH->end();
       ++iRHit) {
@@ -336,11 +338,11 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       idx = ieta_crop*crop_size + iphi_crop;
 
       // Cell geometry provides access to (rho,eta,phi) coordinates of cell center
-      auto cell = caloGeom->getGeometry(ebId);
+      //auto cell = caloGeom->getGeometry(ebId);
       
       // Fill branch arrays 
       vSC_energy_[iP][idx] = iRHit->energy();
-      vSC_energyT_[iP][idx] = iRHit->energy()/TMath::CosH(cell->etaPos());
+      vSC_energyT_[iP][idx] = iRHit->energy()/TMath::CosH(vPho_eta_[iP]);
       vSC_time_[iP][idx] = iRHit->time();
       vEB_SCenergy_[ebId.hashedIndex()] = iRHit->energy();
       //std::cout << " >> " << iP << ": iphi_,ieta_,E: " << iphi_crop << ", " << ieta_crop << ", " << iRHit->energy() << std::endl; 
