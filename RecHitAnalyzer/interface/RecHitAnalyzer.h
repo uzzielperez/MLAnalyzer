@@ -200,9 +200,8 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<float> vHBHE_energy_EB_;
     std::vector<float> vHBHE_energy_;
     std::vector<float> vHBHE_EMenergy_;
-    //std::vector<float> vFC_inputs_;
+    std::vector<float> vFC_inputs_;
     math::PtEtaPhiELorentzVectorD vPho_[2];
-    //float vFC_inputs_[5];
   
     // Selection and filling functions
     bool runSelections( const edm::Event&, const edm::EventSetup& );
@@ -214,7 +213,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     void fillECALatHCAL();
     void fillECALstitched();
     void fillEBdigis( const edm::Event&, const edm::EventSetup& );
-    //void fillFC( const edm::Event&, const edm::EventSetup& );
+    void fillFC( const edm::Event&, const edm::EventSetup& );
 
 }; // class RecHitAnalyzer
 

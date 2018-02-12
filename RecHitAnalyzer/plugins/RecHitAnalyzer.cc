@@ -97,6 +97,8 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   h_E   = fs->make<TH1D>("h_E"  , "E;E;Particles"        , 100,  0., 800.);
   h_eta = fs->make<TH1D>("h_eta", "#eta;#eta;Particles"  , 100, -5., 5.);
   h_m0  = fs->make<TH1D>("h_m0" , "m0;m0;Events"        ,   72, 50., 950.);
+  //h_m0  = fs->make<TH1D>("h_m0" , "m0;m0;Events"        ,   50, 90., 240.);
+  //h_m0  = fs->make<TH1D>("h_m0" , "m0;m0;Events"        ,   50, 0., 2.); 
   h_leadJetPt  = fs->make<TH1D>("h_leadJetPt" , "p_{T};p_{T};Events", 100,  0., 500.);
 
   // Single-event histograms
@@ -146,7 +148,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   RHTree->Branch("HBHE_EMenergy",  &vHBHE_EMenergy_);
 
   // For FC inputs
-  //RHTree->Branch("FC_inputs",      &vFC_inputs_);
+  RHTree->Branch("FC_inputs",      &vFC_inputs_);
 
 } // constructor
 
@@ -209,7 +211,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   fillHBHErechits( iEvent, iSetup );
 
   //////////// 4-Momenta //////////
-  //fillFC( iEvent, iSetup );
+  fillFC( iEvent, iSetup );
 
   //////////// Bookkeeping //////////
 
@@ -250,8 +252,8 @@ RecHitAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //descriptions.addDefault(desc);
 }
 
-/*
-//____ Fill FC variables _____//
+
+//____ Fill FC diphoton variables _____//
 void RecHitAnalyzer::fillFC ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
   edm::Handle<reco::PhotonCollection> photons;
@@ -270,8 +272,7 @@ void RecHitAnalyzer::fillFC ( const edm::Event& iEvent, const edm::EventSetup& i
   }
   vFC_inputs_.push_back( TMath::Cos(vPho_[0].Phi()-vPho_[1].Phi()) );
 
-}
-*/
+} // fillFC() 
 
 //____ Apply event selection cuts _____//
 bool RecHitAnalyzer::runSelections_H24G ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
@@ -291,8 +292,8 @@ bool RecHitAnalyzer::runSelections_H24G ( const edm::Event& iEvent, const edm::E
   //float dRCut = 0.4;
   //float dR, dEta, dPhi;
   std::cout << " >> recoPhoCol.size: " << photons->size() << std::endl;
-  //math::PtEtaPhiELorentzVectorD vDiPho;
-  math::XYZTLorentzVector vDiPho;
+  math::PtEtaPhiELorentzVectorD vDiPho;
+  //math::XYZTLorentzVector vDiPho;
   std::vector<float> vE, vPt, vEta, vPhi;
   float leadPhoPt = 0;
 
@@ -365,6 +366,11 @@ bool RecHitAnalyzer::runSelections_H24G ( const edm::Event& iEvent, const edm::E
     diPhoE_  += vE[i];
     diPhoPt_ += vPt[i];
   }
+  //vDiPho = vDiPho/m0_;
+  //vDiPho = vDiPho/diPhoE_;
+  //vDiPho = vDiPho/diPhoPt_;
+  //h_m0->Fill( vDiPho.mass() );
+  //std::cout << " >> m0: " << vDiPho.mass() << " diPhoPt: " << diPhoPt_ << " diPhoE: " << diPhoE_ << std::endl;
   h_m0->Fill( m0_ );
   std::cout << " >> m0: " << m0_ << " diPhoPt: " << diPhoPt_ << " diPhoE: " << diPhoE_ << std::endl;
 
@@ -993,12 +999,12 @@ void RecHitAnalyzer::fillEBdigis ( const edm::Event& iEvent, const edm::EventSet
   // Initialize data collection pointers
   edm::Handle<EBDigiCollection> EBDigisH;
   iEvent.getByToken(EBDigiCollectionT_, EBDigisH);
-
+/*
   // Provides access to global cell position and coordinates below
   edm::ESHandle<CaloGeometry> caloGeomH;
   iSetup.get<CaloGeometryRecord>().get(caloGeomH);
   caloGeom = caloGeomH.product();
-
+*/
   // Initialize arrays
   for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; ++iS)
     vEB_adc_[iS].assign(EBDetId::kSizeForDenseIndexing,0);
