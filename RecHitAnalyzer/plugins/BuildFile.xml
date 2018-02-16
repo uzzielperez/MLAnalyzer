@@ -1,12 +1,26 @@
 <use name="FWCore/Framework"/>
 <use name="FWCore/PluginManager"/>
 <use name="FWCore/ParameterSet"/>
+<use name="DataFormats/TrackReco"/>
+<use name="DataFormats/EcalRecHit"/>
+<use name="DataFormats/HcalDetId"/>
+<use name="DataFormats/HcalRecHit"/>
+<use name="DQM/HcalCommon"/>
+<use name="Geometry/CaloGeometry"/>
+<use name="Geometry/Records"/>
+<use name="CommonTools/UtilAlgos"/>
+
+<use name="DataFormats/EcalDigi"/>
+<use name="Geometry/CaloTopology"/>
+
+<use name="DataFormats/TrackingRecHit"/>
+
+<use name="FWCore/Utilities"/>
+<use name="FWCore/ServiceRegistry"/>
+
+<use name="DataFormats/HepMCCandidate"/>
+<use name="DataFormats/EgammaCandidates"/>
+<use name="DataFormats/JetReco"/>
+
+<use name="DataFormats/PatCandidates"/>
 <flags EDM_PLUGIN="1"/>
- <use name="DataFormats/TrackReco"/>
- <use name="DataFormats/EcalRecHit"/>
- <use name="DataFormats/HcalDetId"/>
- <use name="DataFormats/HcalRecHit"/>
- <use name="DQM/HcalCommon"/>
- <use name="Geometry/CaloGeometry"/>
- <use name="Geometry/Records"/>
- <use name="CommonTools/UtilAlgos"/>

@@ -60,6 +60,10 @@ process.fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , gsfElectronCollection = cms.InputTag('gedGsfElectrons')
     , ak4PFJetCollection = cms.InputTag('ak4PFJets')
     , genJetCollection = cms.InputTag('ak4GenJets')
+    , trkRecHitCollection = cms.InputTag('generalTracks')
+    , slimmedPhotonCollection = cms.InputTag('slimmedPhotons')
+    , slimmedElectronCollection = cms.InputTag('slimmedElectrons')
+    , phoTightIdMap = cms.InputTag("egmPhotonIDs:cutBasedPhotonID-Spring16-V2p2-tight")
     )
 
 process.TFileService = cms.Service("TFileService",

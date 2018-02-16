@@ -9,6 +9,7 @@
 //
 //
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
+#include "DataFormats/EcalDetId/interface/EBDetId.h"
 
 //
 // constructors and destructor
@@ -22,12 +23,17 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   EERecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEERecHitCollection"));
   //EERecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EERecHitCollection"));
   HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
+  TrkRecHitCollectionT_ = consumes<TrackingRecHitCollection>(iConfig.getParameter<edm::InputTag>("trkRecHitCollection"));
 
   genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
   photonCollectionT_ = consumes<reco::PhotonCollection>(iConfig.getParameter<edm::InputTag>("gedPhotonCollection"));
   electronCollectionT_ = consumes<reco::GsfElectronCollection>(iConfig.getParameter<edm::InputTag>("gsfElectronCollection"));
   jetCollectionT_ = consumes<reco::PFJetCollection>(iConfig.getParameter<edm::InputTag>("ak4PFJetCollection"));
   genJetCollectionT_ = consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genJetCollection"));
+
+  slimmedPhotonCollectionT_ = consumes<pat::PhotonCollection>(iConfig.getParameter<edm::InputTag>("slimmedPhotonCollection"));
+  slimmedElectronCollectionT_ = consumes<pat::ElectronCollection>(iConfig.getParameter<edm::InputTag>("slimmedElectronCollection"));
+  phoTightIdMapT_ = consumes<edm::ValueMap<bool>>(iConfig.getParameter<edm::InputTag>("phoTightIdMap"));
 
   // Initialize file writer
   // NOTE: initializing dynamic-memory histograms outside of TFileService
@@ -173,7 +179,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // ----- Get Calorimeter Geometry ----- //
 
   //////////// EB //////////
-
+/*
   // EB reduced rechit collection //
   // This contatins the reduced EB rechit collection after
   // the selective readout and bad channel clean-up
@@ -213,7 +219,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //fillFC( iEvent, iSetup );
 
   //////////// Bookkeeping //////////
-
+*/
   // Write out event ID
   eventId_ = iEvent.id().event();
 
@@ -254,10 +260,13 @@ RecHitAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
 //____ Apply event selection cuts _____//
 bool RecHitAnalyzer::runSelections_Stealth ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
-  edm::Handle<reco::PhotonCollection> photons;
-  iEvent.getByToken(photonCollectionT_, photons);
-  edm::Handle<reco::GenParticleCollection> genParticles;
-  iEvent.getByToken(genParticleCollectionT_, genParticles);
+  //edm::Handle<reco::PhotonCollection> photons;
+  //iEvent.getByToken(photonCollectionT_, photons);
+  //edm::Handle<edm::View<pat::Photon> > photons; 
+  edm::Handle<edm::ValueMap<bool>> isTightPhoton;
+  iEvent.getByToken(phoTightIdMapT_, isTightPhoton);
+  edm::Handle<pat::PhotonCollection> photons;
+  iEvent.getByToken(slimmedPhotonCollectionT_, photons);
 
   int nPho = 0, nJet = 0;
   float sT = 0.;
@@ -271,13 +280,14 @@ bool RecHitAnalyzer::runSelections_Stealth ( const edm::Event& iEvent, const edm
   //float dR, dEta, dPhi;
   std::cout << " >> recoPhoCol.size: " << photons->size() << std::endl;
   //math::PtEtaPhiELorentzVectorD vDiPho;
-  //math::XYZTLorentzVector vDiPho;
   std::vector<float> vE, vPt, vEta, vPhi;
   //float leadPhoPt = 0;
   float phoPt_;
 
   // Apply diphoton trigger-like selection
-  for(reco::PhotonCollection::const_iterator iPho = photons->begin();
+  //for(reco::PhotonCollection::const_iterator iPho = photons->begin();
+  for(pat::PhotonCollection::const_iterator iPho = photons->begin();
+  //for(edm::View<pat::Photon>::const_iterator iPho = photons->begin();
       iPho != photons->end();
       ++iPho) {
 
@@ -287,11 +297,20 @@ bool RecHitAnalyzer::runSelections_Stealth ( const edm::Event& iEvent, const edm
     if ( iPho->full5x5_sigmaIetaIeta() > 0.01022 ) continue;
     if ( iPho->hadTowOverEm() > 0.0396 ) continue;
     phoPt_ = std::abs(iPho->pt());
+    //if (iPho->photonID("cutBasedPhotonID-Spring15-25ns-V1-standalone-tight")) continue; 
+    std::cout << " pho IDs:" << bool(iPho->photonID("cutBasedPhotonID-Spring15-25ns-V1-standalone-tight")) << std::endl;
+    //std::cout << " pho IDs:" << iPho->photonIDs().size() << std::endl;
+    //for (std::vector<std::pair<std::string,Bool_t>>::const_iterator it = iPho->photonIDs().begin(), ed = iPho->photonIDs().end(); it != ed; ++it) {
+    //  std::cout << "'" << it->first << "' " << it->second << std::endl;
+    //}
     /*
     if ( iPho->chargedHadronIso() > 0.441 ) continue;
     if ( iPho->neutralHadronIso() > (2.725 + 0.0148*phoPt_ + 0.000017*phoPt_*phoPt_) ) continue;
     if ( iPho->photonIso() > (2.571 + 0.0047*phoPt_) ) continue;
     */
+    //pat::PhotonRef phoRef(photons, iP);
+    //const auto pho = photons->ptrAt(iP);
+    //std::cout << (*isTightPhoton)[phoRef] << std::endl;
     nPho++;
     sT += phoPt_;
     /*
@@ -385,12 +404,14 @@ bool RecHitAnalyzer::runSelections_Stealth ( const edm::Event& iEvent, const edm
   std::cout << " >> nJet: " << nJet << std::endl;
   if ( nJet < 4 ) return false;
 
-  //edm::Handle<edm::View<reco::GsfElectron>> electrons;
-  edm::Handle<reco::GsfElectronCollection> electrons;
-  iEvent.getByToken(electronCollectionT_, electrons);
+  //edm::Handle<reco::GsfElectronCollection> electrons;
+  //iEvent.getByToken(electronCollectionT_, electrons);
+  edm::Handle<pat::ElectronCollection> electrons;
+  iEvent.getByToken(slimmedElectronCollectionT_, electrons);
   std::cout << "EleCol.size: " << electrons->size() << std::endl;
   int nEle = 0;
-  for(reco::GsfElectronCollection::const_iterator iEle = electrons->begin();
+  //for(reco::GsfElectronCollection::const_iterator iEle = electrons->begin();
+  for(pat::ElectronCollection::const_iterator iEle = electrons->begin();
       iEle != electrons->end();
       ++iEle) {
     if ( std::abs(iEle->eta()) > 2.5 ) continue;
@@ -495,35 +516,6 @@ void RecHitAnalyzer::fillEBrechits ( const edm::Event& iEvent, const edm::EventS
     hEvt_HBHE_EMenergy->Fill( phi, eta, iRHit->energy() );
 
   } // EB rechits
-
-  /*
-  // FOR GEOMETRY DEBUGGING
-  float phi_edge;
-  for(int i = 1; i < 360+1; i++) {
-
-    // Get detector id and convert to histogram-friendly coordinates
-    //EBDetId ebId( iRHit->id() );
-    EBDetId ebId( 85, i );
-    //EcalTrigTowerDetId ttId( iRHit->id() );
-    iphi_ = ebId.iphi()-1;
-    ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
-    //std::cout << "ECAL | (ieta,iphi): (" << ebId.ieta() << "," << ebId.iphi() << ")" <<std::endl;
-
-    // Get global position of cell center
-    pos  = caloGeom->getPosition(ebId);
-    eta = pos.eta();
-    phi = pos.phi();
-
-    cell = caloGeom->getGeometry(ebId);
-    phi_edge = cell->getCorners()[3].phi();
-
-    //std::cout << "ECAL | (eta,phi,E): (" << eta << "," << phi << ","<< iRHit->energy()<<")" <<std::endl;
-    std::cout << iphi_+1 << ":" << phi << ":" << phi_edge << std::endl;
-    //std::cout << iphi_+1 << ":" << phi << ":" << cell->getCorners()[0].phi() << "," << cell->getCorners()[1].phi() 
-    //    << phi_edge << "," << cell->getCorners()[3].phi() << std::endl;
-    //std::cout << phi_edge << ","<<std::endl;
-  }
-  */
 
 } // fillEBrechits()
 
@@ -688,39 +680,6 @@ void RecHitAnalyzer::fillHBHErechits ( const edm::Event& iEvent, const edm::Even
     } 
   }  
 
-  /*
-  // FOR GEOMETRY DEBUGGING
-  float phi;
-  for(int i=1; i<72+1;i++) {
-  //for(int i=1; i<16+1;i++) {
-  //for(int i=16; i<29+1;i++) {
-
-    // Get detector id and convert to histogram-friendly coordinates
-    // NOTE: HBHE detector ids are indexed by (ieta,iphi,depth)!
-    //HcalDetId hId( iRHit->id() );
-    HcalDetId hId( HcalSubdetector::HcalBarrel, 1, i, 1 );
-    //HcalDetId hId( HcalSubdetector::HcalBarrel, i, 1, 1 );
-    //HcalDetId hId( HcalSubdetector::HcalEndcap, i, 1, 1 );
-    //if (hId.subdet() != HcalSubdetector::HcalBarrel) continue;
-    // WARNING: HBHE::iphi() is not aligned with EBRecHit::iphi()!
-    // => Need to shift by 2 HBHE towers: HBHE::iphi: [1,...,71,72]->[3,4,...,71,72,1,2]
-    iphi_  = hId.iphi()+2; // shift
-    iphi_  = iphi_ > 72 ? iphi_-72 : iphi_; // wrap-around
-    iphi_  = iphi_ -1; // make histogram-friendly
-    //iphi_  = hId.iphi()-1;
-    ieta_  = hId.ieta() > 0 ? hId.ieta()-1 : hId.ieta();
-    //std::cout << "HCAL | (ieta,iphi): (" << hId.ieta() << "," << iphi_+1 << ")" <<std::endl;
-
-    // Get global position of cell center
-    pos = caloGeom->getPosition(hId);
-    //eta = pos.eta();
-    phi = pos.phi();
-    //std::cout << "HCAL > (eta,phi): (" << eta << "," << phi << ","<< std::endl;
-    std::cout <<  hId.iphi() << ":" << iphi_+1 << ":" << phi << std::endl;
-    //std::cout <<  hId.ieta() << ":" << eta << std::endl;
-  }
-  */
-
 } // fillHBHErechits()
 
 //____ Fill ECAL @HCAL granularity _____//
@@ -811,12 +770,12 @@ void RecHitAnalyzer::fillEBdigis ( const edm::Event& iEvent, const edm::EventSet
   // Initialize data collection pointers
   edm::Handle<EBDigiCollection> EBDigisH;
   iEvent.getByToken(EBDigiCollectionT_, EBDigisH);
-/*
+
   // Provides access to global cell position and coordinates below
   edm::ESHandle<CaloGeometry> caloGeomH;
   iSetup.get<CaloGeometryRecord>().get(caloGeomH);
   caloGeom = caloGeomH.product();
-*/
+
   // Initialize arrays
   for(int iS(0); iS < EcalDataFrame::MAXSAMPLES; ++iS)
     vEB_adc_[iS].assign(EBDetId::kSizeForDenseIndexing,0);
