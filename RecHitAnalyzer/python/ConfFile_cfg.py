@@ -57,6 +57,7 @@ process.fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , reducedHBHERecHitCollection = cms.InputTag('reducedHcalRecHits:hbhereco')
     , genParticleCollection = cms.InputTag('genParticles')
     , gedPhotonCollection = cms.InputTag('gedPhotons')
+    , gsfElectronCollection = cms.InputTag('gedGsfElectrons')
     , ak4PFJetCollection = cms.InputTag('ak4PFJets')
     , genJetCollection = cms.InputTag('ak4GenJets')
     )

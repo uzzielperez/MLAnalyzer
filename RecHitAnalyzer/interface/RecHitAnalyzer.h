@@ -48,6 +48,7 @@
 #include "TMath.h"
 
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+#include "DataFormats/EgammaCandidates/interface/GsfElectron.h"
 #include "DataFormats/EgammaCandidates/interface/Photon.h"
 #include "DataFormats/EgammaCandidates/interface/PhotonFwd.h" // reco::PhotonCollection defined here
 #include "DataFormats/JetReco/interface/PFJet.h"
@@ -85,6 +86,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<HBHERecHitCollection> HBHERecHitCollectionT_;
     edm::EDGetTokenT<reco::GenParticleCollection> genParticleCollectionT_;
     edm::EDGetTokenT<reco::PhotonCollection> photonCollectionT_;
+    edm::EDGetTokenT<reco::GsfElectronCollection> electronCollectionT_;
     edm::EDGetTokenT<reco::PFJetCollection> jetCollectionT_;
     edm::EDGetTokenT<reco::GenJetCollection> genJetCollectionT_;
     //edm::InputTag trackTags_; //used to select what tracks to read from configuration file
@@ -204,16 +206,14 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     math::PtEtaPhiELorentzVectorD vPho_[2];
   
     // Selection and filling functions
-    bool runSelections( const edm::Event&, const edm::EventSetup& );
-    bool runSelections_H2GG( const edm::Event&, const edm::EventSetup& );
-    bool runSelections_H24G( const edm::Event&, const edm::EventSetup& );
+    bool runSelections_Stealth( const edm::Event&, const edm::EventSetup& );
     void fillEBrechits( const edm::Event&, const edm::EventSetup& );
     void fillEErechits( const edm::Event&, const edm::EventSetup& );
     void fillHBHErechits( const edm::Event&, const edm::EventSetup& );
     void fillECALatHCAL();
     void fillECALstitched();
     void fillEBdigis( const edm::Event&, const edm::EventSetup& );
-    void fillFC( const edm::Event&, const edm::EventSetup& );
+    //void fillFC( const edm::Event&, const edm::EventSetup& );
 
 }; // class RecHitAnalyzer
 

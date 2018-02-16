@@ -25,6 +25,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 
   genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
   photonCollectionT_ = consumes<reco::PhotonCollection>(iConfig.getParameter<edm::InputTag>("gedPhotonCollection"));
+  electronCollectionT_ = consumes<reco::GsfElectronCollection>(iConfig.getParameter<edm::InputTag>("gsfElectronCollection"));
   jetCollectionT_ = consumes<reco::PFJetCollection>(iConfig.getParameter<edm::InputTag>("ak4PFJetCollection"));
   genJetCollectionT_ = consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genJetCollection"));
 
@@ -148,7 +149,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   RHTree->Branch("HBHE_EMenergy",  &vHBHE_EMenergy_);
 
   // For FC inputs
-  RHTree->Branch("FC_inputs",      &vFC_inputs_);
+  //RHTree->Branch("FC_inputs",      &vFC_inputs_);
 
 } // constructor
 
@@ -165,9 +166,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // ----- Apply event selection cuts ----- //
 
   bool passedSelection = false;
-  //passedSelection = runSelections( iEvent, iSetup );
-  //passedSelection = runSelections_H2GG( iEvent, iSetup );
-  passedSelection = runSelections_H24G( iEvent, iSetup );
+  passedSelection = runSelections_Stealth( iEvent, iSetup );
 
   if ( !passedSelection ) return;
 
@@ -211,7 +210,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   fillHBHErechits( iEvent, iSetup );
 
   //////////// 4-Momenta //////////
-  fillFC( iEvent, iSetup );
+  //fillFC( iEvent, iSetup );
 
   //////////// Bookkeeping //////////
 
@@ -252,50 +251,30 @@ RecHitAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //descriptions.addDefault(desc);
 }
 
-
-//____ Fill FC diphoton variables _____//
-void RecHitAnalyzer::fillFC ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
-
-  edm::Handle<reco::PhotonCollection> photons;
-  iEvent.getByToken(photonCollectionT_, photons);
-
-  vFC_inputs_.clear();
-
-  int ptOrder[2] = {0, 1};
-  if ( vPho_[1].Pt() > vPho_[0].Pt() ) {
-      ptOrder[0] = 1;
-      ptOrder[1] = 0;
-  }
-  for ( int i = 0; i < 2; i++ ) {
-    vFC_inputs_.push_back( vPho_[ptOrder[i]].Pt()/m0_ );
-    vFC_inputs_.push_back( vPho_[ptOrder[i]].Eta() );
-  }
-  vFC_inputs_.push_back( TMath::Cos(vPho_[0].Phi()-vPho_[1].Phi()) );
-
-} // fillFC() 
-
 //____ Apply event selection cuts _____//
-bool RecHitAnalyzer::runSelections_H24G ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
+bool RecHitAnalyzer::runSelections_Stealth ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
   edm::Handle<reco::PhotonCollection> photons;
   iEvent.getByToken(photonCollectionT_, photons);
   edm::Handle<reco::GenParticleCollection> genParticles;
   iEvent.getByToken(genParticleCollectionT_, genParticles);
 
-  int nPho = 0;
+  int nPho = 0, nJet = 0;
+  float sT = 0.;
   //bool isHiggs = true;
   //bool isDecayed = true;
-  float etaCut = 1.44;
+  //float etaCut = 1.44;
   //float etaCut = 2.3;
   //float etaCut = 2.5;
-  float ptCut = 18.;
+  //float ptCut = 18.;
   //float dRCut = 0.4;
   //float dR, dEta, dPhi;
   std::cout << " >> recoPhoCol.size: " << photons->size() << std::endl;
-  math::PtEtaPhiELorentzVectorD vDiPho;
+  //math::PtEtaPhiELorentzVectorD vDiPho;
   //math::XYZTLorentzVector vDiPho;
   std::vector<float> vE, vPt, vEta, vPhi;
-  float leadPhoPt = 0;
+  //float leadPhoPt = 0;
+  float phoPt_;
 
   // Apply diphoton trigger-like selection
   for(reco::PhotonCollection::const_iterator iPho = photons->begin();
@@ -303,11 +282,19 @@ bool RecHitAnalyzer::runSelections_H24G ( const edm::Event& iEvent, const edm::E
       ++iPho) {
 
     // Kinematic cuts
-    if ( std::abs(iPho->eta()) > etaCut ) continue;
-    if ( std::abs(iPho->pt()) < ptCut ) continue;
-
+    if ( std::abs(iPho->eta()) > 1.44 ) continue;
+    if ( std::abs(iPho->pt()) < 25. ) continue;
+    if ( iPho->full5x5_sigmaIetaIeta() > 0.01022 ) continue;
+    if ( iPho->hadTowOverEm() > 0.0396 ) continue;
+    phoPt_ = std::abs(iPho->pt());
+    /*
+    if ( iPho->chargedHadronIso() > 0.441 ) continue;
+    if ( iPho->neutralHadronIso() > (2.725 + 0.0148*phoPt_ + 0.000017*phoPt_*phoPt_) ) continue;
+    if ( iPho->photonIso() > (2.571 + 0.0047*phoPt_) ) continue;
+    */
     nPho++;
-
+    sT += phoPt_;
+    /*
     // Record kinematics
     vDiPho += iPho->p4();
     vE.push_back(   iPho->energy() );
@@ -315,14 +302,16 @@ bool RecHitAnalyzer::runSelections_H24G ( const edm::Event& iEvent, const edm::E
     vEta.push_back( iPho->eta()    );
     vPhi.push_back( iPho->phi()    );
     if ( std::abs(iPho->pt()) > leadPhoPt ) leadPhoPt = std::abs(iPho->pt());
+    */
 
   } // recoPhotons
 
   // Apply diphoton trigger-like selection
-  if ( nPho != 2 ) return false;
-  if ( leadPhoPt < 30. ) return false;
-  m0_ = vDiPho.mass();
-  if ( m0_ < 90. ) return false;
+  std::cout << " >> nPho: " << nPho << std::endl;
+  if ( nPho < 2 ) return false;
+  //if ( leadPhoPt < 30. ) return false;
+  //m0_ = vDiPho.mass();
+  //if ( m0_ < 90. ) return false;
   /*
   // Check dR
   dEta = std::abs( vEta[0] - vEta[1] );
@@ -331,8 +320,9 @@ bool RecHitAnalyzer::runSelections_H24G ( const edm::Event& iEvent, const edm::E
   dR = TMath::Sqrt(dR);
   if ( dR < dRCut ) return false;
   */
-  std::cout << " >> passed trigger" << std::endl;
+  //std::cout << " >> passed photon" << std::endl;
 
+  /*
   // Apply good photon selection
   int i = 0;
   nPho = 0;
@@ -373,69 +363,7 @@ bool RecHitAnalyzer::runSelections_H24G ( const edm::Event& iEvent, const edm::E
   //std::cout << " >> m0: " << vDiPho.mass() << " diPhoPt: " << diPhoPt_ << " diPhoE: " << diPhoE_ << std::endl;
   h_m0->Fill( m0_ );
   std::cout << " >> m0: " << m0_ << " diPhoPt: " << diPhoPt_ << " diPhoE: " << diPhoE_ << std::endl;
-
-  /*
-  for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
-       iGen != genParticles->end();
-       ++iGen) {
-
-    // ID cuts
-    if ( std::abs(iGen->pdgId()) != 22 ) continue;
-    if ( iGen->status() != 1 ) continue; // NOT the same as Pythia status
-    if ( !iGen->mother() ) continue;
-    if ( iGen->mother()->pdgId() != 35 && iGen->mother()->pdgId() != 22 ) continue;
-    //std::cout << "status:" <<iGen->status() << " pT:" << iGen->pt() << " eta:" << iGen->eta() << " E:" << iGen->energy() << " mothId:" << iGen->mother()->pdgId() << std::endl;
-    // Kinematic cuts
-    if ( std::abs(iGen->eta()) > etaCut ) continue;
-    if ( std::abs(iGen->pt()) < ptCut ) continue;
-    nPho++;
-    vDiPho += iGen->p4();
-    if ( std::abs(iGen->pt()) > leadPt ) leadPt = std::abs(iGen->pt());
-
-  } // genParticle loop: count good photons
-
-  // Require exactly 2 gen-level photons
-  // Indifferent about photons of status != 1
-  std::cout << "GenCollection: " << nPho << std::endl;
-  if ( nPho != 4 ) return false;
-  //if ( vDiPho.mass() < 80. ) return false;
-
-  // Fill loop
-  for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
-       iGen != genParticles->end();
-       ++iGen) {
-
-    // PDG ID cut
-    if ( std::abs(iGen->pdgId()) != 22 ) continue;
-    if ( iGen->status() != 1 ) continue; // NOT the same as Pythia status
-    if ( !iGen->mother() ) continue;
-    if ( iGen->mother()->pdgId() != 35 && iGen->mother()->pdgId() != 22 ) continue;
-    // Kinematic cuts
-    if ( std::abs(iGen->eta()) > etaCut ) continue;
-    if ( std::abs(iGen->pt()) < ptCut ) continue;
-    std::cout << " pT:" << iGen->pt() << " eta:" << iGen->eta() << " phi: " << iGen->phi() << " E:" << iGen->energy() << std::endl;
-
-    // Fill histograms
-    //h_pT-> Fill( iGen->pt()      );
-    h_E->  Fill( iGen->energy()  );
-    h_eta->Fill( iGen->eta()     );
-  } // genParticle loop: fill hist
-  h_pT-> Fill( leadPt );
-  h_m0->Fill( vDiPho.mass() );
-  std::cout << "leadPt: " << leadPt << std::endl;
-  std::cout << " m0: " << vDiPho.mass() <<" (" << vDiPho.T() << ")" << std::endl;
-
-  m0_ = vDiPho.mass();
-  std::cout << "PhoCol.size: " << photons->size() << std::endl;
-  for(reco::PhotonCollection::const_iterator iPho = photons->begin();
-      iPho != photons->end();
-      ++iPho) {
-    if ( std::abs(iPho->eta()) > etaCut ) continue;
-    //if ( std::abs(iPho->pt()) < ptCut-2. ) continue;
-    std::cout << " pT:" << iPho->pt() << " eta:" << iPho->eta() << " phi: " << iPho->phi() << " E:" << iPho->energy() << std::endl;
-  }
   */
-
   // Check leading jet in reco jet collection
   edm::Handle<reco::PFJetCollection> jets;
   iEvent.getByToken(jetCollectionT_, jets);
@@ -443,9 +371,48 @@ bool RecHitAnalyzer::runSelections_H24G ( const edm::Event& iEvent, const edm::E
   for(reco::PFJetCollection::const_iterator iJet = jets->begin();
       iJet != jets->end();
       ++iJet) {
+    if ( std::abs(iJet->eta()) > 2.4 ) continue;
+    if ( std::abs(iJet->pt()) < 30. ) continue;
+    if ( iJet->chargedHadronEnergyFraction() < 0. ) continue;
+    if ( iJet->chargedEmEnergyFraction() > 0.99 ) continue;
+    if ( iJet->chargedMultiplicity() < 0. ) continue;
+    if ( iJet->neutralHadronEnergyFraction() > 0.90 ) continue;
+    if ( iJet->neutralEmEnergyFraction() > 0.90 ) continue;
+    nJet++;
+    sT += iJet->pt();
     //std::cout << " pT:" << iJet->pt() << " eta:" << iJet->eta() << " phi: " << iJet->phi() << " E:" << iJet->energy() << std::endl;
   }
+  std::cout << " >> nJet: " << nJet << std::endl;
+  if ( nJet < 4 ) return false;
 
+  //edm::Handle<edm::View<reco::GsfElectron>> electrons;
+  edm::Handle<reco::GsfElectronCollection> electrons;
+  iEvent.getByToken(electronCollectionT_, electrons);
+  std::cout << "EleCol.size: " << electrons->size() << std::endl;
+  int nEle = 0;
+  for(reco::GsfElectronCollection::const_iterator iEle = electrons->begin();
+      iEle != electrons->end();
+      ++iEle) {
+    if ( std::abs(iEle->eta()) > 2.5 ) continue;
+    if ( std::abs(iEle->pt()) < 15. ) continue;
+    if ( std::abs(iEle->eta()) <= 1.479 ) {
+        if ( iEle->full5x5_sigmaIetaIeta() > 0.00998 ) continue;
+        if ( iEle->hcalOverEcal() > 0.0414 ) continue;
+        //if ( std::abs(iEle->deltaEtaSeedClusterTrackAtVtx()) > 0.00308 ) continue;
+        //if ( std::abs(iEle->deltaPhiSuperClusterTrackAtVtx()) > 0.0816 ) continue;
+        //if ( std::abs(1. - iEle->eSuperClusterOverP())*(1./iEle->ecalEnergy()) > 0.0129 ) continue;
+    } else {
+        if ( iEle->full5x5_sigmaIetaIeta() > 0.0292 ) continue;
+        if ( iEle->hcalOverEcal() > 0.0641 ) continue;
+        //if ( std::abs(iEle->deltaEtaSeedClusterTrackAtVtx()) > 0.00605 ) continue;
+        //if ( std::abs(iEle->deltaPhiSuperClusterTrackAtVtx()) > 0.0394 ) continue;
+        //if ( std::abs(1. - iEle->eSuperClusterOverP())*(1./iEle->ecalEnergy()) > 0.0129 ) continue;
+    }
+    nEle++;
+  }
+  std::cout << " >> nEle: " << nEle << std::endl;
+
+  /*
   // Check leading jet in gen jet collection
   float leadJetPt = 0.;
   edm::Handle<reco::GenJetCollection> genJets;
@@ -459,165 +426,10 @@ bool RecHitAnalyzer::runSelections_H24G ( const edm::Event& iEvent, const edm::E
   }
   std::cout << " >> leadJetPt: " << leadJetPt << std::endl;
   h_leadJetPt->Fill( leadJetPt );
-
-  return true;
-
-} // runSelections_H24G
-
-//____ Apply event selection cuts _____//
-bool RecHitAnalyzer::runSelections_H2GG ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
-
-  edm::Handle<reco::PhotonCollection> photons;
-  iEvent.getByToken(photonCollectionT_, photons);
-  edm::Handle<reco::GenParticleCollection> genParticles;
-  iEvent.getByToken(genParticleCollectionT_, genParticles);
-
-  int nPho = 0;
-  //bool isHiggs = true;
-  //bool isDecayed = true;
-  //float etaCut = 1.4;
-  //float etaCut = 2.3;
-  //float etaCut = 5.;
-  //float ptCut = 0.;
-  //float dRCut = 0.4;
-  //float dR, dEta, dPhi;
-  std::cout << "PhoCol.size: " << photons->size() << std::endl;
-  math::XYZTLorentzVector vDiPho;
-
-  for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
-       iGen != genParticles->end();
-       ++iGen) {
-
-    // ID cuts
-    if ( std::abs(iGen->pdgId()) != 22 ) continue;
-    if ( iGen->status() != 1 ) continue; // NOT the same as Pythia status
-    if ( !iGen->mother() ) continue;
-    if ( iGen->mother()->pdgId() != 25 && iGen->mother()->pdgId() != 22 ) continue;
-    //std::cout << "status:" <<iGen->status() << " pT:" << iGen->pt() << " eta:" << iGen->eta() << " E:" << iGen->energy() << " mothId:" << iGen->mother()->pdgId() << std::endl;
-    nPho++;
-    vDiPho += iGen->p4();
-
-  } // genParticle loop: count good photons
-
-  // Require exactly 2 gen-level photons
-  // Indifferent about photons of status != 1
-  std::cout << nPho << std::endl;
-  if ( nPho != 2 ) return false;
-  //if ( vDiPho.mass() < 80. ) return false;
-
-  // Fill loop
-  for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
-       iGen != genParticles->end();
-       ++iGen) {
-
-    // PDG ID cut
-    if ( std::abs(iGen->pdgId()) != 22 ) continue;
-    if ( iGen->status() != 1 ) continue; // NOT the same as Pythia status
-    if ( !iGen->mother() ) continue;
-    if ( iGen->mother()->pdgId() != 25 && iGen->mother()->pdgId() != 22 ) continue;
-
-    // Fill histograms
-    h_pT-> Fill( iGen->pt()      );
-    h_E->  Fill( iGen->energy()  );
-    h_eta->Fill( iGen->eta()     );
-  } // genParticle loop: fill hist
-  h_m0->Fill( vDiPho.mass() );
-  std::cout << " m0: " << vDiPho.mass() <<" (" << vDiPho.T() << ")" << std::endl;
-
-  m0_ = vDiPho.mass();
-
-  return true;
-
-} // runSelections_H2GG()
-
-//____ Apply event selection cuts _____//
-bool RecHitAnalyzer::runSelections ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
-
-  // Initialize data collection pointers
-  edm::Handle<reco::PhotonCollection> photons;
-  iEvent.getByToken(photonCollectionT_, photons);
-  edm::Handle<reco::GenParticleCollection> genParticles;
-  iEvent.getByToken(genParticleCollectionT_, genParticles);
-
-  int nPho = 0;
-  //float etaCut = 1.4;
-  float etaCut = 2.3;
-  float ptCut = 25.;
-  std::cout << "PhoCol.size: " << photons->size() << std::endl;
-  for(reco::PhotonCollection::const_iterator iPho = photons->begin();
-      iPho != photons->end();
-      ++iPho) {
-
-    // Kinematic cuts
-    if ( std::abs(iPho->eta()) > etaCut ) continue;
-    if ( std::abs(iPho->pt()) < ptCut ) continue;
-
-    nPho++;
-
-  } // recoPhotons
-
-  // Require at least 2 passed reco photons
-  // Will also include PU photons
-  if ( nPho < 2 ) return false; 
-
-  /* 
-  for(reco::PhotonCollection::const_iterator iPho = photons->begin();
-      iPho != photons->end();
-      ++iPho) {
-
-    // Kinematic cuts
-    if ( std::abs(iPho->eta()) > etaCut ) continue;
-    if ( std::abs(iPho->pt()) < ptCut ) continue;
-
-    h_pT-> Fill( iPho->pt()      );
-    h_E->  Fill( iPho->energy()  );
-    h_eta->Fill( iPho->eta()     );
-    std::cout << "nPho:" << nPho << " pT:" << iPho->pt() << " eta:" << iPho->eta() << " E:" << iPho->energy() << std::endl;
-
-  } // recoPhotons
   */
-
-  float dRCut = 0.4;
-  float dEta, dPhi, dR;
-  for(reco::PhotonCollection::const_iterator iPho = photons->begin();
-      iPho != photons->end();
-      ++iPho) {
-
-    // Kinematic cuts
-    if ( std::abs(iPho->eta()) > etaCut ) continue;
-    if ( std::abs(iPho->pt()) < ptCut ) continue;
-
-    std::cout << "nPho:" << nPho << " pT:" << iPho->pt() << " eta:" << iPho->eta() << " E:" << iPho->energy() << std::endl;
-
-    for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
-        iGen != genParticles->end();
-        ++iGen) {
-
-      // ID cuts
-      if ( std::abs(iGen->pdgId()) != 22 ) continue;
-      if ( iGen->status() != 1 ) continue; // NOT the same as Pythia status
-      if ( !iGen->mother() ) continue;
-      if ( std::abs(iGen->mother()->status()) != 44 && std::abs(iGen->mother()->status()) != 23 ) continue;
-
-      // Match by dR
-      dEta = std::abs( iPho->eta() - iGen->eta() );
-      dPhi = std::abs( iPho->phi() - iGen->phi() );
-      dR = TMath::Power(dEta,2.) + TMath::Power(dPhi,2.);
-      dR = TMath::Sqrt(dR);
-      if ( dR < dRCut ) {
-        h_pT-> Fill( iGen->pt()      );
-        h_E->  Fill( iGen->energy()  );
-        h_eta->Fill( iGen->eta()     );
-        break;
-      }
-
-    } // genParticle loop: count good photons
-
-  } // recoPhotons
-
   return true;
 
-} // runSelections()
+} // runSelections_Stealth
 
 //____ Fill EB rechits _____//
 void RecHitAnalyzer::fillEBrechits ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
