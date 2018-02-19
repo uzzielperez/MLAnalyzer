@@ -1,8 +1,8 @@
 import os
 
 cfg='RecHitAnalyzer/python/ConfFile_cfg.py'
-inputFiles_='file:../miniAOD-prod_PAT.root'
-#inputFiles_='file:/eos/cms/store/user/mandrews/ML/FEVTDEBUG/T7WgStealth_800_200_FEVTDEBUG_noPU/180214_210138/0000/step_full_1.root'
+#inputFiles_='file:../miniAOD-prod_PAT.root'
+inputFiles_='file:/eos/cms/store/user/mandrews/ML/MINIAODSIM/T7WgStealth_800_200_MINIAODSIM_noPU/180218_102632/0000/miniAOD-prod_PAT_1.root'
 #inputFiles_='file:/eos/uscms/store/user/mba2012/FEVTDEBUG/h24gamma_1j_1M_100MeV_noPU_FEVTDEBUG/180109_233954/0000/step_full_1.root'
 #inputFiles_='root://cmseos.fnal.gov:1094//store/user/mba2012/FEVTDEBUG/step_full_17.root'
 maxEvents_=-1

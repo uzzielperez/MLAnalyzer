@@ -9,7 +9,6 @@
 //
 //
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
-#include "DataFormats/EcalDetId/interface/EBDetId.h"
 
 //
 // constructors and destructor
@@ -35,6 +34,8 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   slimmedElectronCollectionT_ = consumes<pat::ElectronCollection>(iConfig.getParameter<edm::InputTag>("slimmedElectronCollection"));
   phoTightIdMapT_ = consumes<edm::ValueMap<bool>>(iConfig.getParameter<edm::InputTag>("phoTightIdMap"));
 
+  rhoT_ = consumes<double>(iConfig.getParameter<edm::InputTag>("rhoLabel"));
+
   // Initialize file writer
   // NOTE: initializing dynamic-memory histograms outside of TFileService
   // will cause memory leaks
@@ -46,14 +47,14 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   // Cumulative histograms filled per event
   // EB rechits
   hEB_energy = fs->make<TH2D>("EB_energy", "E(i#phi,i#eta);i#phi;i#eta",
-      EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
-      2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
+      360  , EBDetId::MIN_IPHI-1, 360,
+      2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   85 );
   //hEB_energy = fs->make<TH2D>("EB_energy", "E(i#phi,i#eta);i#phi;i#eta",
-  //    EcalTrigTowerDetId::kEBTowersInPhi*18  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
+  //    EcalTrigTowerDetId::kEBTowersInPhi*18  , EBDetId::MIN_IPHI-1, 360,
   //    EcalTrigTowerDetId::kEBTowersInEta*2,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
   hEB_time = fs->make<TH2D>("EB_time", "t(i#phi,i#eta);i#phi;i#eta",
-      EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
-      2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
+      360  , EBDetId::MIN_IPHI-1, 360,
+      2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   85 );
   // EB Digis
   char hname[50], htitle[50];
   /*
@@ -61,7 +62,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
     sprintf(hname, "EB_adc%d",iS);
     sprintf(htitle,"adc%d(i#phi,i#eta);i#phi;i#eta",iS);
     hEB_adc[iS] = fs->make<TH2D>(hname, htitle,
-        EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
+        360  , EBDetId::MIN_IPHI-1, 360,
         2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
   }
   */
@@ -87,7 +88,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
       2*hcaldqm::constants::IETA_MAX_HE,-hcaldqm::constants::IETA_MAX_HE,hcaldqm::constants::IETA_MAX_HE );
   hHBHE_energy_EB = fs->make<TH2D>("HBHE_energy_EB", "E(i#phi,i#eta);i#phi;i#eta",
       hcaldqm::constants::IPHI_NUM, hcaldqm::constants::IPHI_MIN-1,hcaldqm::constants::IPHI_MAX,
-      2*HBHE_IETA_MAX_EB,          -HBHE_IETA_MAX_EB,              HBHE_IETA_MAX_EB );
+      2*17,          -17,              17 );
   //hHBHE_depth = fs->make<TH1D>("HBHE_depth", "Depth;depth;Hits",
   //    hcaldqm::constants::DEPTH_NUM, hcaldqm::constants::DEPTH_MIN, hcaldqm::constants::DEPTH_MAX+1);
 
@@ -114,11 +115,11 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
       hcaldqm::constants::IPHI_NUM, -TMath::Pi(), TMath::Pi(),
       2*(hcaldqm::constants::IETA_MAX_HE-1), eta_bins_HBHE );
   hEvt_EE_energy[0] = fs->make<TH2D>("evt_EEm_energy", "E(i#phi,i#eta);i#phi;i#eta",
-      EBDetId::MAX_IPHI, -TMath::Pi(), TMath::Pi(),
-      5*(hcaldqm::constants::IETA_MAX_HE-1-HBHE_IETA_MAX_EB), eta_bins_EEm );
+      360, -TMath::Pi(), TMath::Pi(),
+      5*(hcaldqm::constants::IETA_MAX_HE-1-17), eta_bins_EEm );
   hEvt_EE_energy[1] = fs->make<TH2D>("evt_EEp_energy", "E(i#phi,i#eta);i#phi;i#eta",
-      EBDetId::MAX_IPHI, -TMath::Pi(), TMath::Pi(),
-      5*(hcaldqm::constants::IETA_MAX_HE-1-HBHE_IETA_MAX_EB), eta_bins_EEp );
+      360, -TMath::Pi(), TMath::Pi(),
+      5*(hcaldqm::constants::IETA_MAX_HE-1-17), eta_bins_EEp );
   hEvt_HBHE_energy = new TH2D("evt_HBHE_energy", "E(i#phi,i#eta);i#phi;i#eta",
       hcaldqm::constants::IPHI_NUM,           hcaldqm::constants::IPHI_MIN-1,    hcaldqm::constants::IPHI_MAX,
       2*(hcaldqm::constants::IETA_MAX_HE-1),-(hcaldqm::constants::IETA_MAX_HE-1),hcaldqm::constants::IETA_MAX_HE-1 );
@@ -267,15 +268,12 @@ bool RecHitAnalyzer::runSelections_Stealth ( const edm::Event& iEvent, const edm
   iEvent.getByToken(phoTightIdMapT_, isTightPhoton);
   edm::Handle<pat::PhotonCollection> photons;
   iEvent.getByToken(slimmedPhotonCollectionT_, photons);
+  edm::Handle<double> rhoH_;
+  iEvent.getByToken(rhoT_, rhoH_);
+  float rho = rhoH_.isValid() ? *(rhoH_.product()) : 0.;
 
   int nPho = 0, nJet = 0;
   float sT = 0.;
-  //bool isHiggs = true;
-  //bool isDecayed = true;
-  //float etaCut = 1.44;
-  //float etaCut = 2.3;
-  //float etaCut = 2.5;
-  //float ptCut = 18.;
   //float dRCut = 0.4;
   //float dR, dEta, dPhi;
   std::cout << " >> recoPhoCol.size: " << photons->size() << std::endl;
@@ -283,6 +281,9 @@ bool RecHitAnalyzer::runSelections_Stealth ( const edm::Event& iEvent, const edm
   std::vector<float> vE, vPt, vEta, vPhi;
   //float leadPhoPt = 0;
   float phoPt_;
+
+  float EA_cIso = 0.0377, EA_nIso = 0.0807, EA_pIso = 0.1107;
+  float cIso_corr, nIso_corr, pIso_corr;
 
   // Apply diphoton trigger-like selection
   //for(reco::PhotonCollection::const_iterator iPho = photons->begin();
@@ -294,20 +295,28 @@ bool RecHitAnalyzer::runSelections_Stealth ( const edm::Event& iEvent, const edm
     // Kinematic cuts
     if ( std::abs(iPho->eta()) > 1.44 ) continue;
     if ( std::abs(iPho->pt()) < 25. ) continue;
-    if ( iPho->full5x5_sigmaIetaIeta() > 0.01022 ) continue;
     if ( iPho->hadTowOverEm() > 0.0396 ) continue;
+    if ( iPho->full5x5_sigmaIetaIeta() > 0.01022 ) continue;
+    if ( iPho->passElectronVeto() == false ) continue;
+    // Isolation
     phoPt_ = std::abs(iPho->pt());
+    if ( std::abs(iPho->eta()) < 1. ) {
+        EA_cIso = 0.0360;
+        EA_nIso = 0.0597;
+        EA_pIso = 0.1210;
+    }
+    cIso_corr = std::max( iPho->chargedHadronIso() - rho*EA_cIso, float(0.) );
+    nIso_corr = std::max( iPho->neutralHadronIso() - rho*EA_nIso, float(0.) );
+    pIso_corr = std::max( iPho->photonIso()        - rho*EA_pIso, float(0.) );
+    if ( cIso_corr > 0.441 ) continue;
+    if ( nIso_corr > (2.725 + 0.0148*phoPt_ + 0.000017*phoPt_*phoPt_) ) continue;
+    if ( pIso_corr > (2.571 + 0.0047*phoPt_) ) continue;
     //if (iPho->photonID("cutBasedPhotonID-Spring15-25ns-V1-standalone-tight")) continue; 
-    std::cout << " pho IDs:" << bool(iPho->photonID("cutBasedPhotonID-Spring15-25ns-V1-standalone-tight")) << std::endl;
+    std::cout << " pho ID:" << iPho->photonID("cutBasedPhotonID-Spring15-25ns-V1-standalone-medium") << std::endl;
     //std::cout << " pho IDs:" << iPho->photonIDs().size() << std::endl;
     //for (std::vector<std::pair<std::string,Bool_t>>::const_iterator it = iPho->photonIDs().begin(), ed = iPho->photonIDs().end(); it != ed; ++it) {
     //  std::cout << "'" << it->first << "' " << it->second << std::endl;
     //}
-    /*
-    if ( iPho->chargedHadronIso() > 0.441 ) continue;
-    if ( iPho->neutralHadronIso() > (2.725 + 0.0148*phoPt_ + 0.000017*phoPt_*phoPt_) ) continue;
-    if ( iPho->photonIso() > (2.571 + 0.0047*phoPt_) ) continue;
-    */
     //pat::PhotonRef phoRef(photons, iP);
     //const auto pho = photons->ptrAt(iP);
     //std::cout << (*isTightPhoton)[phoRef] << std::endl;
@@ -382,7 +391,7 @@ bool RecHitAnalyzer::runSelections_Stealth ( const edm::Event& iEvent, const edm
   //std::cout << " >> m0: " << vDiPho.mass() << " diPhoPt: " << diPhoPt_ << " diPhoE: " << diPhoE_ << std::endl;
   h_m0->Fill( m0_ );
   std::cout << " >> m0: " << m0_ << " diPhoPt: " << diPhoPt_ << " diPhoE: " << diPhoE_ << std::endl;
-  */
+
   // Check leading jet in reco jet collection
   edm::Handle<reco::PFJetCollection> jets;
   iEvent.getByToken(jetCollectionT_, jets);
@@ -403,31 +412,36 @@ bool RecHitAnalyzer::runSelections_Stealth ( const edm::Event& iEvent, const edm
   }
   std::cout << " >> nJet: " << nJet << std::endl;
   if ( nJet < 4 ) return false;
-
+  */
   //edm::Handle<reco::GsfElectronCollection> electrons;
   //iEvent.getByToken(electronCollectionT_, electrons);
   edm::Handle<pat::ElectronCollection> electrons;
   iEvent.getByToken(slimmedElectronCollectionT_, electrons);
   std::cout << "EleCol.size: " << electrons->size() << std::endl;
   int nEle = 0;
+  float eIso;
+  float EA_ele = 0.1715;
   //for(reco::GsfElectronCollection::const_iterator iEle = electrons->begin();
   for(pat::ElectronCollection::const_iterator iEle = electrons->begin();
       iEle != electrons->end();
       ++iEle) {
     if ( std::abs(iEle->eta()) > 2.5 ) continue;
     if ( std::abs(iEle->pt()) < 15. ) continue;
+    //eIso = iEle->chargedHadronIso() + std::max(iEle->neutralHadronIso()+iEle->photonIso() - rho*EA_ele, 0.);
     if ( std::abs(iEle->eta()) <= 1.479 ) {
         if ( iEle->full5x5_sigmaIetaIeta() > 0.00998 ) continue;
         if ( iEle->hcalOverEcal() > 0.0414 ) continue;
         //if ( std::abs(iEle->deltaEtaSeedClusterTrackAtVtx()) > 0.00308 ) continue;
         //if ( std::abs(iEle->deltaPhiSuperClusterTrackAtVtx()) > 0.0816 ) continue;
         //if ( std::abs(1. - iEle->eSuperClusterOverP())*(1./iEle->ecalEnergy()) > 0.0129 ) continue;
+        //if ( eIso > 0.0588 ) continue;
     } else {
         if ( iEle->full5x5_sigmaIetaIeta() > 0.0292 ) continue;
         if ( iEle->hcalOverEcal() > 0.0641 ) continue;
         //if ( std::abs(iEle->deltaEtaSeedClusterTrackAtVtx()) > 0.00605 ) continue;
         //if ( std::abs(iEle->deltaPhiSuperClusterTrackAtVtx()) > 0.0394 ) continue;
         //if ( std::abs(1. - iEle->eSuperClusterOverP())*(1./iEle->ecalEnergy()) > 0.0129 ) continue;
+        //if ( eIso > 0.0571 ) continue;
     }
     nEle++;
   }
@@ -498,7 +512,7 @@ void RecHitAnalyzer::fillEBrechits ( const edm::Event& iEvent, const edm::EventS
     // Get Hashed Index
     // Hashed index provides a convenient index mapping
     // from [ieta][iphi] -> [idx]
-    idx   = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
+    idx   = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*360 + iphi_
     //idx = ttId.hashedIndex();
 
     // Get global position of cell center
@@ -601,7 +615,7 @@ void RecHitAnalyzer::fillHBHErechits ( const edm::Event& iEvent, const edm::Even
   caloGeom = caloGeomH.product();
 
   // Initialize arrays
-  vHBHE_energy_EB_.assign( hcaldqm::constants::IPHI_NUM*2*HBHE_IETA_MAX_EB,0. );
+  vHBHE_energy_EB_.assign( hcaldqm::constants::IPHI_NUM*2*17,0. );
   vHBHE_energy_.assign( hcaldqm::constants::IPHI_NUM*2*(hcaldqm::constants::IETA_MAX_HE-1),0. );
   // Due to complications in HBHE geometry, fill intermediate histogram first
   // before copying to vector for tree writing
@@ -657,13 +671,13 @@ void RecHitAnalyzer::fillHBHErechits ( const edm::Event& iEvent, const edm::Even
     }
 
     // Fill HBHE coverage with EB overlap: hId.ieta() <= 17
-    if ( hId.ietaAbs() > HBHE_IETA_MAX_EB ) continue;
+    if ( hId.ietaAbs() > 17 ) continue;
     hHBHE_energy_EB->Fill( iphi_,ieta_,iRHit->energy() );
 
     // Create hashed Index
     // Effectively sums energies over depth for a given (ieta,iphi)
     // Maps from [ieta][iphi] -> [idx]
-    idx = ( ieta_+HBHE_IETA_MAX_EB )*hcaldqm::constants::IPHI_NUM + iphi_;
+    idx = ( ieta_+17 )*hcaldqm::constants::IPHI_NUM + iphi_;
 
     // Fill event arrays
     // These are the actual inputs to the detector images
@@ -711,7 +725,7 @@ void RecHitAnalyzer::fillECALstitched () {
 
   int iphi, ieta, idx;
 
-  vECAL_energy_.assign( 2*(EBDetId::MAX_IETA+55)*EBDetId::MAX_IPHI,0. );
+  vECAL_energy_.assign( 2*(85+55)*360,0. );
 
   // Fill fake EE-(ieta,iphi) geometry with EE- hits
   int offset = 0;
@@ -722,9 +736,9 @@ void RecHitAnalyzer::fillECALstitched () {
       // WARNING: HBHE::iphi() is not aligned with EBRecHit::iphi()!
       // => Need to shift by 2 HBHE towers: HBHE::iphi: [1,...,71,72]->[3,4,...,71,72,1,2]
       iphi = iphi_ + 190; // shift
-      iphi = iphi > EBDetId::MAX_IPHI ? iphi-EBDetId::MAX_IPHI : iphi; // wrap-around
+      iphi = iphi > 360 ? iphi-360 : iphi; // wrap-around
       iphi = iphi - 1;
-      idx = ieta*EBDetId::MAX_IPHI + iphi; 
+      idx = ieta*360 + iphi; 
       vECAL_energy_[idx] += hEvt_EE_energy[0]->GetBinContent( iphi_, ieta_ );
       //if (ieta_ == 1) std::cout << iphi_ << ":" << iphi+1 << ":" << hEvt_EE_energy[0]->GetXaxis()->GetBinCenter( iphi_ ) << std::endl;
       offset++;
@@ -733,7 +747,7 @@ void RecHitAnalyzer::fillECALstitched () {
 
   // Append true EB hits
   float offset_ = offset;
-  for (int idx_ = 0; idx_ < 2*EBDetId::MAX_IETA*EBDetId::MAX_IPHI; idx_++) {
+  for (int idx_ = 0; idx_ < 2*85*360; idx_++) {
     idx = idx_ + offset_;
     vECAL_energy_[idx] += vEB_energy_[idx_];
     offset++;
@@ -748,9 +762,9 @@ void RecHitAnalyzer::fillECALstitched () {
       // WARNING: HBHE::iphi() is not aligned with EBRecHit::iphi()!
       // => Need to shift by 2 HBHE towers: HBHE::iphi: [1,...,71,72]->[3,4,...,71,72,1,2]
       iphi = iphi_ + 190; // shift
-      iphi = iphi > EBDetId::MAX_IPHI ? iphi-EBDetId::MAX_IPHI : iphi; // wrap-around
+      iphi = iphi > 360 ? iphi-360 : iphi; // wrap-around
       iphi = iphi - 1;
-      idx = ieta*EBDetId::MAX_IPHI + iphi + offset_; 
+      idx = ieta*360 + iphi + offset_; 
       vECAL_energy_[idx] += hEvt_EE_energy[1]->GetBinContent( iphi_, ieta_ );
       //std::cout << iphi_ << ":" << iphi+1 << ":" << hEvt_EE_energy[1]->GetXaxis()->GetBinCenter( iphi_ ) << std::endl;
       offset++;
@@ -758,7 +772,7 @@ void RecHitAnalyzer::fillECALstitched () {
     //break;
   }  
 
-  if (offset != 280*EBDetId::MAX_IPHI) std::cout << "!!! full extended ECAL not traversed !!!: " << offset << std::endl;
+  if (offset != 280*360) std::cout << "!!! full extended ECAL not traversed !!!: " << offset << std::endl;
 
 } // fillECALstitched()
 
@@ -794,7 +808,7 @@ void RecHitAnalyzer::fillEBdigis ( const edm::Event& iEvent, const edm::EventSet
     // Get Hashed Index & Cell Geometry
     // Hashed index provides a convenient index mapping
     // from [ieta][iphi] -> [idx]
-    idx = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
+    idx = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*360 + iphi_
     // Cell geometry provides access to (rho,eta,phi) coordinates of cell center
     //cell  = caloGeom->getGeometry(ebId);
 

@@ -21,10 +21,10 @@
 #include "DataFormats/EcalDetId/interface/EBDetId.h"
 #include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
 #include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
-#include "DataFormats/EcalDetId/interface/EcalTrigTowerDetId.h"
-#include "Geometry/CaloTopology/interface/EcalBarrelTopology.h"
+//#include "DataFormats/EcalDetId/interface/EcalTrigTowerDetId.h"
+//#include "Geometry/CaloTopology/interface/EcalBarrelTopology.h"
 #include "Geometry/CaloGeometry/interface/CaloGeometry.h"
-#include "Geometry/CaloGeometry/interface/CaloCellGeometry.h"
+//#include "Geometry/CaloGeometry/interface/CaloCellGeometry.h"
 #include "Geometry/Records/interface/CaloGeometryRecord.h"
 
 #include "DataFormats/HcalRecHit/interface/HcalRecHitCollections.h"
@@ -102,6 +102,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<pat::ElectronCollection> slimmedElectronCollectionT_;
 
     edm::EDGetTokenT<edm::ValueMap<bool>>  phoTightIdMapT_;
+    edm::EDGetTokenT<double> rhoT_;
 
     // Declare some constants
     static const int EE_IZ_MAX = 2;

@@ -64,6 +64,7 @@ process.fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , slimmedPhotonCollection = cms.InputTag('slimmedPhotons')
     , slimmedElectronCollection = cms.InputTag('slimmedElectrons')
     , phoTightIdMap = cms.InputTag("egmPhotonIDs:cutBasedPhotonID-Spring16-V2p2-tight")
+    , rhoLabel = cms.InputTag("fixedGridRhoFastjetAll")
     )
 
 process.TFileService = cms.Service("TFileService",
@@ -73,4 +74,40 @@ process.TFileService = cms.Service("TFileService",
 
 #process.SimpleMemoryCheck = cms.Service( "SimpleMemoryCheck", ignoreTotal = cms.untracked.int32(1) )
 
-process.p = cms.Path(process.fevt)
+#####VID framework####################
+from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
+dataFormat = DataFormat.MiniAOD
+switchOnVIDElectronIdProducer(process, dataFormat)
+switchOnVIDPhotonIdProducer(process, dataFormat)
+
+# define which IDs we want to produce
+my_id_modules = ['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Summer16_80X_V1_cff',
+                 'RecoEgamma.ElectronIdentification.Identification.cutBasedElectronHLTPreselecition_Summer16_V1_cff',
+                 #'RecoEgamma.ElectronIdentification.Identification.heepElectronID_HEEPV70_cff.py',
+                 'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Spring16_GeneralPurpose_V1_cff',
+                 'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Spring16_HZZ_V1_cff']
+
+#add them to the VID producer
+for idmod in my_id_modules:
+    setupAllVIDIdsInModule(process,idmod,setupVIDElectronSelection)
+
+my_phoid_modules = ['RecoEgamma.PhotonIdentification.Identification.cutBasedPhotonID_Spring16_V2p2_cff',
+                    'RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Spring16_nonTrig_V1_cff']
+
+process.load("RecoEgamma.ElectronIdentification.ElectronIDValueMapProducer_cfi")
+process.electronIDValueMapProducer.srcMiniAOD = cms.InputTag('slimmedElectrons')
+process.electronMVAValueMapProducer.srcMiniAOD = cms.InputTag('slimmedElectrons')
+process.photonIDValueMapProducer.srcMiniAOD = cms.InputTag('slimmedPhotons')
+process.photonMVAValueMapProducer.srcMiniAOD = cms.InputTag('slimmedPhotons')
+
+#add them to the VID producer
+for idmod in my_phoid_modules:
+    setupAllVIDIdsInModule(process,idmod,setupVIDPhotonSelection)
+
+process.p = cms.Path(
+    process.egmGsfElectronIDSequence*
+    process.egmPhotonIDSequence*
+    process.fevt
+    )
+
+#process.p = cms.Path(process.fevt)
