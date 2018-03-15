@@ -213,15 +213,19 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   ////////// Apply selection and get coordinates of shower max //////////
   float Emax;
+  int idx;
   int iphi_Emax, ieta_Emax;
   int nPho = 0;
   edm::Handle<reco::PhotonCollection> photons;
   iEvent.getByToken(photonCollectionT_, photons);
   std::cout << " >> PhoCol.size: " << photons->size() << std::endl;
   // Loop over photons
+  idx = -1;
   for(reco::PhotonCollection::const_iterator iPho = photons->begin();
       iPho != photons->end();
       ++iPho) {
+
+    idx++;
 
     // Apply reco selection
     std::cout << " >> pT: " << iPho->pt() << " eta: " << iPho->eta() << std::endl;
@@ -265,7 +269,7 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     // Apply selection on position of shower seed
     if ( ieta_Emax > 169 - 15 || ieta_Emax < 15 ) continue;
-    vGoodPhotonIdxs_.push_back( nPho );
+    vGoodPhotonIdxs_.push_back( idx );
     vIphi_Emax.push_back( iphi_Emax );
     vIeta_Emax.push_back( ieta_Emax );
     std::cout << " >> Found: iphi_Emax,ieta_Emax: " << iphi_Emax << ", " << ieta_Emax << std::endl;
@@ -279,29 +283,16 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   std::cout << " >> Passed selection. " << std::endl;
     
   ////////// Store each shower crop //////////
-  int i = 0;
-  int iP = 0;
-  for(reco::PhotonCollection::const_iterator iPho = photons->begin();
-      iPho != photons->end();
-      ++iPho) {
-
-    // Skip failed photons
-    if ( std::find(vGoodPhotonIdxs_.begin(), vGoodPhotonIdxs_.end(), i) == vGoodPhotonIdxs_.end() ) {
-      i++;
-      continue;
-    }
+  for ( unsigned int i = 0; i < nPhotons; i++ ) {
+    reco::PhotonRef iPho( photons, vGoodPhotonIdxs_[i] );
 
     // Fill branch arrays
-    vPho_pT_[iP] = iPho->pt();
-    vPho_E_[iP] = iPho->energy();
-    vPho_eta_[iP] = iPho->eta();
-    vPho_phi_[iP] = iPho->phi();
-    i++;
-    iP++;
-
+    vPho_pT_[i] = iPho->pt();
+    vPho_E_[i] = iPho->energy();
+    vPho_eta_[i] = iPho->eta();
+    vPho_phi_[i] = iPho->phi();
   } // photons
 
-  int idx;
   int iphi_shift, ieta_shift;
   int iphi_crop, ieta_crop;
   /*
