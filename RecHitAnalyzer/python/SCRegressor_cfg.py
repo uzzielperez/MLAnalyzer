@@ -48,7 +48,7 @@ process.source = cms.Source("PoolSource",
 process.GlobalTag.globaltag = cms.string('80X_dataRun2_HLT_v12')
 process.es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
 
-process.fevt = cms.EDAnalyzer('SCAnalyzer'
+process.fevt = cms.EDAnalyzer('SCRegressor'
     #, EBRecHitCollection = cms.InputTag('ecalRecHit:EcalRecHitsEB')
     , gsfElectronCollection = cms.InputTag('gedGsfElectrons')
     , gedPhotonCollection = cms.InputTag('gedPhotons')
