@@ -18,8 +18,8 @@
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/one/EDAnalyzer.h"
-//#include "FWCore/Framework/interface/EDAnalyzer.h"
+//#include "FWCore/Framework/interface/one/EDAnalyzer.h"
+#include "FWCore/Framework/interface/EDAnalyzer.h"
 
 #include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
 #include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
@@ -70,8 +70,8 @@
 // constructor "usesResource("TFileService");"
 // This will improve performance in multithreaded jobs.
 
-class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
-//class RecHitAnalyzer : public edm::EDAnalyzer  {
+//class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
+class RecHitAnalyzer : public edm::EDAnalyzer  {
   public:
     explicit RecHitAnalyzer(const edm::ParameterSet&);
     ~RecHitAnalyzer();
@@ -85,22 +85,21 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     virtual void endJob() override;
 
     // ----------member data ---------------------------
-    // Tokens
-    edm::EDGetTokenT<EcalRecHitCollection> EBRecHitCollectionT_;
-    edm::EDGetTokenT<EBDigiCollection>     EBDigiCollectionT_;
-    edm::EDGetTokenT<EcalRecHitCollection> EERecHitCollectionT_;
-    edm::EDGetTokenT<HBHERecHitCollection> HBHERecHitCollectionT_;
-    edm::EDGetTokenT<TrackingRecHitCollection> TRKRecHitCollectionT_;
-    edm::EDGetTokenT<reco::GenParticleCollection> genParticleCollectionT_;
-    edm::EDGetTokenT<reco::PhotonCollection> photonCollectionT_;
-    edm::EDGetTokenT<reco::PFJetCollection> jetCollectionT_;
-    edm::EDGetTokenT<reco::GenJetCollection> genJetCollectionT_;
-    edm::EDGetTokenT<reco::TrackCollection> trackCollectionT_;
-    //edm::InputTag trackTags_; //used to select what tracks to read from configuration file
+    edm::InputTag EBRecHitCollectionT_;
+    edm::InputTag EBDigiCollectionT_;
+    edm::InputTag EERecHitCollectionT_;
+    edm::InputTag HBHERecHitCollectionT_;
+    edm::InputTag TRKRecHitCollectionT_;
+    edm::InputTag genParticleCollectionT_;
+    edm::InputTag photonCollectionT_;
+    edm::InputTag jetCollectionT_;
+    edm::InputTag genJetCollectionT_;
+    edm::InputTag trackCollectionT_;
 
     // Diagnostic histograms
     //TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES]; 
     //TH1D * hHBHE_depth; 
+    TH1F *h_sel; 
 
     // Main TTree
     TTree* RHTree;

@@ -43,8 +43,10 @@ process.source = cms.Source("PoolSource",
     , skipEvents = cms.untracked.uint32(options.skipEvents)
     )
 
-process.GlobalTag.globaltag = cms.string('80X_dataRun2_HLT_v12')
-process.es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
+from Configuration.AlCa.GlobalTag import GlobalTag
+process.GlobalTag = GlobalTag(process.GlobalTag, 'START53_LV6::All', '')
+#process.GlobalTag.globaltag = cms.string('80X_dataRun2_HLT_v12')
+#process.es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
 
 process.fevt = cms.EDAnalyzer('RecHitAnalyzer'
     #, tracks = cms.untracked.InputTag('ctfWithMaterialTracks')
@@ -56,9 +58,12 @@ process.fevt = cms.EDAnalyzer('RecHitAnalyzer'
     #, selectedEBDigiCollection = cms.InputTag('selectDigi:selectedEcalEBDigiCollection')
     , reducedHBHERecHitCollection = cms.InputTag('reducedHcalRecHits:hbhereco')
     , genParticleCollection = cms.InputTag('genParticles')
-    , gedPhotonCollection = cms.InputTag('gedPhotons')
-    , ak4PFJetCollection = cms.InputTag('ak4PFJets')
-    , genJetCollection = cms.InputTag('ak4GenJets')
+    #, gedPhotonCollection = cms.InputTag('gedPhotons')
+    , photonCollection = cms.InputTag('photons')
+    #, ak4PFJetCollection = cms.InputTag('ak4PFJets')
+    , PFJetCollection = cms.InputTag('ak5PFJets')
+    #, genJetCollection = cms.InputTag('ak4GenJets')
+    , genJetCollection = cms.InputTag('ak5GenJets')
     , trackRecHitCollection = cms.InputTag('generalTracks')
     , trackCollection = cms.InputTag("generalTracks")
     )

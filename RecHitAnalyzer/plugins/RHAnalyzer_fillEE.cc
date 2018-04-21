@@ -5,8 +5,12 @@
 // For each endcap, store event rechits in a vector of length 
 // equal to number of crystals per endcap (ix:100 x iy:100)
 
+static const int EE_MIN_IX = 1;
+static const int EE_MIN_IY = 1;
+static const int EE_MAX_IX = 100;
+static const int EE_MAX_IY = 100;
 static const int nEE = 2;
-static const int EE_NC_PER_ZSIDE = EEDetId::IX_MAX*EEDetId::IY_MAX; // 100*100
+static const int EE_NC_PER_ZSIDE = EE_MAX_IX*EE_MAX_IY; // 100*100
 
 TProfile2D *hEE_energy[nEE];
 TProfile2D *hEE_time[nEE];
@@ -29,13 +33,13 @@ void RecHitAnalyzer::branchesEE ( TTree* tree, edm::Service<TFileService> &fs ) 
     sprintf(hname, "EE%s_energy",zside);
     sprintf(htitle,"E(ix,iy);ix;iy");
     hEE_energy[iz] = fs->make<TProfile2D>(hname, htitle,
-        EEDetId::IX_MAX, EEDetId::IX_MIN-1, EEDetId::IX_MAX,
-        EEDetId::IY_MAX, EEDetId::IY_MIN-1, EEDetId::IY_MAX );
+        EE_MAX_IX, EE_MIN_IX-1, EE_MAX_IX,
+        EE_MAX_IY, EE_MIN_IY-1, EE_MAX_IY );
     sprintf(hname, "EE%s_time",zside);
     sprintf(htitle,"t(ix,iy);ix;iy");
     hEE_time[iz] = fs->make<TProfile2D>(hname, htitle,
-        EEDetId::IX_MAX, EEDetId::IX_MIN-1, EEDetId::IX_MAX,
-        EEDetId::IY_MAX, EEDetId::IY_MIN-1, EEDetId::IY_MAX );
+        EE_MAX_IX, EE_MIN_IX-1, EE_MAX_IX,
+        EE_MAX_IY, EE_MIN_IY-1, EE_MAX_IY );
   } // iz
 
 } // branchesEE()
@@ -52,7 +56,7 @@ void RecHitAnalyzer::fillEE ( const edm::Event& iEvent, const edm::EventSetup& i
   }
 
   edm::Handle<EcalRecHitCollection> EERecHitsH_;
-  iEvent.getByToken( EERecHitCollectionT_, EERecHitsH_ );
+  iEvent.getByLabel( EERecHitCollectionT_, EERecHitsH_ );
 
   // Fill EE rechits
   for ( EcalRecHitCollection::const_iterator iRHit = EERecHitsH_->begin();
@@ -69,7 +73,7 @@ void RecHitAnalyzer::fillEE ( const edm::Event& iEvent, const edm::EventSetup& i
     hEE_energy[iz_]->Fill( ix_, iy_, energy_ );
     hEE_time[iz_]->Fill( ix_, iy_, iRHit->time() );
     // Create hashed Index: maps from [iy][ix] -> [idx_]
-    idx_ = iy_*EEDetId::IX_MAX + ix_;
+    idx_ = iy_*EE_MAX_IX + ix_;
     // Fill vectors for images
     vEE_energy_[iz_][idx_] = energy_;
     vEE_time_[iz_][idx_] = iRHit->time();

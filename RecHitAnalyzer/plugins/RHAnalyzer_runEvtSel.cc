@@ -1,32 +1,41 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
+#include "DataFormats/Math/interface/deltaR.h"
 
 // Fill EB rec hits ////////////////////////////////
 // Store event rechits in a vector of length equal
 // to number of crystals in EB (ieta:170 x iphi:360)
 
-TH1D *h_pT;
-TH1D *h_E;
-TH1D *h_eta;
-TH1D *h_m0;
-TH1D *h_leadJetPt;
+TH1F *h_m0;
+TH1F *h_nJet;
+TH1F *h_phoPt; 
+TH1F *h_phoE;
+TH1F *h_phoEta;
+TH1F *h_jetPt;
+TH1F *h_jetE;
+TH1F *h_jetEta;
+
 float eventId_;
 float m0_;
+float nJet_;
 //float diPhoE_;
 //float diPhoPt_;
 
 // Initialize branches _____________________________________________________//
 void RecHitAnalyzer::branchesEvtSel ( TTree* tree, edm::Service<TFileService> &fs ) {
 
-  h_pT  = fs->make<TH1D>("h_pT" , "p_{T};p_{T};Particles", 100,  0., 500.);
-  h_E   = fs->make<TH1D>("h_E"  , "E;E;Particles"        , 100,  0., 800.);
-  h_eta = fs->make<TH1D>("h_eta", "#eta;#eta;Particles"  , 100, -5., 5.);
-  h_m0  = fs->make<TH1D>("h_m0" , "m0;m0;Events"        ,   72, 50., 950.);
-  //h_m0  = fs->make<TH1D>("h_m0" , "m0;m0;Events"        ,   50, 90., 240.);
-  //h_m0  = fs->make<TH1D>("h_m0" , "m0;m0;Events"        ,   50, 0., 2.);
-  h_leadJetPt  = fs->make<TH1D>("h_leadJetPt" , "p_{T};p_{T};Events", 100,  0., 500.);
+  h_nJet   = fs->make<TH1F>("h_nJet"  , "nJet;nJet;Events"     ,  10,  0.,  10.);
+  h_m0     = fs->make<TH1F>("h_m0"    , "m0;m0;Events"         ,  50, 90., 240.);
+
+  h_phoPt  = fs->make<TH1F>("h_phoPt" , "p_{T};p_{T};Particles", 100,  0., 500.);
+  h_phoE   = fs->make<TH1F>("h_phoE"  , "E;E;Particles"        , 100,  0., 800.);
+  h_phoEta = fs->make<TH1F>("h_phoEta", "#eta;#eta;Particles"  , 100, -5., 5.);
+  h_jetPt  = fs->make<TH1F>("h_jetPt" , "p_{T};p_{T};Particles", 100,  0., 500.);
+  h_jetE   = fs->make<TH1F>("h_jetE"  , "E;E;Particles"        , 100,  0., 800.);
+  h_jetEta = fs->make<TH1F>("h_jetEta", "#eta;#eta;Particles"  , 100, -5., 5.);
 
   RHTree->Branch("eventId",        &eventId_);
   RHTree->Branch("m0",             &m0_);
+  RHTree->Branch("nJet",           &nJet_);
   //RHTree->Branch("diPhoE",         &diPhoE_);
   //RHTree->Branch("diPhoPt",        &diPhoPt_);
 
@@ -36,57 +45,90 @@ void RecHitAnalyzer::branchesEvtSel ( TTree* tree, edm::Service<TFileService> &f
 bool RecHitAnalyzer::runEvtSel ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
   edm::Handle<reco::PhotonCollection> photons;
-  iEvent.getByToken(photonCollectionT_, photons);
+  iEvent.getByLabel(photonCollectionT_, photons);
+  std::cout << "PhoCol.size: " << photons->size() << std::endl;
+  edm::Handle<reco::PFJetCollection> jets;
+  iEvent.getByLabel(jetCollectionT_, jets);
+  std::cout << " >> PFJetCol.size: " << jets->size() << std::endl;
+  edm::Handle<reco::GenJetCollection> genJets;
+  iEvent.getByLabel(genJetCollectionT_, genJets);
+  std::cout << " >> GenJetCol.size: " << genJets->size() << std::endl;
   edm::Handle<reco::GenParticleCollection> genParticles;
-  iEvent.getByToken(genParticleCollectionT_, genParticles);
+  iEvent.getByLabel(genParticleCollectionT_, genParticles);
 
   int nPho = 0;
-  std::cout << "PhoCol.size: " << photons->size() << std::endl;
-  math::XYZTLorentzVector vDiPho;
+  std::cout << "GPCol.size: " << genParticles->size() << std::endl;
+  //math::XYZTLorentzVector vDiPho;
 
-  for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
-       iGen != genParticles->end();
-       ++iGen) {
-
+  math::PtEtaPhiELorentzVectorD vDiPho;
+  //std::vector<math::XYZTLorentzVector> vPhoPairs[nPhotons];
+  std::vector<int> vPhoIdxs;
+  for ( unsigned int iG = 0; iG < genParticles->size(); iG++ ) {
+    reco::GenParticleRef iGen( genParticles, iG );
     // ID cuts
     if ( std::abs(iGen->pdgId()) != 22 ) continue;
     if ( iGen->status() != 1 ) continue; // NOT the same as Pythia status
+    //std::cout << iGen->numberOfMothers() << std::endl;
     if ( !iGen->mother() ) continue;
     if ( iGen->mother()->pdgId() != 25 && iGen->mother()->pdgId() != 22 ) continue;
-    //std::cout << "status:" <<iGen->status() << " pT:" << iGen->pt() << " eta:" << iGen->eta() << " E:" << iGen->energy() << " mothId:" << iGen->mother()->pdgId() << std::endl;
+    //std::cout << "status:" <<iGen->status() << " pdgId:" << iGen->pdgId() << " pT:" << iGen->pt() << " eta:" << iGen->eta() << " E:" << iGen->energy() << std::endl;
+    std::cout << "status:" <<iGen->status() << " pdgId:" << iGen->pdgId() << " pT:" << iGen->pt() << " eta:" << iGen->eta() << " E:" << iGen->energy() << " mothId:" << iGen->mother()->pdgId() << std::endl;
+
+    for ( unsigned int iD = 0; iD < iGen->numberOfMothers(); iD++ ) {
+          const reco::Candidate* moth = iGen->mother(iD);
+          std::cout << " mothId:" << moth->pdgId() << std::endl;
+    }
     nPho++;
     vDiPho += iGen->p4();
+    vPhoIdxs.push_back( iG );
 
   } // genParticle loop: count good photons
 
-  // Require exactly 2 gen-level photons
-  // Indifferent about photons of status != 1
-  std::cout << nPho << std::endl;
   if ( nPho != 2 ) return false;
-  //if ( vDiPho.mass() < 80. ) return false;
+  if ( vDiPho.mass() < 90. ) return false;
+  std::cout << " n:" << nPho << " m0:" << vDiPho.mass() << std::endl;
 
-  // Fill loop
-  for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
-       iGen != genParticles->end();
-       ++iGen) {
+  float dR;
+  bool isDRIsolated;
+  int nJet = 0;
+  std::vector<int> vJetIdxs;
+  for ( unsigned int iJ = 0; iJ < genJets->size(); iJ++ ) {
+    reco::GenJetRef iJet( genJets, iJ );
+    if ( std::abs(iJet->pt()) < 30. ) continue;
+    if ( std::abs(iJet->eta()) > 2.5 ) continue;
+    // deltaR check
+    isDRIsolated = true;
+    for ( int iP = 0; iP < nPho; iP++ ) {
+      reco::GenParticleRef iGen( genParticles, vPhoIdxs[iP] );
+      dR = reco::deltaR( iJet->eta(),iJet->phi(), iGen->eta(),iGen->phi() );
+      if ( dR < 0.4 ) {
+        isDRIsolated = false;
+        break;
+      }
+    }
+    if ( !isDRIsolated ) continue;
+    std::cout << " >> pT:" << iJet->pt() << " eta:" << iJet->eta() << " phi: " << iJet->phi() << " E:" << iJet->energy() << std::endl;
+    nJet++;
+    vJetIdxs.push_back( iJ );
+  }
 
-    // PDG ID cut
-    if ( std::abs(iGen->pdgId()) != 22 ) continue;
-    if ( iGen->status() != 1 ) continue; // NOT the same as Pythia status
-    if ( !iGen->mother() ) continue;
-    if ( iGen->mother()->pdgId() != 25 && iGen->mother()->pdgId() != 22 ) continue;
-
-    // Fill histograms
-    h_pT-> Fill( iGen->pt()      );
-    h_E->  Fill( iGen->energy()  );
-    h_eta->Fill( iGen->eta()     );
-  } // genParticle loop: fill hist
+  h_nJet->Fill( nJet );
   h_m0->Fill( vDiPho.mass() );
-  std::cout << " m0: " << vDiPho.mass() <<" (" << vDiPho.T() << ")" << std::endl;
-
-  m0_ = vDiPho.mass();
-
+  for ( int iP = 0; iP < nPho; iP++ ) {
+    reco::GenParticleRef iGen( genParticles, vPhoIdxs[iP] );
+    h_phoPt->Fill( iGen->pt() ); 
+    h_phoE->Fill( iGen->energy() );
+    h_phoEta->Fill( iGen->eta() ); 
+  }
+  for ( int iJ = 0; iJ < nJet; iJ++ ) {
+    reco::GenJetRef iJet( genJets, vJetIdxs[iJ] );
+    h_jetPt->Fill( iJet->pt() ); 
+    h_jetE->Fill( iJet->energy() );
+    h_jetEta->Fill( iJet->eta() ); 
+  }
   // Write out event ID
+  m0_ = vDiPho.mass();
+  nJet_ = nJet;
   eventId_ = iEvent.id().event();
 
   return true;
@@ -98,9 +140,9 @@ bool RecHitAnalyzer::runEvtSel ( const edm::Event& iEvent, const edm::EventSetup
 bool RecHitAnalyzer::runSelections_H24G ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
   edm::Handle<reco::PhotonCollection> photons;
-  iEvent.getByToken(photonCollectionT_, photons);
+  iEvent.getByLabel(photonCollectionT_, photons);
   edm::Handle<reco::GenParticleCollection> genParticles;
-  iEvent.getByToken(genParticleCollectionT_, genParticles);
+  iEvent.getByLabel(genParticleCollectionT_, genParticles);
 
   int nPho = 0;
   //bool isHiggs = true;
@@ -254,7 +296,7 @@ bool RecHitAnalyzer::runSelections_H24G ( const edm::Event& iEvent, const edm::E
 
   // Check leading jet in reco jet collection
   edm::Handle<reco::PFJetCollection> jets;
-  iEvent.getByToken(jetCollectionT_, jets);
+  iEvent.getByLabel(jetCollectionT_, jets);
   std::cout << " >> PFJetCol.size: " << jets->size() << std::endl;
   for(reco::PFJetCollection::const_iterator iJet = jets->begin();
       iJet != jets->end();
@@ -265,7 +307,7 @@ bool RecHitAnalyzer::runSelections_H24G ( const edm::Event& iEvent, const edm::E
   // Check leading jet in gen jet collection
   float leadJetPt = 0.;
   edm::Handle<reco::GenJetCollection> genJets;
-  iEvent.getByToken(genJetCollectionT_, genJets);
+  iEvent.getByLabel(genJetCollectionT_, genJets);
   std::cout << " >> GenJetCol.size: " << jets->size() << std::endl;
   for(reco::GenJetCollection::const_iterator iJet = genJets->begin();
       iJet != genJets->end();
@@ -284,9 +326,9 @@ bool RecHitAnalyzer::runSelections_H24G ( const edm::Event& iEvent, const edm::E
 bool RecHitAnalyzer::runSelections_H2GG ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
   edm::Handle<reco::PhotonCollection> photons;
-  iEvent.getByToken(photonCollectionT_, photons);
+  iEvent.getByLabel(photonCollectionT_, photons);
   edm::Handle<reco::GenParticleCollection> genParticles;
-  iEvent.getByToken(genParticleCollectionT_, genParticles);
+  iEvent.getByLabel(genParticleCollectionT_, genParticles);
 
   int nPho = 0;
   //bool isHiggs = true;
@@ -351,9 +393,9 @@ bool RecHitAnalyzer::runSelections ( const edm::Event& iEvent, const edm::EventS
 
   // Initialize data collection pointers
   edm::Handle<reco::PhotonCollection> photons;
-  iEvent.getByToken(photonCollectionT_, photons);
+  iEvent.getByLabel(photonCollectionT_, photons);
   edm::Handle<reco::GenParticleCollection> genParticles;
-  iEvent.getByToken(genParticleCollectionT_, genParticles);
+  iEvent.getByLabel(genParticleCollectionT_, genParticles);
 
   int nPho = 0;
   //float etaCut = 1.4;

@@ -15,26 +15,30 @@
 //
 RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 {
-  //EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EBRecHitCollection"));
-  EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
-  //EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("selectedEBDigiCollection"));
-  //EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("EBDigiCollection"));
-  EERecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEERecHitCollection"));
-  //EERecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EERecHitCollection"));
-  HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
-  TRKRecHitCollectionT_  = consumes<TrackingRecHitCollection>(iConfig.getParameter<edm::InputTag>("trackRecHitCollection"));
 
-  genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
-  photonCollectionT_ = consumes<reco::PhotonCollection>(iConfig.getParameter<edm::InputTag>("gedPhotonCollection"));
-  jetCollectionT_ = consumes<reco::PFJetCollection>(iConfig.getParameter<edm::InputTag>("ak4PFJetCollection"));
-  genJetCollectionT_ = consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genJetCollection"));
-  trackCollectionT_ = consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("trackCollection"));
+  //EBRecHitCollectionT_ = iConfig.getParameter<edm::InputTag>("EBRecHitCollection");
+  EBRecHitCollectionT_ = iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection");
+  //EBDigiCollectionT_ = iConfig.getParameter<edm::InputTag>("selectedEBDigiCollection");
+  //EBDigiCollectionT_ = iConfig.getParameter<edm::InputTag>("EBDigiCollection"));
+  EERecHitCollectionT_ = iConfig.getParameter<edm::InputTag>("reducedEERecHitCollection");
+  //EERecHitCollectionT_ = iConfig.getParameter<edm::InputTag>("EERecHitCollection"));
+  HBHERecHitCollectionT_ = iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection");
+  //TRKRecHitCollectionT_  = iConfig.getParameter<edm::InputTag>("trackRecHitCollection");
+
+  genParticleCollectionT_ = iConfig.getParameter<edm::InputTag>("genParticleCollection");
+  //photonCollectionT_ = iConfig.getParameter<edm::InputTag>("gedPhotonCollection");
+  photonCollectionT_ = iConfig.getParameter<edm::InputTag>("photonCollection");
+  //jetCollectionT_ = iConfig.getParameter<edm::InputTag>("ak4PFJetCollection");
+  jetCollectionT_ = iConfig.getParameter<edm::InputTag>("PFJetCollection");
+  genJetCollectionT_ = iConfig.getParameter<edm::InputTag>("genJetCollection");
+  //trackCollectionT_ = iConfig.getParameter<edm::InputTag>("trackCollection");
 
   // Initialize file writer
   // NOTE: initializing dynamic-memory histograms outside of TFileService
   // will cause memory leaks
-  usesResource("TFileService");
+  //usesResource("TFileService");
   edm::Service<TFileService> fs;
+  h_sel = fs->make<TH1F>("h_sel", "isSelected;isSelected;Events", 2, 0., 2.);
 
   //////////// TTree //////////
 
@@ -77,10 +81,19 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // ----- Apply event selection cuts ----- //
 
+  //edm::Handle<reco::PhotonCollection> photons;
+  //iEvent.getByLabel(photonCollectionT_, photons);
+  //edm::Handle<reco::GenParticleCollection> genParticles;
+  //iEvent.getByLabel(genParticleCollectionT_, genParticles);
+
+  //std::cout << "GenCol.size: " << genParticles->size() << std::endl;
   bool passedSelection = false;
   passedSelection = runEvtSel( iEvent, iSetup );
 
-  if ( !passedSelection ) return;
+  if ( !passedSelection ) {
+    h_sel->Fill( 0. );
+    return;
+  }
 
   fillEB( iEvent, iSetup );
   fillEE( iEvent, iSetup );
@@ -99,6 +112,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // Fill RHTree
   RHTree->Fill();
+  h_sel->Fill( 1. );
 
 } // analyze()
 
