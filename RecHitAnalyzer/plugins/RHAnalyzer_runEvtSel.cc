@@ -52,7 +52,7 @@ bool RecHitAnalyzer::runEvtSel ( const edm::Event& iEvent, const edm::EventSetup
     if ( std::abs(iGen->pdgId()) != 22 ) continue;
     if ( iGen->status() != 1 ) continue; // NOT the same as Pythia status
     if ( !iGen->mother() ) continue;
-    if ( iGen->mother()->pdgId() != 25 && iGen->mother()->pdgId() != 22 ) continue;
+    if ( iGen->mother()->pdgId() != 35 && iGen->mother()->pdgId() != 22 ) continue;
     //std::cout << "status:" <<iGen->status() << " pT:" << iGen->pt() << " eta:" << iGen->eta() << " E:" << iGen->energy() << " mothId:" << iGen->mother()->pdgId() << std::endl;
     nPho++;
     vDiPho += iGen->p4();
@@ -61,8 +61,8 @@ bool RecHitAnalyzer::runEvtSel ( const edm::Event& iEvent, const edm::EventSetup
 
   // Require exactly 2 gen-level photons
   // Indifferent about photons of status != 1
-  std::cout << nPho << std::endl;
-  if ( nPho != 2 ) return false;
+  std::cout << "nPho:" << nPho << std::endl;
+  if ( nPho != 4 ) return false;
   //if ( vDiPho.mass() < 80. ) return false;
 
   // Fill loop
@@ -74,7 +74,7 @@ bool RecHitAnalyzer::runEvtSel ( const edm::Event& iEvent, const edm::EventSetup
     if ( std::abs(iGen->pdgId()) != 22 ) continue;
     if ( iGen->status() != 1 ) continue; // NOT the same as Pythia status
     if ( !iGen->mother() ) continue;
-    if ( iGen->mother()->pdgId() != 25 && iGen->mother()->pdgId() != 22 ) continue;
+    if ( iGen->mother()->pdgId() != 35 && iGen->mother()->pdgId() != 22 ) continue;
 
     // Fill histograms
     h_pT-> Fill( iGen->pt()      );

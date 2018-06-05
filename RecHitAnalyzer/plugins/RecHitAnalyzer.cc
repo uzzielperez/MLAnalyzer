@@ -44,9 +44,9 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   branchesEB           ( RHTree, fs );
   branchesEE           ( RHTree, fs );
   branchesHBHE         ( RHTree, fs );
-  //branchesECALatHCAL   ( RHTree, fs );
-  //branchesECALstitched ( RHTree, fs );
-  //branchesHCALatEBEE   ( RHTree, fs );
+  branchesECALatHCAL   ( RHTree, fs );
+  branchesECALstitched ( RHTree, fs );
+  branchesHCALatEBEE   ( RHTree, fs );
   //branchesTracksAtEBEE(RHTree, fs);
   //branchesTRKlayersAtEBEE(RHTree, fs);
   //branchesTRKlayersAtECAL(RHTree, fs);
@@ -85,9 +85,9 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   fillEB( iEvent, iSetup );
   fillEE( iEvent, iSetup );
   fillHBHE( iEvent, iSetup );
-  //fillECALatHCAL( iEvent, iSetup );
-  //fillECALstitched( iEvent, iSetup );
-  //fillHCALatEBEE( iEvent, iSetup );
+  fillECALatHCAL( iEvent, iSetup );
+  fillECALstitched( iEvent, iSetup );
+  fillHCALatEBEE( iEvent, iSetup );
   //fillTracksAtEBEE( iEvent, iSetup );
   //fillTRKlayersAtEBEE( iEvent, iSetup );
   //fillTRKlayersAtECAL( iEvent, iSetup );

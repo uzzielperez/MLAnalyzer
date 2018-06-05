@@ -115,9 +115,9 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     void branchesEB             ( TTree*, edm::Service<TFileService>& );
     void branchesEE             ( TTree*, edm::Service<TFileService>& );
     void branchesHBHE           ( TTree*, edm::Service<TFileService>& );
-    //void branchesECALatHCAL     ( TTree*, edm::Service<TFileService>& );
-    //void branchesECALstitched   ( TTree*, edm::Service<TFileService>& );
-    //void branchesHCALatEBEE     ( TTree*, edm::Service<TFileService>& );
+    void branchesECALatHCAL     ( TTree*, edm::Service<TFileService>& );
+    void branchesECALstitched   ( TTree*, edm::Service<TFileService>& );
+    void branchesHCALatEBEE     ( TTree*, edm::Service<TFileService>& );
     //void branchesTracksAtEBEE   ( TTree*, edm::Service<TFileService>& );
     //void branchesTRKlayersAtEBEE( TTree*, edm::Service<TFileService>& );
     //void branchesTRKlayersAtECAL( TTree*, edm::Service<TFileService>& );
@@ -128,9 +128,9 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     void fillEB             ( const edm::Event&, const edm::EventSetup& );
     void fillEE             ( const edm::Event&, const edm::EventSetup& );
     void fillHBHE           ( const edm::Event&, const edm::EventSetup& );
-    //void fillECALatHCAL     ( const edm::Event&, const edm::EventSetup& );
-    //void fillECALstitched   ( const edm::Event&, const edm::EventSetup& );
-    //void fillHCALatEBEE     ( const edm::Event&, const edm::EventSetup& );
+    void fillECALatHCAL     ( const edm::Event&, const edm::EventSetup& );
+    void fillECALstitched   ( const edm::Event&, const edm::EventSetup& );
+    void fillHCALatEBEE     ( const edm::Event&, const edm::EventSetup& );
     //void fillTracksAtEBEE   ( const edm::Event&, const edm::EventSetup& );
     //void fillTRKlayersAtEBEE( const edm::Event&, const edm::EventSetup& );
     //void fillTRKlayersAtECAL( const edm::Event&, const edm::EventSetup& );
