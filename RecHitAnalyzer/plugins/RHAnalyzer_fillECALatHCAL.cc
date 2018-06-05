@@ -1,7 +1,4 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
-#include "DQM/HcalCommon/interface/Constants.h"
-//#include "Geometry/CaloGeometry/interface/CaloCellGeometry.h"
-//#include "Calibration/IsolatedParticles/interface/DetIdFromEtaPhi.h"
 
 // Fill ECAL rechits at HCAL granularity /////////////////
 // Project ECAL event rechits into a vector of length
@@ -24,13 +21,13 @@ void RecHitAnalyzer::branchesECALatHCAL ( TTree* tree, edm::Service<TFileService
   tree->Branch("HBHE_EMenergy",    &vHBHE_EMenergy_);
   // Intermediate helper histogram (single event only)
   hEvt_HBHE_EMenergy = new TH2F("evt_HBHE_EMenergy", "E(#phi,#eta);#phi;#eta",
-      hcaldqm::constants::IPHI_NUM,         -TMath::Pi(),     TMath::Pi(),
-      2*(hcaldqm::constants::IETA_MAX_HE-1), eta_bins_HBHE );
+      HBHE_IPHI_NUM,         -TMath::Pi(),     TMath::Pi(),
+      2*(HBHE_IETA_MAX_HE-1), eta_bins_HBHE );
 
   // Histograms for monitoring
   hHBHE_EMenergy = fs->make<TProfile2D>("HBHE_EMenergy", "E(i#phi,i#eta);i#phi;i#eta",
-      hcaldqm::constants::IPHI_NUM,           hcaldqm::constants::IPHI_MIN-1,    hcaldqm::constants::IPHI_MAX,
-      2*(hcaldqm::constants::IETA_MAX_HE-1),-(hcaldqm::constants::IETA_MAX_HE-1),hcaldqm::constants::IETA_MAX_HE-1 );
+      HBHE_IPHI_NUM,           HBHE_IPHI_MIN-1,    HBHE_IPHI_MAX,
+      2*(HBHE_IETA_MAX_HE-1),-(HBHE_IETA_MAX_HE-1),HBHE_IETA_MAX_HE-1 );
 
 } // branchesECALatHCAL
 
@@ -41,7 +38,7 @@ void RecHitAnalyzer::fillECALatHCAL ( const edm::Event& iEvent, const edm::Event
   float eta,  phi, energy_;
   GlobalPoint pos;
 
-  vHBHE_EMenergy_.assign( 2*hcaldqm::constants::IPHI_NUM*(hcaldqm::constants::IETA_MAX_HE-1),0. );
+  vHBHE_EMenergy_.assign( 2*HBHE_IPHI_NUM*(HBHE_IETA_MAX_HE-1),0. );
   hEvt_HBHE_EMenergy->Reset();
 
   edm::Handle<EcalRecHitCollection> EBRecHitsH_;
@@ -95,13 +92,13 @@ void RecHitAnalyzer::fillECALatHCAL ( const edm::Event& iEvent, const edm::Event
       if ( energy_ == 0. ) continue;
       // NOTE: EB iphi = 1 does not correspond to physical phi = -pi so need to shift!
       iphi_ = iphi  + 38; // shift
-      iphi_ = iphi_ > hcaldqm::constants::IPHI_MAX ? iphi_-hcaldqm::constants::IPHI_MAX : iphi_; // wrap-around
+      iphi_ = iphi_ > HBHE_IPHI_MAX ? iphi_-HBHE_IPHI_MAX : iphi_; // wrap-around
       iphi_ = iphi_ - 1;
-      idx_  = ieta_*hcaldqm::constants::IPHI_NUM + iphi_;
+      idx_  = ieta_*HBHE_IPHI_NUM + iphi_;
       // Fill vector for image
       vHBHE_EMenergy_[idx_] = energy_;
       // Fill histogram for monitoring
-      hHBHE_EMenergy->Fill( iphi_, ieta_-(hcaldqm::constants::IETA_MAX_HE-1), energy_ );
+      hHBHE_EMenergy->Fill( iphi_, ieta_-(HBHE_IETA_MAX_HE-1), energy_ );
 
     } // iphi
   } // ieta

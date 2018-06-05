@@ -1,5 +1,4 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
-#include "DataFormats/EcalDetId/interface/EBDetId.h"
 
 // Fill EB rec hits ////////////////////////////////
 // Store event rechits in a vector of length equal
@@ -19,11 +18,11 @@ void RecHitAnalyzer::branchesEB ( TTree* tree, edm::Service<TFileService> &fs ) 
 
   // Histograms for monitoring
   hEB_energy = fs->make<TProfile2D>("EB_energy", "E(i#phi,i#eta);i#phi;i#eta",
-      EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
-      2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
+      EB_IPHI_MAX  , EB_IPHI_MIN-1, EB_IPHI_MAX,
+      2*EB_IETA_MAX,-EB_IETA_MAX,   EB_IETA_MAX );
   hEB_time = fs->make<TProfile2D>("EB_time", "t(i#phi,i#eta);i#phi;i#eta",
-      EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
-      2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
+      EB_IPHI_MAX  , EB_IPHI_MIN-1, EB_IPHI_MAX,
+      2*EB_IETA_MAX,-EB_IETA_MAX,   EB_IETA_MAX );
 
 } // branchesEB()
 
@@ -54,7 +53,7 @@ void RecHitAnalyzer::fillEB ( const edm::Event& iEvent, const edm::EventSetup& i
     hEB_time->Fill( iphi_,ieta_,iRHit->time() );
     // Get Hashed Index: provides convenient 
     // index mapping from [ieta][iphi] -> [idx]
-    idx_ = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
+    idx_ = ebId.hashedIndex(); // (ieta_+EB_IETA_MAX)*EB_IPHI_MAX + iphi_
     // Fill vectors for images
     vEB_energy_[idx_] = energy_;
     vEB_time_[idx_] = iRHit->time();
@@ -105,7 +104,7 @@ void RecHitAnalyzer::fillEBdigis ( const edm::Event& iEvent, const edm::EventSet
     // Get Hashed Index & Cell Geometry
     // Hashed index provides a convenient index mapping
     // from [ieta][iphi] -> [idx]
-    idx = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
+    idx = ebId.hashedIndex(); // (ieta_+EB_IETA_MAX)*EB_IPHI_MAX + iphi_
     // Cell geometry provides access to (rho,eta,phi) coordinates of cell center
     //cell  = caloGeom->getGeometry(ebId);
 

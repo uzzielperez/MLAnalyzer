@@ -35,6 +35,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   // will cause memory leaks
   usesResource("TFileService");
   edm::Service<TFileService> fs;
+  h_sel = fs->make<TH1F>("h_sel", "isSelected;isSelected;Events", 2, 0., 2.);
 
   //////////// TTree //////////
 
@@ -101,6 +102,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // Fill RHTree
   RHTree->Fill();
+  h_sel->Fill( 1. );
 
 } // analyze()
 

@@ -1,13 +1,4 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
-#include "FWCore/Framework/interface/ESHandle.h"
-#include "DataFormats/EcalDetId/interface/EBDetId.h"
-#include "DataFormats/EcalDetId/interface/EEDetId.h"
-#include "DataFormats/HcalDetId/interface/HcalDetId.h"
-#include "DQM/HcalCommon/interface/Constants.h"
-#include "Geometry/Records/interface/CaloGeometryRecord.h"
-#include "Geometry/CaloGeometry/interface/CaloGeometry.h"
-#include "Geometry/CaloGeometry/interface/CaloCellGeometry.h"
-//#include "Calibration/IsolatedParticles/interface/DetIdFromEtaPhi.h"
 
 // Fill EE rec hits /////////////////////////////////////////
 // For each endcap, store event rechits in a vector of length 
@@ -29,8 +20,8 @@ void RecHitAnalyzer::branchesHCALatEBEE ( TTree* tree, edm::Service<TFileService
     // Histograms for monitoring
     sprintf(htitle,"E(ix,iy);ix;iy");
     hHBHE_energy_EE_[iz] = fs->make<TProfile2D>(hname, htitle,
-        EEDetId::IX_MAX, EEDetId::IX_MIN-1, EEDetId::IX_MAX,
-        EEDetId::IY_MAX, EEDetId::IY_MIN-1, EEDetId::IY_MAX );
+        EE_MAX_IX, EE_MIN_IX-1, EE_MAX_IX,
+        EE_MAX_IY, EE_MIN_IY-1, EE_MAX_IY );
   } // iz
 
 } // branchesHCALatEBEE()
@@ -118,7 +109,7 @@ void RecHitAnalyzer::fillHCALatEBEE ( const edm::Event& iEvent, const edm::Event
         iy_ = eeId.iy() - 1;
         iz_ = (eeId.zside() > 0) ? 1 : 0;
         // Create hashed Index: maps from [iy][ix] -> [idx_]
-        idx_ = iy_*EEDetId::IX_MAX + ix_;
+        idx_ = iy_*EE_MAX_IX + ix_;
         // Fill vector for images
         vHBHE_energy_EE_[iz_][idx_] += ( energy_/float(nEExtals_filled) );
         // Fill histogram for monitoring
@@ -167,7 +158,7 @@ void RecHitAnalyzer::fillHCALatEBEE ( const edm::Event& iEvent, const edm::Event
     // Fill histograms for monitoring
     hHBHE_energy_EE_[iz_]->Fill( ix_,iy_,energy_ );
     // Create hashed Index: maps from [iy][ix] -> [idx_]
-    idx_ = iy_*EEDetId::IX_MAX + ix_;
+    idx_ = iy_*EE_MAX_IX + ix_;
     // Fill vectors for images
     vHBHE_energy_EE_[iz_][idx_] += energy_;
 

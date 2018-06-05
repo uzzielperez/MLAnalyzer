@@ -1,5 +1,4 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
-#include "DataFormats/EcalDetId/interface/EEDetId.h"
 
 // Fill EE rec hits /////////////////////////////////////////
 // For each endcap, store event rechits in a vector of length 
@@ -26,13 +25,13 @@ void RecHitAnalyzer::branchesEE ( TTree* tree, edm::Service<TFileService> &fs ) 
     sprintf(hname, "EE%s_energy",zside);
     sprintf(htitle,"E(ix,iy);ix;iy");
     hEE_energy[iz] = fs->make<TProfile2D>(hname, htitle,
-        EEDetId::IX_MAX, EEDetId::IX_MIN-1, EEDetId::IX_MAX,
-        EEDetId::IY_MAX, EEDetId::IY_MIN-1, EEDetId::IY_MAX );
+        EE_MAX_IX, EE_MIN_IX-1, EE_MAX_IX,
+        EE_MAX_IY, EE_MIN_IY-1, EE_MAX_IY );
     sprintf(hname, "EE%s_time",zside);
     sprintf(htitle,"t(ix,iy);ix;iy");
     hEE_time[iz] = fs->make<TProfile2D>(hname, htitle,
-        EEDetId::IX_MAX, EEDetId::IX_MIN-1, EEDetId::IX_MAX,
-        EEDetId::IY_MAX, EEDetId::IY_MIN-1, EEDetId::IY_MAX );
+        EE_MAX_IX, EE_MIN_IX-1, EE_MAX_IX,
+        EE_MAX_IY, EE_MIN_IY-1, EE_MAX_IY );
   } // iz
 
 } // branchesEE()
@@ -66,7 +65,7 @@ void RecHitAnalyzer::fillEE ( const edm::Event& iEvent, const edm::EventSetup& i
     hEE_energy[iz_]->Fill( ix_, iy_, energy_ );
     hEE_time[iz_]->Fill( ix_, iy_, iRHit->time() );
     // Create hashed Index: maps from [iy][ix] -> [idx_]
-    idx_ = iy_*EEDetId::IX_MAX + ix_;
+    idx_ = iy_*EE_MAX_IX + ix_;
     // Fill vectors for images
     vEE_energy_[iz_][idx_] = energy_;
     vEE_time_[iz_][idx_] = iRHit->time();

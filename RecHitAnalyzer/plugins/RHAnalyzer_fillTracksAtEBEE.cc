@@ -1,13 +1,4 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
-#include "FWCore/Framework/interface/ESHandle.h"
-#include "DataFormats/EcalDetId/interface/EBDetId.h"
-#include "DataFormats/EcalDetId/interface/EEDetId.h"
-#include "Geometry/Records/interface/CaloGeometryRecord.h"
-#include "Geometry/CaloGeometry/interface/CaloGeometry.h"
-#include "Geometry/CaloGeometry/interface/CaloCellGeometry.h"
-#include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
-#include "Geometry/TrackerGeometryBuilder/interface/StripGeomDetUnit.h"
-#include "Calibration/IsolatedParticles/interface/DetIdFromEtaPhi.h"
 
 // Fill Tracks in EB+EE ////////////////////////////////
 // Store tracks in EB+EE projection
@@ -30,11 +21,11 @@ void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileServi
 
   // Histograms for monitoring
   hTracks_EB = fs->make<TH2F>("Tracks_EB", "N(i#phi,i#eta);i#phi;i#eta",
-      EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
-      2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
+      EB_IPHI_MAX  , EB_IPHI_MIN-1, EB_IPHI_MAX,
+      2*EB_IETA_MAX,-EB_IETA_MAX,   EB_IETA_MAX );
   hTracksPt_EB = fs->make<TH2F>("TracksPt_EB", "pT(i#phi,i#eta);i#phi;i#eta",
-      EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
-      2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
+      EB_IPHI_MAX  , EB_IPHI_MIN-1, EB_IPHI_MAX,
+      2*EB_IETA_MAX,-EB_IETA_MAX,   EB_IETA_MAX );
 
   char hname[50], htitle[50];
   for ( int iz(0); iz < nEE; iz++ ) {
@@ -49,13 +40,13 @@ void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileServi
     sprintf(hname, "Tracks_EE%s",zside);
     sprintf(htitle,"N(ix,iy);ix;iy");
     hTracks_EE[iz] = fs->make<TH2F>(hname, htitle,
-        EEDetId::IX_MAX, EEDetId::IX_MIN-1, EEDetId::IX_MAX,
-        EEDetId::IY_MAX, EEDetId::IY_MIN-1, EEDetId::IY_MAX );
+        EE_MAX_IX, EE_MIN_IX-1, EE_MAX_IX,
+        EE_MAX_IY, EE_MIN_IY-1, EE_MAX_IY );
     sprintf(hname, "TracksPt_EE%s",zside);
     sprintf(htitle,"pT(ix,iy);ix;iy");
     hTracksPt_EE[iz] = fs->make<TH2F>(hname, htitle,
-        EEDetId::IX_MAX, EEDetId::IX_MIN-1, EEDetId::IX_MAX,
-        EEDetId::IY_MAX, EEDetId::IY_MIN-1, EEDetId::IY_MAX );
+        EE_MAX_IX, EE_MIN_IX-1, EE_MAX_IX,
+        EE_MAX_IY, EE_MIN_IY-1, EE_MAX_IY );
   } // iz
 
 } // branchesEB()
@@ -98,7 +89,7 @@ void RecHitAnalyzer::fillTracksAtEBEE ( const edm::Event& iEvent, const edm::Eve
       // Fill histograms for monitoring
       hTracks_EB->Fill( iphi_, ieta_ );
       hTracksPt_EB->Fill( iphi_, ieta_, iTk->pt() );
-      idx_ = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
+      idx_ = ebId.hashedIndex(); // (ieta_+EB_IETA_MAX)*EB_IPHI_MAX + iphi_
       // Fill vectors for images
       vTracks_EB_[idx_] += 1.;
       vTracksPt_EB_[idx_] += iTk->pt();
@@ -111,7 +102,7 @@ void RecHitAnalyzer::fillTracksAtEBEE ( const edm::Event& iEvent, const edm::Eve
       hTracks_EE[iz_]->Fill( ix_, iy_ );
       hTracksPt_EE[iz_]->Fill( ix_, iy_, iTk->pt() );
       // Create hashed Index: maps from [iy][ix] -> [idx_]
-      idx_ = iy_*EEDetId::IX_MAX + ix_;
+      idx_ = iy_*EE_MAX_IX + ix_;
       // Fill vectors for images
       vTracks_EE_[iz_][idx_] += 1.;
       vTracksPt_EE_[iz_][idx_] += iTk->pt();

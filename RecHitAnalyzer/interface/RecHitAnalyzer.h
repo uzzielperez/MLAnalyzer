@@ -28,6 +28,7 @@
 #include "Geometry/CaloGeometry/interface/CaloGeometry.h"
 #include "Geometry/CaloGeometry/interface/CaloCellGeometry.h"
 #include "Geometry/Records/interface/CaloGeometryRecord.h"
+#include "Calibration/IsolatedParticles/interface/DetIdFromEtaPhi.h"
 
 #include "DataFormats/HcalRecHit/interface/HcalRecHitCollections.h"
 //#include "DataFormats/HcalDetId/interface/HcalDetId.h"
@@ -101,6 +102,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     // Diagnostic histograms
     //TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES]; 
     //TH1D * hHBHE_depth; 
+    TH1F *h_sel;
 
     // Main TTree
     TTree* RHTree;
@@ -146,22 +148,22 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 // constants, enums and typedefs
 //
 static const int nEE = 2;
-static const int EB_IPHI_MIN = 1;
-static const int EB_IPHI_MAX = 360;
-static const int EB_IETA_MIN = 1;
-static const int EB_IETA_MAX = 85;
-static const int EE_MIN_IX = 1;
-static const int EE_MIN_IY = 1;
-static const int EE_MAX_IX = 100;
-static const int EE_MAX_IY = 100;
+static const int EB_IPHI_MIN = EBDetId::MIN_IPHI;//1;
+static const int EB_IPHI_MAX = EBDetId::MAX_IPHI;//360;
+static const int EB_IETA_MIN = EBDetId::MIN_IETA;//1;
+static const int EB_IETA_MAX = EBDetId::MAX_IETA;//85;
+static const int EE_MIN_IX = EEDetId::IX_MIN;//1;
+static const int EE_MIN_IY = EEDetId::IY_MIN;//1;
+static const int EE_MAX_IX = EEDetId::IX_MAX;//100;
+static const int EE_MAX_IY = EEDetId::IY_MAX;//100;
 static const int EE_NC_PER_ZSIDE = EEDetId::IX_MAX*EEDetId::IY_MAX; // 100*100
 static const int HBHE_IETA_MAX_FINE = 20;
-static const int HBHE_IETA_MAX_HB = 16;
-static const int HBHE_IETA_MAX_HE = 29;
+static const int HBHE_IETA_MAX_HB = hcaldqm::constants::IETA_MAX_HB;//16;
+static const int HBHE_IETA_MAX_HE = hcaldqm::constants::IETA_MAX_HE;//29;
 static const int HBHE_IETA_MAX_EB = hcaldqm::constants::IETA_MAX_HB + 1; // 17
-static const int HBHE_IPHI_NUM = 72;
-static const int HBHE_IPHI_MIN = 1;
-static const int HBHE_IPHI_MAX = 72;
+static const int HBHE_IPHI_NUM = hcaldqm::constants::IPHI_NUM;//72;
+static const int HBHE_IPHI_MIN = hcaldqm::constants::IPHI_MIN;//1;
+static const int HBHE_IPHI_MAX = hcaldqm::constants::IPHI_MAX;//72;
 static const int ECAL_IETA_MAX_EXT = 140;
 
 // EE-(phi,eta) projection eta edges

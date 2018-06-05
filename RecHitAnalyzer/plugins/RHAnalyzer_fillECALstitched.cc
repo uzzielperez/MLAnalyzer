@@ -1,9 +1,4 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
-#include "DataFormats/EcalDetId/interface/EBDetId.h"
-#include "DataFormats/EcalDetId/interface/EEDetId.h"
-#include "DQM/HcalCommon/interface/Constants.h"
-#include "Geometry/Records/interface/CaloGeometryRecord.h"
-#include "Geometry/CaloGeometry/interface/CaloGeometry.h"
 
 // Fill stitched EEm_EB_EEp image /////////////////////............/
 // Store all ECAL event rechits into a stitched EEm_EB_EEp image 
@@ -30,15 +25,15 @@ void RecHitAnalyzer::branchesECALstitched ( TTree* tree, edm::Service<TFileServi
   tree->Branch("ECAL_energy",    &vECAL_energy_);
   // Intermediate helper histogram (single event only)
   hEvt_EE_energy[0] = new TH2F("evt_EEm_energy", "E(i#phi,i#eta);i#phi;i#eta",
-      EBDetId::MAX_IPHI, -TMath::Pi(), TMath::Pi(),
-      5*(hcaldqm::constants::IETA_MAX_HE-1-HBHE_IETA_MAX_EB), eta_bins_EEm );
+      EB_IPHI_MAX, -TMath::Pi(), TMath::Pi(),
+      5*(HBHE_IETA_MAX_HE-1-HBHE_IETA_MAX_EB), eta_bins_EEm );
   hEvt_EE_energy[1] = new TH2F("evt_EEp_energy", "E(i#phi,i#eta);i#phi;i#eta",
-      EBDetId::MAX_IPHI, -TMath::Pi(), TMath::Pi(),
-      5*(hcaldqm::constants::IETA_MAX_HE-1-HBHE_IETA_MAX_EB), eta_bins_EEp );
+      EB_IPHI_MAX, -TMath::Pi(), TMath::Pi(),
+      5*(HBHE_IETA_MAX_HE-1-HBHE_IETA_MAX_EB), eta_bins_EEp );
 
   // Histograms for monitoring
   hECAL_energy = fs->make<TProfile2D>("ECAL_energy", "E(i#phi,i#eta);i#phi;i#eta",
-      EBDetId::MAX_IPHI,    EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
+      EB_IPHI_MAX,    EB_IPHI_MIN-1, EB_IPHI_MAX,
       2*ECAL_IETA_MAX_EXT, -ECAL_IETA_MAX_EXT,   ECAL_IETA_MAX_EXT );
 
 } // branchesECALstitched()
@@ -60,9 +55,9 @@ void fillECAL_with_EEproj ( TH2F *hEvt_EE_energy_, int ieta_global_offset, int i
       if ( energy_ == 0. ) continue;
       // NOTE: EB iphi = 1 does not correspond to physical phi = -pi so need to shift!
       iphi_ = iphi  + 5*38; // shift
-      iphi_ = iphi_ > EBDetId::MAX_IPHI ? iphi_-EBDetId::MAX_IPHI : iphi_; // wrap-around
+      iphi_ = iphi_ > EB_IPHI_MAX ? iphi_-EB_IPHI_MAX : iphi_; // wrap-around
       iphi_ = iphi_ - 1;
-      idx_  = ieta_global_*EBDetId::MAX_IPHI + iphi_;
+      idx_  = ieta_global_*EB_IPHI_MAX + iphi_;
       // Fill vector for image
       vECAL_energy_[idx_] = energy_;
       // Fill histogram for monitoring
@@ -82,7 +77,7 @@ void RecHitAnalyzer::fillECALstitched ( const edm::Event& iEvent, const edm::Eve
   float eta, phi, energy_;
   GlobalPoint pos;
 
-  vECAL_energy_.assign( 2*ECAL_IETA_MAX_EXT*EBDetId::MAX_IPHI, 0. );
+  vECAL_energy_.assign( 2*ECAL_IETA_MAX_EXT*EB_IPHI_MAX, 0. );
   for ( int iz(0); iz < nEE; ++iz ) hEvt_EE_energy[iz]->Reset();
 
   edm::Handle<EcalRecHitCollection> EBRecHitsH_;
@@ -129,8 +124,8 @@ void RecHitAnalyzer::fillECALstitched ( const edm::Event& iEvent, const edm::Eve
     ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
     // Fill vector for image
     ieta_signed = ieta_;
-    ieta_global = ieta_ + EBDetId::MAX_IETA + ieta_global_offset;
-    idx_ = ieta_global*EBDetId::MAX_IPHI + iphi_; 
+    ieta_global = ieta_ + EB_IETA_MAX + ieta_global_offset;
+    idx_ = ieta_global*EB_IPHI_MAX + iphi_; 
     vECAL_energy_[idx_] = energy_;
     // Fill histogram for monitoring
     hECAL_energy->Fill( iphi_, ieta_signed, energy_ );
@@ -138,8 +133,8 @@ void RecHitAnalyzer::fillECALstitched ( const edm::Event& iEvent, const edm::Eve
   } // EB
 
   // Map EE+(phi,eta) to upper part of ECAL(iphi,ieta)
-  ieta_global_offset = ECAL_IETA_MAX_EXT + EBDetId::MAX_IETA;
-  ieta_signed_offset = EBDetId::MAX_IETA;
+  ieta_global_offset = ECAL_IETA_MAX_EXT + EB_IETA_MAX;
+  ieta_signed_offset = EB_IETA_MAX;
   fillECAL_with_EEproj( hEvt_EE_energy[1], ieta_global_offset, ieta_signed_offset );
 
 } // fillECALstitched()
