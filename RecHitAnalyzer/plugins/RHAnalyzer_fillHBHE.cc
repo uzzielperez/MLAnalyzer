@@ -13,9 +13,6 @@
 // more intuitive to fill an intermediate histogram first.
 // As this is binned in ieta,iphi, assignment is exact.
 
-static const int HBHE_IETA_MAX_FINE = 20;
-static const int HBHE_IETA_MAX_EB = hcaldqm::constants::IETA_MAX_HB + 1; // 17
-
 TH2F *hEvt_HBHE_energy;
 TProfile2D *hHBHE_energy_EB;
 TProfile2D *hHBHE_energy;

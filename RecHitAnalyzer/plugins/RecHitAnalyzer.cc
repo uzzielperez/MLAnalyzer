@@ -47,7 +47,8 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   branchesECALatHCAL   ( RHTree, fs );
   branchesECALstitched ( RHTree, fs );
   branchesHCALatEBEE   ( RHTree, fs );
-  //branchesTracksAtEBEE(RHTree, fs);
+  branchesTracksAtEBEE(RHTree, fs);
+  branchesTracksAtECALstitched( RHTree, fs);
   //branchesTRKlayersAtEBEE(RHTree, fs);
   //branchesTRKlayersAtECAL(RHTree, fs);
   //branchesTRKvolumeAtEBEE(RHTree, fs);
@@ -78,9 +79,9 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // ----- Apply event selection cuts ----- //
 
   bool passedSelection = false;
-  passedSelection = runEvtSel( iEvent, iSetup );
+  //passedSelection = runEvtSel( iEvent, iSetup );
 
-  if ( !passedSelection ) return;
+  //if ( !passedSelection ) return;
 
   fillEB( iEvent, iSetup );
   fillEE( iEvent, iSetup );
@@ -88,7 +89,8 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   fillECALatHCAL( iEvent, iSetup );
   fillECALstitched( iEvent, iSetup );
   fillHCALatEBEE( iEvent, iSetup );
-  //fillTracksAtEBEE( iEvent, iSetup );
+  fillTracksAtEBEE( iEvent, iSetup );
+  fillTracksAtECALstitched( iEvent, iSetup );
   //fillTRKlayersAtEBEE( iEvent, iSetup );
   //fillTRKlayersAtECAL( iEvent, iSetup );
   //fillTRKvolumeAtEBEE( iEvent, iSetup );

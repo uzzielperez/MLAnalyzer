@@ -5,9 +5,6 @@
 // For each endcap, store event rechits in a vector of length 
 // equal to number of crystals per endcap (ix:100 x iy:100)
 
-static const int nEE = 2;
-static const int EE_NC_PER_ZSIDE = EEDetId::IX_MAX*EEDetId::IY_MAX; // 100*100
-
 TProfile2D *hEE_energy[nEE];
 TProfile2D *hEE_time[nEE];
 std::vector<float> vEE_energy_[nEE];

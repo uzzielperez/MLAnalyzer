@@ -11,3 +11,4 @@
  <use name="Geometry/CaloGeometry"/>
  <use name="Geometry/Records"/>
  <use name="CommonTools/UtilAlgos"/>
+ <use name="Calibration/IsolatedParticles"/>

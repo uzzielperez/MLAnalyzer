@@ -13,10 +13,6 @@
 // For each endcap, store event rechits in a vector of length 
 // equal to number of crystals per endcap (ix:100 x iy:100)
 
-static const int nEE = 2;
-static const int EE_NC_PER_ZSIDE = EEDetId::IX_MAX*EEDetId::IY_MAX; // 100*100
-static const int HBHE_IETA_MAX_EB = hcaldqm::constants::IETA_MAX_HB + 1; // 17
-
 TProfile2D *hHBHE_energy_EE_[nEE];
 std::vector<float> vHBHE_energy_EE_[nEE];
 

@@ -1,7 +1,5 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
 #include "DQM/HcalCommon/interface/Constants.h"
-#include "Geometry/Records/interface/CaloGeometryRecord.h"
-#include "Geometry/CaloGeometry/interface/CaloGeometry.h"
 //#include "Geometry/CaloGeometry/interface/CaloCellGeometry.h"
 //#include "Calibration/IsolatedParticles/interface/DetIdFromEtaPhi.h"
 
@@ -18,13 +16,6 @@
 TH2F *hEvt_HBHE_EMenergy;
 TProfile2D *hHBHE_EMenergy;
 std::vector<float> vHBHE_EMenergy_;
-
-// HBHE eta bin edges
-double eta_bins_HBHE[2*(hcaldqm::constants::IETA_MAX_HE-1)+1] =
-                  {-3.000, -2.650, -2.500, -2.322, -2.172, -2.043, -1.930, -1.830, -1.740, -1.653, -1.566, -1.479, -1.392, -1.305,
-                   -1.218, -1.131, -1.044, -0.957, -0.870, -0.783, -0.695, -0.609, -0.522, -0.435, -0.348, -0.261, -0.174, -0.087, 0.000,
-                    0.087,  0.174,  0.261,  0.348,  0.435,  0.522,  0.609,  0.695,  0.783,  0.870,  0.957,  1.044,  1.131,  1.218,
-                    1.305,  1.392,  1.479,  1.566,  1.653,  1.740,  1.830,  1.930,  2.043,  2.172,  2.322,  2.500,  2.650,  3.000}; // 57
 
 // Initialize branches _____________________________________________________________//
 void RecHitAnalyzer::branchesECALatHCAL ( TTree* tree, edm::Service<TFileService> &fs ) {
