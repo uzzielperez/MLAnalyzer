@@ -59,6 +59,8 @@ process.fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , gedPhotonCollection = cms.InputTag('gedPhotons')
     , ak4PFJetCollection = cms.InputTag('ak4PFJets')
     , genJetCollection = cms.InputTag('ak4GenJets')
+    , trackRecHitCollection = cms.InputTag('generalTracks')
+    , trackCollection = cms.InputTag("generalTracks")
     )
 
 process.TFileService = cms.Service("TFileService",
