@@ -80,9 +80,9 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // ----- Apply event selection cuts ----- //
 
   bool passedSelection = false;
-  //passedSelection = runEvtSel( iEvent, iSetup );
+  passedSelection = runEvtSel( iEvent, iSetup );
 
-  //if ( !passedSelection ) return;
+  if ( !passedSelection ) return;
 
   fillEB( iEvent, iSetup );
   fillEE( iEvent, iSetup );
