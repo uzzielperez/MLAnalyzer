@@ -83,6 +83,7 @@ class SCAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
     static const int nPhotons = 1;
     static const int crop_size = 32;
+    static const bool debug = false;
 
     //TH1D * histo; 
     TH2D * hEB_energy; 
@@ -195,6 +196,7 @@ void
 SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   using namespace edm;
+  nTotal++;
 
   edm::Handle<EcalRecHitCollection> EBRecHitsH;
   iEvent.getByToken(EBRecHitCollectionT_, EBRecHitsH);
@@ -219,7 +221,7 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   int nPho = 0;
   edm::Handle<reco::PhotonCollection> photons;
   iEvent.getByToken(photonCollectionT_, photons);
-  std::cout << " >> PhoCol.size: " << photons->size() << std::endl;
+  if ( debug ) std::cout << " >> PhoCol.size: " << photons->size() << std::endl;
   // Loop over photons
   idx = -1;
   for(reco::PhotonCollection::const_iterator iPho = photons->begin();
@@ -229,16 +231,16 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     idx++;
 
     // Apply reco selection
-    std::cout << " >> pT: " << iPho->pt() << " eta: " << iPho->eta() << std::endl;
-    if ( iPho->pt() < 30. ) continue;
-    if ( iPho->eta() > 1.44 ) continue;
+    if ( debug ) std::cout << " >> pT: " << iPho->pt() << " eta: " << iPho->eta() << std::endl;
+    if ( std::abs(iPho->pt()) < 45. ) continue;
+    if ( std::abs(iPho->eta()) > 1.4 ) continue;
 
     // Get underlying super cluster
     reco::SuperClusterRef iSC = iPho->superCluster();
     //EcalRecHitCollection::const_iterator iRHit_( EBRecHitsH->find(iSC->seed()->seed()) );
     //std::cout << "Seed E: " << iRHit_->energy() << std::endl;
     std::vector<std::pair<DetId, float>> const& SCHits( iSC->hitsAndFractions() );
-    std::cout << " >> SChits.size: " << SCHits.size() << std::endl;
+    if ( debug ) std::cout << " >> SChits.size: " << SCHits.size() << std::endl;
 
     // Get Emax crystal
     Emax = 0.;
@@ -271,17 +273,18 @@ SCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     // Apply selection on position of shower seed
     if ( ieta_Emax > 169 - 15 || ieta_Emax < 15 ) continue;
     vGoodPhotonIdxs_.push_back( idx );
+    if ( debug ) std::cout << " >> idx: " << idx << std::endl;
     vIphi_Emax.push_back( iphi_Emax );
     vIeta_Emax.push_back( ieta_Emax );
-    std::cout << " >> Found: iphi_Emax,ieta_Emax: " << iphi_Emax << ", " << ieta_Emax << std::endl;
+    if ( debug ) std::cout << " >> Found: iphi_Emax,ieta_Emax: " << iphi_Emax << ", " << ieta_Emax << std::endl;
     nPho++;
 
   } // Photons
 
   // Enforce selection
-  std::cout << " >> nPho: " << nPho << std::endl;
+  if ( debug ) std::cout << " >> nPho: " << nPho << std::endl;
   if ( nPho != nPhotons ) return;
-  std::cout << " >> Passed selection. " << std::endl;
+  if ( debug ) std::cout << " >> Passed selection. " << std::endl;
     
   ////////// Store each shower crop //////////
   for ( unsigned int i = 0; i < nPhotons; i++ ) {
