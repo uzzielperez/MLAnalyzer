@@ -57,6 +57,7 @@
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/EgammaCandidates/interface/Photon.h"
 #include "DataFormats/EgammaCandidates/interface/PhotonFwd.h" // reco::PhotonCollection defined here
+#include "DataFormats/PatCandidates/interface/Photon.h"
 #include "DataFormats/JetReco/interface/PFJet.h"
 #include "DataFormats/JetReco/interface/GenJet.h"
 #include "DataFormats/JetReco/interface/GenJetCollection.h"
@@ -93,7 +94,8 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<HBHERecHitCollection> HBHERecHitCollectionT_;
     edm::EDGetTokenT<TrackingRecHitCollection> TRKRecHitCollectionT_;
     edm::EDGetTokenT<reco::GenParticleCollection> genParticleCollectionT_;
-    edm::EDGetTokenT<reco::PhotonCollection> photonCollectionT_;
+    //edm::EDGetTokenT<reco::PhotonCollection> photonCollectionT_;
+    edm::EDGetTokenT<pat::PhotonCollection> photonCollectionT_;
     edm::EDGetTokenT<reco::PFJetCollection> jetCollectionT_;
     edm::EDGetTokenT<reco::GenJetCollection> genJetCollectionT_;
     edm::EDGetTokenT<reco::TrackCollection> trackCollectionT_;
@@ -141,12 +143,14 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     //void fillTRKvolumeAtEBEE( const edm::Event&, const edm::EventSetup& );
     //void fillTRKvolumeAtECAL( const edm::Event&, const edm::EventSetup& );
 
+    int nTotal, nPassed;
 
 }; // class RecHitAnalyzer
 
 //
 // constants, enums and typedefs
 //
+static const bool debug = true;
 static const int nEE = 2;
 static const int EB_IPHI_MIN = EBDetId::MIN_IPHI;//1;
 static const int EB_IPHI_MAX = EBDetId::MAX_IPHI;//360;

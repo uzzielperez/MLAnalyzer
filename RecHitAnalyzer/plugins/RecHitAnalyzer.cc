@@ -25,7 +25,8 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   TRKRecHitCollectionT_  = consumes<TrackingRecHitCollection>(iConfig.getParameter<edm::InputTag>("trackRecHitCollection"));
 
   genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
-  photonCollectionT_ = consumes<reco::PhotonCollection>(iConfig.getParameter<edm::InputTag>("gedPhotonCollection"));
+  //photonCollectionT_ = consumes<reco::PhotonCollection>(iConfig.getParameter<edm::InputTag>("gedPhotonCollection"));
+  photonCollectionT_ = consumes<pat::PhotonCollection>(iConfig.getParameter<edm::InputTag>("patPhotonCollection"));
   jetCollectionT_ = consumes<reco::PFJetCollection>(iConfig.getParameter<edm::InputTag>("ak4PFJetCollection"));
   genJetCollectionT_ = consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genJetCollection"));
   trackCollectionT_ = consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("trackCollection"));
@@ -44,12 +45,12 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   branchesEvtSel       ( RHTree, fs );
   branchesEB           ( RHTree, fs );
   branchesEE           ( RHTree, fs );
-  branchesHBHE         ( RHTree, fs );
-  branchesECALatHCAL   ( RHTree, fs );
-  branchesECALstitched ( RHTree, fs );
-  branchesHCALatEBEE   ( RHTree, fs );
-  branchesTracksAtEBEE(RHTree, fs);
-  branchesTracksAtECALstitched( RHTree, fs);
+  //branchesHBHE         ( RHTree, fs );
+  //branchesECALatHCAL   ( RHTree, fs );
+  //branchesECALstitched ( RHTree, fs );
+  //branchesHCALatEBEE   ( RHTree, fs );
+  //branchesTracksAtEBEE(RHTree, fs);
+  //branchesTracksAtECALstitched( RHTree, fs);
   //branchesTRKlayersAtEBEE(RHTree, fs);
   //branchesTRKlayersAtECAL(RHTree, fs);
   //branchesTRKvolumeAtEBEE(RHTree, fs);
@@ -79,19 +80,23 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // ----- Apply event selection cuts ----- //
 
+  nTotal++;
   bool passedSelection = false;
-  //passedSelection = runEvtSel( iEvent, iSetup );
+  passedSelection = runEvtSel( iEvent, iSetup );
 
-  //if ( !passedSelection ) return;
+  if ( !passedSelection ) {
+    h_sel->Fill( 0. );
+    return;
+  }
 
   fillEB( iEvent, iSetup );
   fillEE( iEvent, iSetup );
-  fillHBHE( iEvent, iSetup );
-  fillECALatHCAL( iEvent, iSetup );
-  fillECALstitched( iEvent, iSetup );
-  fillHCALatEBEE( iEvent, iSetup );
-  fillTracksAtEBEE( iEvent, iSetup );
-  fillTracksAtECALstitched( iEvent, iSetup );
+  //fillHBHE( iEvent, iSetup );
+  //fillECALatHCAL( iEvent, iSetup );
+  //fillECALstitched( iEvent, iSetup );
+  //fillHCALatEBEE( iEvent, iSetup );
+  //fillTracksAtEBEE( iEvent, iSetup );
+  //fillTracksAtECALstitched( iEvent, iSetup );
   //fillTRKlayersAtEBEE( iEvent, iSetup );
   //fillTRKlayersAtECAL( iEvent, iSetup );
   //fillTRKvolumeAtEBEE( iEvent, iSetup );
@@ -103,6 +108,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // Fill RHTree
   RHTree->Fill();
   h_sel->Fill( 1. );
+  nPassed++;
 
 } // analyze()
 
@@ -111,12 +117,15 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 void 
 RecHitAnalyzer::beginJob()
 {
+  nTotal = 0;
+  nPassed = 0;
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 RecHitAnalyzer::endJob() 
 {
+  std::cout << " selected: " << nPassed << "/" << nTotal << std::endl;
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
