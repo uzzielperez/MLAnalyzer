@@ -70,12 +70,12 @@ void RecHitAnalyzer::fillHBHE ( const edm::Event& iEvent, const edm::EventSetup&
     // Get detector id and convert to histogram-friendly coordinates
     // NOTE: HBHE detector ids are indexed by (ieta,iphi,depth)!
     HcalDetId hId( iRHit->id() );
-    // NOTE: HBHE iphi = 1 does not correspond to EBE iphi = 1!
+    // NOTE: HBHE iphi = 1 does not correspond to EB iphi = 1!
     // => Need to shift by 2 HBHE towers: HBHE::iphi: [1,...,71,72]->[3,4,...,71,72,1,2]
     iphi_  = hId.iphi() + 2; // shift
     iphi_  = iphi_ > HBHE_IPHI_MAX ? iphi_-HBHE_IPHI_MAX : iphi_; // wrap-around
     iphi_  = iphi_ - 1; // make histogram-friendly
-    ietaAbs_  = hId.ietaAbs() == HBHE_IETA_MAX_HE ? HBHE_IETA_MAX_HE-1 : hId.ietaAbs();
+    ietaAbs_  = hId.ietaAbs() == HBHE_IETA_MAX_HE ? HBHE_IETA_MAX_HE-1 : hId.ietaAbs(); // last HBHE ieta embedded
     ieta_  = hId.zside() > 0 ? ietaAbs_-1 : -ietaAbs_;
     //depth_ = hId.depth();
 

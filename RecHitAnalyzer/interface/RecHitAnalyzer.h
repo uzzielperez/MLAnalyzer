@@ -126,6 +126,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
   
     // Selection and filling functions
     void branchesEvtSel         ( TTree*, edm::Service<TFileService>& );
+    void branchesEvtSel_jet     ( TTree*, edm::Service<TFileService>& );
     void branchesEB             ( TTree*, edm::Service<TFileService>& );
     void branchesEE             ( TTree*, edm::Service<TFileService>& );
     void branchesHBHE           ( TTree*, edm::Service<TFileService>& );
@@ -140,6 +141,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     //void branchesTRKvolumeAtECAL( TTree*, edm::Service<TFileService>& );
 
     bool runEvtSel          ( const edm::Event&, const edm::EventSetup& );
+    bool runEvtSel_jet      ( const edm::Event&, const edm::EventSetup& );
     void fillEB             ( const edm::Event&, const edm::EventSetup& );
     void fillEE             ( const edm::Event&, const edm::EventSetup& );
     void fillHBHE           ( const edm::Event&, const edm::EventSetup& );
@@ -178,6 +180,7 @@ static const int EE_MAX_IY = EEDetId::IY_MAX;//100;
 static const int EE_NC_PER_ZSIDE = EEDetId::IX_MAX*EEDetId::IY_MAX; // 100*100
 static const int HBHE_IETA_MAX_FINE = 20;
 static const int HBHE_IETA_MAX_HB = hcaldqm::constants::IETA_MAX_HB;//16;
+static const int HBHE_IETA_MIN_HB = hcaldqm::constants::IETA_MIN_HB;//1
 static const int HBHE_IETA_MAX_HE = hcaldqm::constants::IETA_MAX_HE;//29;
 static const int HBHE_IETA_MAX_EB = hcaldqm::constants::IETA_MAX_HB + 1; // 17
 static const int HBHE_IPHI_NUM = hcaldqm::constants::IPHI_NUM;//72;

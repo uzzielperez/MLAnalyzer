@@ -7,11 +7,13 @@ parser = argparse.ArgumentParser(description='Run RHAnalyzer')
 parser.add_argument('-d','--decay', required=True, help='Decay:Single*Pt50',type=str)
 args = parser.parse_args()
 
-eosDir='/eos/uscms/store/user/mba2012'
-decay='%s_FEVTDEBUG'%args.decay
+eosDir='/eos/cms/store/user/mandrews/ML'
+#decay='%s_FEVTDEBUG'%args.decay
+decay=args.decay
 
 cfg='RecHitAnalyzer/python/ConfFile_cfg.py'
-inputFiles_ = ['file:%s'%path for path in glob('%s/FEVTDEBUG/%s/*/*/step*root'%(eosDir,decay))]
+#inputFiles_ = ['file:%s'%path for path in glob('%s/FEVTDEBUG/%s/*/*/step*root'%(eosDir,decay))]
+inputFiles_ = ['file:%s'%path for path in glob('%s/AODSIM/%s/*/*/step*root'%(eosDir,decay))]
 
 listname = 'list_%s.txt'%decay
 with open(listname, 'w') as list_file:
