@@ -64,15 +64,25 @@ for j,decay in enumerate(decays):
                 for i in range(0,neff,chunk_size)])
     print " >> Expected shape:", X.shape
 
-    # eventId
-    branches = ["eventId"]
-    eventId = da.concatenate([\
+    ## eventId
+    #branches = ["eventId"]
+    #eventId = da.concatenate([\
+    #            da.from_delayed(\
+    #                load_single(tree,i,i+chunk_size, branches),\
+    #                shape=(chunk_size,),\
+    #                dtype=np.int32)\
+    #            for i in range(0,neff,chunk_size)])
+    #print " >> Expected shape:", eventId.shape
+
+    # runId
+    branches = ["runId"]
+    runId = da.concatenate([\
                 da.from_delayed(\
                     load_single(tree,i,i+chunk_size, branches),\
                     shape=(chunk_size,),\
                     dtype=np.int32)\
                 for i in range(0,neff,chunk_size)])
-    print " >> Expected shape:", eventId.shape
+    print " >> Expected shape:", runId.shape
 
     # m0
     branches = ["m0"]

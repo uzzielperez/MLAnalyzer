@@ -21,6 +21,8 @@ process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 #process.load("Geometry.CMSCommonData.cmsIdealGeometryXML_cfi");
 #process.load("Geometry.CaloEventSetup.CaloGeometry_cfi");
 #process.load("Geometry.CaloEventSetup.CaloTopology_cfi");
+process.load("FWCore.MessageLogger.MessageLogger_cfi")
+process.MessageLogger.cerr.FwkReport.reportEvery = 50000
 
 process.maxEvents = cms.untracked.PSet( 
     #input = cms.untracked.int32(1) 
@@ -66,6 +68,8 @@ process.fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , genJetCollection = cms.InputTag('ak5GenJets')
     , trackRecHitCollection = cms.InputTag('generalTracks')
     , trackCollection = cms.InputTag("generalTracks")
+    , photonID = cms.InputTag('PhotonIDProd:PhotonCutBasedIDLoose')
+    , jetID = cms.InputTag('ak5JetID')
     )
 
 process.TFileService = cms.Service("TFileService",

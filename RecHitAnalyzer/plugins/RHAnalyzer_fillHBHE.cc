@@ -13,14 +13,7 @@
 // more intuitive to fill an intermediate histogram first.
 // As this is binned in ieta,iphi, assignment is exact.
 
-static const int HBHE_IETA_MAX_FINE = 20;
-static const int HBHE_IETA_MAX_HB = 16;
-static const int HBHE_IETA_MAX_HE = 29;
-static const int HBHE_IETA_MAX_EB = HBHE_IETA_MAX_HB + 1; // 17
-static const int HBHE_IPHI_NUM = 72;
-static const int HBHE_IPHI_MIN = 1;
-static const int HBHE_IPHI_MAX = 72;
-
+TH1F *hHBHE_depth;
 TH2F *hEvt_HBHE_energy;
 TProfile2D *hHBHE_energy_EB;
 TProfile2D *hHBHE_energy;
@@ -39,6 +32,7 @@ void RecHitAnalyzer::branchesHBHE ( TTree* tree, edm::Service<TFileService> &fs 
       2*(HBHE_IETA_MAX_HE-1),-(HBHE_IETA_MAX_HE-1),HBHE_IETA_MAX_HE-1 );
 
   // Histograms for monitoring
+  hHBHE_depth = fs->make<TH1F>("HBHE_depth", "depth;depth;N", 10, 0., 10.);
   hHBHE_energy = fs->make<TProfile2D>("HBHE_energy", "E(i#phi,i#eta);i#phi;i#eta",
       HBHE_IPHI_NUM,      HBHE_IPHI_MIN-1, HBHE_IPHI_MAX,
       2*HBHE_IETA_MAX_HE,-HBHE_IETA_MAX_HE,HBHE_IETA_MAX_HE );
@@ -52,7 +46,7 @@ void RecHitAnalyzer::branchesHBHE ( TTree* tree, edm::Service<TFileService> &fs 
 void RecHitAnalyzer::fillHBHE ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
   int iphi_, ieta_, ietaAbs_, idx_;
-  float energy_;
+  float energy_, depth_;
   //float eta, GlobalPoint pos;
 
   vHBHE_energy_EB_.assign( 2*HBHE_IPHI_NUM*HBHE_IETA_MAX_EB, 0. );
@@ -79,16 +73,17 @@ void RecHitAnalyzer::fillHBHE ( const edm::Event& iEvent, const edm::EventSetup&
     // Get detector id and convert to histogram-friendly coordinates
     // NOTE: HBHE detector ids are indexed by (ieta,iphi,depth)!
     HcalDetId hId( iRHit->id() );
-    // NOTE: HBHE iphi = 1 does not correspond to EBE iphi = 1!
+    // NOTE: HBHE iphi = 1 does not correspond to EB iphi = 1!
     // => Need to shift by 2 HBHE towers: HBHE::iphi: [1,...,71,72]->[3,4,...,71,72,1,2]
     iphi_  = hId.iphi() + 2; // shift
     iphi_  = iphi_ > HBHE_IPHI_MAX ? iphi_-HBHE_IPHI_MAX : iphi_; // wrap-around
     iphi_  = iphi_ - 1; // make histogram-friendly
     ietaAbs_  = hId.ietaAbs() == HBHE_IETA_MAX_HE ? HBHE_IETA_MAX_HE-1 : hId.ietaAbs();
     ieta_  = hId.zside() > 0 ? ietaAbs_-1 : -ietaAbs_;
-    //depth_ = hId.depth();
+    depth_ = hId.depth();
 
     // Fill vectors/histos by ieta range: /////////////////////////
+    hHBHE_depth->Fill( depth_ );
 
     // (A) hId.ieta() > 20: full extent of HBHE
     // NOTE: HBHE iphis only occur in even numbers in coarse region

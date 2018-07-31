@@ -1,16 +1,8 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
-#include "DataFormats/EcalDetId/interface/EEDetId.h"
 
 // Fill EE rec hits /////////////////////////////////////////
 // For each endcap, store event rechits in a vector of length 
 // equal to number of crystals per endcap (ix:100 x iy:100)
-
-static const int EE_MIN_IX = 1;
-static const int EE_MIN_IY = 1;
-static const int EE_MAX_IX = 100;
-static const int EE_MAX_IY = 100;
-static const int nEE = 2;
-static const int EE_NC_PER_ZSIDE = EE_MAX_IX*EE_MAX_IY; // 100*100
 
 TProfile2D *hEE_energy[nEE];
 TProfile2D *hEE_time[nEE];

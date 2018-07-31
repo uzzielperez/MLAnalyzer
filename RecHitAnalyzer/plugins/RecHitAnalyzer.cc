@@ -31,7 +31,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   //jetCollectionT_ = iConfig.getParameter<edm::InputTag>("ak4PFJetCollection");
   jetCollectionT_ = iConfig.getParameter<edm::InputTag>("PFJetCollection");
   genJetCollectionT_ = iConfig.getParameter<edm::InputTag>("genJetCollection");
-  //trackCollectionT_ = iConfig.getParameter<edm::InputTag>("trackCollection");
+  trackCollectionT_ = iConfig.getParameter<edm::InputTag>("trackCollection");
 
   // Initialize file writer
   // NOTE: initializing dynamic-memory histograms outside of TFileService
@@ -49,9 +49,10 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   branchesEE           ( RHTree, fs );
   branchesHBHE         ( RHTree, fs );
   //branchesECALatHCAL   ( RHTree, fs );
-  //branchesECALstitched ( RHTree, fs );
-  //branchesHCALatEBEE   ( RHTree, fs );
-  //branchesTracksAtEBEE(RHTree, fs);
+  branchesECALstitched ( RHTree, fs );
+  branchesHCALatEBEE   ( RHTree, fs );
+  branchesTracksAtEBEE(RHTree, fs);
+  branchesTracksAtECALstitched( RHTree, fs);
   //branchesTRKlayersAtEBEE(RHTree, fs);
   //branchesTRKlayersAtECAL(RHTree, fs);
   //branchesTRKvolumeAtEBEE(RHTree, fs);
@@ -79,6 +80,16 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   using namespace edm;
 
+  // Check run-dependent count
+  unsigned int run = iEvent.id().run();
+  if ( run == 194533 && !(runCount[0] < runTotal[0]) ) {
+    return;
+  } else if ( run == 200519 && !(runCount[1] < runTotal[1]) ) {
+    return;
+  } else if ( run == 206859 && !(runCount[2] < runTotal[2]) ) {
+    return;
+  }
+
   // ----- Apply event selection cuts ----- //
 
   //edm::Handle<reco::PhotonCollection> photons;
@@ -99,9 +110,10 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   fillEE( iEvent, iSetup );
   fillHBHE( iEvent, iSetup );
   //fillECALatHCAL( iEvent, iSetup );
-  //fillECALstitched( iEvent, iSetup );
-  //fillHCALatEBEE( iEvent, iSetup );
-  //fillTracksAtEBEE( iEvent, iSetup );
+  fillECALstitched( iEvent, iSetup );
+  fillHCALatEBEE( iEvent, iSetup );
+  fillTracksAtEBEE( iEvent, iSetup );
+  fillTracksAtECALstitched( iEvent, iSetup );
   //fillTRKlayersAtEBEE( iEvent, iSetup );
   //fillTRKlayersAtECAL( iEvent, iSetup );
   //fillTRKvolumeAtEBEE( iEvent, iSetup );
@@ -113,6 +125,13 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // Fill RHTree
   RHTree->Fill();
   h_sel->Fill( 1. );
+  if ( run == 194533 ) {
+    runCount[0]++;
+  } else if ( run == 200519 ) {
+    runCount[1]++;
+  } else if ( run == 206859 ) {
+    runCount[2]++;
+  }
 
 } // analyze()
 
@@ -121,12 +140,19 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 void 
 RecHitAnalyzer::beginJob()
 {
+  for ( int i=0; i < 3; i++ ) {
+    runCount[i] = 0;
+  }
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 RecHitAnalyzer::endJob() 
 {
+  for ( int i=0; i < 3; i++ ) {
+    std::cout << "i: " << i << " runCount:" << runCount[i] << std::endl;
+  }
+  std::cout << "Total: " << runCount[0]+runCount[1]+runCount[2] << std::endl;
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------

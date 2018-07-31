@@ -5,14 +5,11 @@
 // Store event rechits in a vector of length equal
 // to number of crystals in EB (ieta:170 x iphi:360)
 
-static const int EB_IPHI_MIN = 1;
-static const int EB_IPHI_MAX = 360;
-static const int EB_IETA_MIN = 1;
-static const int EB_IETA_MAX = 85;
-
 TProfile2D *hEB_energy;
 TProfile2D *hEB_time;
 std::vector<float> vEB_energy_;
+std::vector<float> vEB_energyT_;
+std::vector<float> vEB_energyZ_;
 std::vector<float> vEB_time_;
 
 // Initialize branches _____________________________________________________//
@@ -20,6 +17,8 @@ void RecHitAnalyzer::branchesEB ( TTree* tree, edm::Service<TFileService> &fs ) 
 
   // Branches for images
   tree->Branch("EB_energy", &vEB_energy_);
+  tree->Branch("EB_energyT", &vEB_energyT_);
+  tree->Branch("EB_energyZ", &vEB_energyZ_);
   tree->Branch("EB_time",   &vEB_time_);
 
   // Histograms for monitoring
@@ -37,12 +36,22 @@ void RecHitAnalyzer::fillEB ( const edm::Event& iEvent, const edm::EventSetup& i
 
   int iphi_, ieta_, idx_; // rows:ieta, cols:iphi
   float energy_;
+  GlobalPoint pos;
+  float eta;
 
   vEB_energy_.assign( EBDetId::kSizeForDenseIndexing, 0. );
+  vEB_energyZ_.assign( EBDetId::kSizeForDenseIndexing, 0. );
+  vEB_energyT_.assign( EBDetId::kSizeForDenseIndexing, 0. );
   vEB_time_.assign( EBDetId::kSizeForDenseIndexing, 0. );
 
   edm::Handle<EcalRecHitCollection> EBRecHitsH_;
   iEvent.getByLabel( EBRecHitCollectionT_, EBRecHitsH_);
+
+  // Provides access to global cell position
+  edm::ESHandle<CaloGeometry> caloGeomH_;
+  iSetup.get<CaloGeometryRecord>().get( caloGeomH_ );
+  const CaloGeometry* caloGeom;
+  caloGeom = caloGeomH_.product();
 
   // Fill EB rechits 
   for ( EcalRecHitCollection::const_iterator iRHit = EBRecHitsH_->begin();
@@ -60,8 +69,12 @@ void RecHitAnalyzer::fillEB ( const edm::Event& iEvent, const edm::EventSetup& i
     // Get Hashed Index: provides convenient 
     // index mapping from [ieta][iphi] -> [idx]
     idx_ = ebId.hashedIndex(); // (ieta_+EB_IETA_MAX)*EB_IPHI_MAX + iphi_
+    pos = caloGeom->getPosition( ebId );
+    eta = pos.eta();
     // Fill vectors for images
     vEB_energy_[idx_] = energy_;
+    vEB_energyT_[idx_] = energy_/TMath::CosH(eta);
+    vEB_energyZ_[idx_] = energy_*std::abs(TMath::TanH(eta));
     vEB_time_[idx_] = iRHit->time();
 
   } // EB rechits

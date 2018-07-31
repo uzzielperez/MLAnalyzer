@@ -1,5 +1,6 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
 #include "DataFormats/Math/interface/deltaR.h"
+#include "DataFormats/Math/interface/deltaPhi.h"
 
 // Fill EB rec hits ////////////////////////////////
 // Store event rechits in a vector of length equal
@@ -10,131 +11,236 @@ TH1F *h_nJet;
 TH1F *h_phoPt; 
 TH1F *h_phoE;
 TH1F *h_phoEta;
+TH1F *h_phoMva;
 TH1F *h_jetPt;
 TH1F *h_jetE;
 TH1F *h_jetEta;
 
-float eventId_;
+unsigned int eventId_;
+unsigned int runId_;
+unsigned int lumiId_;
 float m0_;
 float nJet_;
-//float diPhoE_;
-//float diPhoPt_;
+float diPhoE_;
+float diPhoPt_;
+std::vector<float> vFC_inputs_;
+
+float m0cut = 90.;
+//float m0cut = 80.;
 
 // Initialize branches _____________________________________________________//
 void RecHitAnalyzer::branchesEvtSel ( TTree* tree, edm::Service<TFileService> &fs ) {
 
   h_nJet   = fs->make<TH1F>("h_nJet"  , "nJet;nJet;Events"     ,  10,  0.,  10.);
-  h_m0     = fs->make<TH1F>("h_m0"    , "m0;m0;Events"         ,  50, 90., 240.);
+  h_m0     = fs->make<TH1F>("h_m0"    , "m0;m0;Events"         ,  50, m0cut, m0cut+150.);
 
   h_phoPt  = fs->make<TH1F>("h_phoPt" , "p_{T};p_{T};Particles", 100,  0., 500.);
   h_phoE   = fs->make<TH1F>("h_phoE"  , "E;E;Particles"        , 100,  0., 800.);
   h_phoEta = fs->make<TH1F>("h_phoEta", "#eta;#eta;Particles"  , 100, -5., 5.);
+  h_phoMva = fs->make<TH1F>("h_phoMva", "#mva;#mva;Particles"  , 100, -1., 1.);
   h_jetPt  = fs->make<TH1F>("h_jetPt" , "p_{T};p_{T};Particles", 100,  0., 500.);
   h_jetE   = fs->make<TH1F>("h_jetE"  , "E;E;Particles"        , 100,  0., 800.);
   h_jetEta = fs->make<TH1F>("h_jetEta", "#eta;#eta;Particles"  , 100, -5., 5.);
 
   RHTree->Branch("eventId",        &eventId_);
+  RHTree->Branch("runId",          &runId_);
+  RHTree->Branch("lumiId",         &lumiId_);
   RHTree->Branch("m0",             &m0_);
   RHTree->Branch("nJet",           &nJet_);
-  //RHTree->Branch("diPhoE",         &diPhoE_);
-  //RHTree->Branch("diPhoPt",        &diPhoPt_);
+  RHTree->Branch("FC_inputs",      &vFC_inputs_);
+  RHTree->Branch("diPhoE",         &diPhoE_);
+  RHTree->Branch("diPhoPt",        &diPhoPt_);
 
-} // branchesEB()
+} // branchesEvtSel()
 
-// Fill EB rechits _________________________________________________________________//
+// Run event selection _________________________________________________________________//
 bool RecHitAnalyzer::runEvtSel ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
   edm::Handle<reco::PhotonCollection> photons;
   iEvent.getByLabel(photonCollectionT_, photons);
-  std::cout << "PhoCol.size: " << photons->size() << std::endl;
+  //std::cout << "PhoCol.size: " << photons->size() << std::endl;
   edm::Handle<reco::PFJetCollection> jets;
   iEvent.getByLabel(jetCollectionT_, jets);
-  std::cout << " >> PFJetCol.size: " << jets->size() << std::endl;
+  //std::cout << " >> PFJetCol.size: " << jets->size() << std::endl;
   edm::Handle<reco::GenJetCollection> genJets;
   iEvent.getByLabel(genJetCollectionT_, genJets);
-  std::cout << " >> GenJetCol.size: " << genJets->size() << std::endl;
+  //std::cout << " >> GenJetCol.size: " << genJets->size() << std::endl;
   edm::Handle<reco::GenParticleCollection> genParticles;
   iEvent.getByLabel(genParticleCollectionT_, genParticles);
 
-  int nPho = 0;
-  std::cout << "GPCol.size: " << genParticles->size() << std::endl;
+  int nPhoTrg = 0;
+  //std::cout << "GPCol.size: " << genParticles->size() << std::endl;
   //math::XYZTLorentzVector vDiPho;
 
+  float dR, m0;
   math::PtEtaPhiELorentzVectorD vDiPho;
   //std::vector<math::XYZTLorentzVector> vPhoPairs[nPhotons];
   std::vector<int> vPhoIdxs;
-  for ( unsigned int iG = 0; iG < genParticles->size(); iG++ ) {
-    reco::GenParticleRef iGen( genParticles, iG );
-    // ID cuts
-    if ( std::abs(iGen->pdgId()) != 22 ) continue;
-    if ( iGen->status() != 1 ) continue; // NOT the same as Pythia status
-    //std::cout << iGen->numberOfMothers() << std::endl;
-    if ( !iGen->mother() ) continue;
-    if ( iGen->mother()->pdgId() != 25 && iGen->mother()->pdgId() != 22 ) continue;
-    //std::cout << "status:" <<iGen->status() << " pdgId:" << iGen->pdgId() << " pT:" << iGen->pt() << " eta:" << iGen->eta() << " E:" << iGen->energy() << std::endl;
-    std::cout << "status:" <<iGen->status() << " pdgId:" << iGen->pdgId() << " pT:" << iGen->pt() << " eta:" << iGen->eta() << " E:" << iGen->energy() << " mothId:" << iGen->mother()->pdgId() << std::endl;
+  //bool isGenMatched;
+  for ( unsigned int iP = 0; iP < photons->size(); iP++ ) {
+    reco::PhotonRef iPho( photons, iP );
+    if ( std::abs(iPho->pt()) < 20. ) continue;
+    if ( std::abs(iPho->eta()) > 1.44 ) continue;
+    //if ( std::abs(iPho->eta()) > 2.1 ) continue;
+    //if ( std::abs(iPho->eta()) > 1.44 && std::abs(iPho->eta()) < 1.57 ) continue;
+    //std::cout << " >> pT:" << iPho->pt() << " eta:" << iPho->eta() << " phi: " << iPho->phi() << " E:" << iPho->energy() << std::endl;
+    /*
+    isGenMatched = false;
+    for ( unsigned int iG = 0; iG < genParticles->size(); iG++ ) {
+      reco::GenParticleRef iGen( genParticles, iG );
+      // ID cuts
+      if ( std::abs(iGen->pdgId()) != 22 ) continue;
+      if ( iGen->status() != 1 ) continue; // NOT the same as Pythia status
+      //std::cout << iGen->numberOfMothers() << std::endl;
+      if ( !iGen->mother() ) continue;
+      if ( iGen->mother()->pdgId() != 25 && iGen->mother()->pdgId() != 22 ) continue;
+      //std::cout << "status:" <<iGen->status() << " pdgId:" << iGen->pdgId() << " pT:" << iGen->pt() << " eta:" << iGen->eta() << " E:" << iGen->energy() << std::endl;
+      //std::cout << "status:" <<iGen->status() << " pdgId:" << iGen->pdgId() << " pT:" << iGen->pt() << " eta:" << iGen->eta() << " E:" << iGen->energy() << " mothId:" << iGen->mother()->pdgId() << std::endl;
 
-    for ( unsigned int iD = 0; iD < iGen->numberOfMothers(); iD++ ) {
-          const reco::Candidate* moth = iGen->mother(iD);
-          std::cout << " mothId:" << moth->pdgId() << std::endl;
+      //for ( unsigned int iD = 0; iD < iGen->numberOfMothers(); iD++ ) {
+      //      const reco::Candidate* moth = iGen->mother(iD);
+      //      std::cout << " mothId:" << moth->pdgId() << std::endl;
+      //}
+      dR = reco::deltaR( iGen->eta(),iGen->phi(), iPho->eta(),iPho->phi() );
+      if ( dR < 0.04 ) {
+        isGenMatched = true;
+        break;
+      }
     }
-    nPho++;
-    vDiPho += iGen->p4();
-    vPhoIdxs.push_back( iG );
+    if ( !isGenMatched ) continue;
+    */
+    nPhoTrg++;
+    vDiPho += iPho->p4();
+    vPhoIdxs.push_back( iP );
 
   } // genParticle loop: count good photons
+  m0 = vDiPho.mass();
+  if ( m0 < m0cut ) return false;
+  if ( nPhoTrg != 2 ) return false;
 
+  int nPho = 0;
+  int leadPho = -1;
+  float leadPhoPt = 0.;
+  for ( int iP = 0; iP < nPhoTrg; iP++ ) {
+    reco::PhotonRef iPho( photons, vPhoIdxs[iP] );
+    if ( std::abs(iPho->pt()) > leadPhoPt ) {
+      leadPhoPt = std::abs(iPho->pt()); 
+      leadPho = iP;
+    }
+    if ( std::abs(iPho->pt()) < m0/4. ) continue;
+    nPho++;
+  }
   if ( nPho != 2 ) return false;
-  if ( vDiPho.mass() < 90. ) return false;
-  std::cout << " n:" << nPho << " m0:" << vDiPho.mass() << std::endl;
+  if ( leadPhoPt < m0/3 ) return false;
+  //nPho = nPhoTrg;
+  //std::cout << " n:" << nPho << " m0:" << m0 << std::endl;
 
-  float dR;
   bool isDRIsolated;
   int nJet = 0;
   std::vector<int> vJetIdxs;
-  for ( unsigned int iJ = 0; iJ < genJets->size(); iJ++ ) {
-    reco::GenJetRef iJet( genJets, iJ );
+  for ( unsigned int iJ = 0; iJ < jets->size(); iJ++ ) {
+    reco::PFJetRef iJet( jets, iJ );
     if ( std::abs(iJet->pt()) < 30. ) continue;
     if ( std::abs(iJet->eta()) > 2.5 ) continue;
     // deltaR check
     isDRIsolated = true;
     for ( int iP = 0; iP < nPho; iP++ ) {
-      reco::GenParticleRef iGen( genParticles, vPhoIdxs[iP] );
-      dR = reco::deltaR( iJet->eta(),iJet->phi(), iGen->eta(),iGen->phi() );
+      //reco::GenParticleRef iGen( genParticles, vPhoIdxs[iP] );
+      reco::PhotonRef iPho( photons, vPhoIdxs[iP] );
+      dR = reco::deltaR( iJet->eta(),iJet->phi(), iPho->eta(),iPho->phi() );
       if ( dR < 0.4 ) {
         isDRIsolated = false;
         break;
       }
     }
     if ( !isDRIsolated ) continue;
-    std::cout << " >> pT:" << iJet->pt() << " eta:" << iJet->eta() << " phi: " << iJet->phi() << " E:" << iJet->energy() << std::endl;
+    /*
+    isGenMatched = false;
+    for ( unsigned int iJ = 0; iJ < genJets->size(); iJ++ ) {
+      reco::GenJetRef iGen( genJets, iJ );
+      if ( std::abs(iGen->pt()) < 30. ) continue;
+      if ( std::abs(iGen->eta()) > 2.5 ) continue;
+      dR = reco::deltaR( iGen->eta(),iGen->phi(), iJet->eta(),iJet->phi() );
+      if ( dR < 0.04 ) {
+        isGenMatched = true;
+        break;
+      }
+    }
+    if ( !isGenMatched ) continue;
+    */
+    //std::cout << " >> pT:" << iJet->pt() << " eta:" << iJet->eta() << " phi: " << iJet->phi() << " E:" << iJet->energy() << std::endl;
     nJet++;
     vJetIdxs.push_back( iJ );
   }
+  //if ( nJet != 2 ) return false;
 
   h_nJet->Fill( nJet );
-  h_m0->Fill( vDiPho.mass() );
-  for ( int iP = 0; iP < nPho; iP++ ) {
-    reco::GenParticleRef iGen( genParticles, vPhoIdxs[iP] );
-    h_phoPt->Fill( iGen->pt() ); 
-    h_phoE->Fill( iGen->energy() );
-    h_phoEta->Fill( iGen->eta() ); 
+  h_m0->Fill( m0 );
+  diPhoE_  = 0.;
+  diPhoPt_ = 0.;
+  int ptOrder[2] = {0, 1};
+  if ( leadPho == 1 ) {
+      ptOrder[0] = 1;
+      ptOrder[1] = 0;
   }
+  float dphi[2] = {0., 0.};
+  vFC_inputs_.clear();
+  for ( int iP = 0; iP < nPho; iP++ ) {
+    //reco::GenParticleRef iGen( genParticles, vPhoIdxs[iP] );
+    //reco::PhotonRef iPho( photons, vPhoIdxs[iP] );
+    reco::PhotonRef iPho( photons, vPhoIdxs[ptOrder[iP]] );
+    h_phoPt->Fill( iPho->pt() ); 
+    h_phoE->Fill( iPho->energy() );
+    h_phoEta->Fill( iPho->eta() ); 
+    //h_phoMva->Fill( iPho->pfMVA() ); 
+    //std::cout << iPho->pfMVA() << std::endl;
+    diPhoE_  += std::abs( iPho->energy() );
+    diPhoPt_ += std::abs( iPho->pt() );
+    vFC_inputs_.push_back( iPho->pt()/m0 );
+    vFC_inputs_.push_back( iPho->eta() );
+    dphi[iP] = iPho->phi();
+  }
+  vFC_inputs_.push_back( TMath::Cos(reco::deltaPhi(dphi[0], dphi[1])) );
   for ( int iJ = 0; iJ < nJet; iJ++ ) {
-    reco::GenJetRef iJet( genJets, vJetIdxs[iJ] );
+    //reco::GenJetRef iJet( genJets, vJetIdxs[iJ] );
+    reco::PFJetRef iJet( jets, vJetIdxs[iJ] );
     h_jetPt->Fill( iJet->pt() ); 
     h_jetE->Fill( iJet->energy() );
     h_jetEta->Fill( iJet->eta() ); 
   }
   // Write out event ID
-  m0_ = vDiPho.mass();
+  m0_ = m0;
   nJet_ = nJet;
   eventId_ = iEvent.id().event();
+  runId_ = iEvent.id().run();
+  lumiId_ = iEvent.id().luminosityBlock();
 
   return true;
 
-} // fillEB()
+} // runEvtSel()
 
+/*
+//____ Fill FC diphoton variables _____//
+void RecHitAnalyzer::fillFC ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
+
+  edm::Handle<reco::PhotonCollection> photons;
+  iEvent.getByToken(photonCollectionT_, photons);
+
+  vFC_inputs_.clear();
+
+  int ptOrder[2] = {0, 1};
+  if ( vPho_[1].Pt() > vPho_[0].Pt() ) {
+      ptOrder[0] = 1;
+      ptOrder[1] = 0;
+  }
+  for ( int i = 0; i < 2; i++ ) {
+    vFC_inputs_.push_back( vPho_[ptOrder[i]].Pt()/m0_ );
+    vFC_inputs_.push_back( vPho_[ptOrder[i]].Eta() );
+  }
+  vFC_inputs_.push_back( TMath::Cos(vPho_[0].Phi()-vPho_[1].Phi()) );
+
+} // fillFC()
+*/
 /*
 //____ Apply event selection cuts _____//
 bool RecHitAnalyzer::runSelections_H24G ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
