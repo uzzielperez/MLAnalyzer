@@ -28,6 +28,17 @@
 #include "Geometry/CaloGeometry/interface/CaloGeometry.h"
 #include "Geometry/CaloGeometry/interface/CaloCellGeometry.h"
 #include "Geometry/Records/interface/CaloGeometryRecord.h"
+
+#include "DataFormats/SiStripDetId/interface/TOBDetId.h"
+#include "DataFormats/SiStripDetId/interface/TECDetId.h"
+#include "DataFormats/SiStripDetId/interface/TIBDetId.h"
+#include "DataFormats/SiStripDetId/interface/TIDDetId.h"
+#include "DataFormats/SiPixelDetId/interface/PXBDetId.h"
+#include "DataFormats/SiPixelDetId/interface/PXFDetId.h"
+#include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
+#include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
+#include "Geometry/TrackerGeometryBuilder/interface/StripGeomDetUnit.h"
+
 #include "Calibration/IsolatedParticles/interface/DetIdFromEtaPhi.h"
 
 #include "DataFormats/HcalRecHit/interface/HcalRecHitCollections.h"
@@ -48,6 +59,7 @@
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "TH1.h"
 #include "TH2.h"
+#include "TH3.h"
 #include "TProfile2D.h"
 #include "TTree.h"
 #include "TCanvas.h"
@@ -122,9 +134,9 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     void branchesHCALatEBEE     ( TTree*, edm::Service<TFileService>& );
     void branchesTracksAtEBEE   ( TTree*, edm::Service<TFileService>& );
     void branchesTracksAtECALstitched   ( TTree*, edm::Service<TFileService>& );
-    //void branchesTRKlayersAtEBEE( TTree*, edm::Service<TFileService>& );
+    void branchesTRKlayersAtEBEE( TTree*, edm::Service<TFileService>& );
     //void branchesTRKlayersAtECAL( TTree*, edm::Service<TFileService>& );
-    //void branchesTRKvolumeAtEBEE( TTree*, edm::Service<TFileService>& );
+    void branchesTRKvolumeAtEBEE( TTree*, edm::Service<TFileService>& );
     //void branchesTRKvolumeAtECAL( TTree*, edm::Service<TFileService>& );
 
     bool runEvtSel          ( const edm::Event&, const edm::EventSetup& );
@@ -136,9 +148,9 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     void fillHCALatEBEE     ( const edm::Event&, const edm::EventSetup& );
     void fillTracksAtEBEE   ( const edm::Event&, const edm::EventSetup& );
     void fillTracksAtECALstitched   ( const edm::Event&, const edm::EventSetup& );
-    //void fillTRKlayersAtEBEE( const edm::Event&, const edm::EventSetup& );
+    void fillTRKlayersAtEBEE( const edm::Event&, const edm::EventSetup& );
     //void fillTRKlayersAtECAL( const edm::Event&, const edm::EventSetup& );
-    //void fillTRKvolumeAtEBEE( const edm::Event&, const edm::EventSetup& );
+    void fillTRKvolumeAtEBEE( const edm::Event&, const edm::EventSetup& );
     //void fillTRKvolumeAtECAL( const edm::Event&, const edm::EventSetup& );
 
 
@@ -148,6 +160,13 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 // constants, enums and typedefs
 //
 static const int nEE = 2;
+static const int nTOB = 6;
+static const int nTEC = 9;
+static const int nTIB = 4;
+static const int nTID = 3;
+static const int nBPIX = 4;
+static const int nFPIX = 3;
+
 static const int EB_IPHI_MIN = EBDetId::MIN_IPHI;//1;
 static const int EB_IPHI_MAX = EBDetId::MAX_IPHI;//360;
 static const int EB_IETA_MIN = EBDetId::MIN_IETA;//1;
