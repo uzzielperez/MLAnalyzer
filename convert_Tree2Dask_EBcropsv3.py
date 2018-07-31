@@ -1,35 +1,25 @@
 import numpy as np
 import ROOT
-from root_numpy import tree2array
+from root_numpy import tree2array, root2array
 from dask.delayed import delayed
 import dask.array as da
+import glob
 
-#eosDir='/eos/uscms/store/user/mba2012/IMGs/HighLumi_ROOTv2'
-#eosDir='/eos/uscms/store/user/mba2012/IMGs/SinglePi0'
-eosDir='/eos/uscms/store/user/mba2012/IMGs/DoublePi0Pt30To90'
-#decays = ['h22gammaSM_1j_1M_noPU', 'h24gamma_1j_1M_1GeV_noPU']
-#decays = ['SM2gamma_1j_1M_noPU', 'h24gamma_1j_1M_1GeV_noPU']
-#decays = ['SM2gamma_1j_1M_noPU', 'h22gammaSM_1j_1M_noPU']
-#decays = ['SM2gamma_1j_1M_noPU', 'h22gammaSM_1j_1M_noPU', 'h24gamma_1j_1M_1GeV_noPU']
-#decays = ['SinglePi0Pt30To160_m100To200_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['SinglePi0Pt60_m100To2000_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['SinglePi0Pt60_m100To200_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['SinglePi0Pt30To160_m100To2000_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['SinglePi0Pt30To160_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['SinglePi0Pt30To160_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU_m100']
-#decays = ['SinglePi0Pt60_m100To400_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['DoublePi0Pt60_m0To400_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['SinglePi0Pt60_m0To400_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['SinglePi0Pt60_m0To150_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['DoublePi0Pt30To90_m0To1400_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-decays = ['DoublePhotonPt30To90_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
+eosDir='/eos/uscms/store/user/mba2012/IMGs/DoublePi0Pt50To60'
+#decays = ['DoublePi0Pt30To90_pythia8_m000_2016_25ns_Moriond17MC_PoissonOOTPU']
+decays = [
+'DoublePhotonPt50To60_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU',
+'DoublePi0Pt50To60_m000_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU',
+'DoublePi0Pt50To60_m0To1600_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU'
+]
 
-chunk_size_ = 250
+chunk_size_ = 500
 scale = 1.
 
 @delayed
 def load_X(tree, start_, stop_, branches_, readouts, scale):
-    X = tree2array(tree, start=start_, stop=stop_, branches=branches_) 
+    #X = tree2array(tree, start=start_, stop=stop_, branches=branches_) 
+    X = root2array(tree, treename='fevt/RHTree', start=start_, stop=stop_, branches=branches_) 
     # Convert the object array X to a multidim array:
     # 1: for each event x in X, concatenate the object columns (branches) into a flat array of shape (readouts*branches)
     # 2: reshape the flat array into a stacked array: (branches, readouts)
@@ -46,7 +36,8 @@ def load_X(tree, start_, stop_, branches_, readouts, scale):
 
 @delayed
 def load_single(tree, start_, stop_, branches_):
-    X = tree2array(tree, start=start_, stop=stop_, branches=branches_) 
+    #X = tree2array(tree, start=start_, stop=stop_, branches=branches_) 
+    X = root2array(tree, treename='fevt/RHTree', start=start_, stop=stop_, branches=branches_) 
     if len(branches_) > 1:
       X = np.array([np.concatenate(x).reshape(len(branches_),1) for x in X])
       X = X.reshape((-1,len(branches_)))
@@ -57,18 +48,18 @@ def load_single(tree, start_, stop_, branches_):
 
 for j,decay in enumerate(decays):
 
-    if j == 1:
+    if j != 1:
         pass
         continue
 
-    #tfile_str = 'output.root'
-    #tfile_str = '%s/%s_IMGcrop.root'%(eosDir,decay)
-    tfile_str = '%s/%s_AODSIM_IMGcrop.root'%(eosDir,decay)
-    #tfile_str = '%s/%s_FEVTDEBUG_IMG.root'%(eosDir,decay)
-    #tfile_str = '%s/%s_FEVTDEBUG_nXXX_IMG.root'%(eosDir,decay)
-    tfile = ROOT.TFile(tfile_str)
-    tree = tfile.Get('fevt/RHTree')
+    #tfiles = glob.glob('%s/%s_AODSIM_IMGcrop*.root'%(eosDir,decay))
+    tfiles = glob.glob('%s/%s_IMGcrop*.root'%(eosDir,decay))
+    print " >> %d files found."%len(tfiles)
+    tree = ROOT.TChain("fevt/RHTree")
+    for f in tfiles:
+      tree.Add(f)
     nevts = tree.GetEntries()
+    tree = tfiles
     neff = (nevts//1000)*1000
     #neff = int(nevts)
     #neff = 112000
@@ -80,7 +71,7 @@ for j,decay in enumerate(decays):
     #neff = 1000 
     #neff = 233000
     print " >> Doing decay:", decay
-    print " >> Input file:", tfile_str
+    print " >> Input file[0]:", tfiles[0]
     print " >> Total events:", nevts
     print " >> Effective events:", neff
 
@@ -256,14 +247,14 @@ for j,decay in enumerate(decays):
 
     # Class label
     label = j
-    label = 1
+    label = 0
     print " >> Class label:",label
     y = da.from_array(\
             np.full(X.shape[0], label, dtype=np.float32),\
             chunks=(chunk_size,))
 
     #file_out_str = "%s/%s_IMG_RH%d_n%dk_label%d.hdf5"%(eosDir,decay,int(scale),neff//1000.,label)
-    file_out_str = "%s/%s_IMG_RH%d_n%dkx2.hdf5"%(eosDir,decay,int(scale),neff//1000.)
+    file_out_str = "%s/%s_IMGcrop_RH%d_n%dkx2.hdf5"%(eosDir,decay,int(scale),neff//1000.)
     #file_out_str = "test.hdf5"
     print " >> Writing to:", file_out_str
     #da.to_hdf5(file_out_str, {'/X': X, '/y': y, 'eventId': eventId, 'X_crop0': X_crop0, 'X_crop1': X_crop1}, compression='lzf')

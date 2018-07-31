@@ -4,25 +4,8 @@ from root_numpy import tree2array
 from dask.delayed import delayed
 import dask.array as da
 
-#eosDir='/eos/uscms/store/user/mba2012/IMGs/HighLumi_ROOTv2'
-#eosDir='/eos/uscms/store/user/mba2012/IMGs/SinglePi0'
-eosDir='/eos/uscms/store/user/mba2012/IMGs/DoublePi0Pt30To90'
-#decays = ['h22gammaSM_1j_1M_noPU', 'h24gamma_1j_1M_1GeV_noPU']
-#decays = ['SM2gamma_1j_1M_noPU', 'h24gamma_1j_1M_1GeV_noPU']
-#decays = ['SM2gamma_1j_1M_noPU', 'h22gammaSM_1j_1M_noPU']
-#decays = ['SM2gamma_1j_1M_noPU', 'h22gammaSM_1j_1M_noPU', 'h24gamma_1j_1M_1GeV_noPU']
-#decays = ['SinglePi0Pt30To160_m100To200_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['SinglePi0Pt60_m100To2000_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['SinglePi0Pt60_m100To200_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['SinglePi0Pt30To160_m100To2000_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['SinglePi0Pt30To160_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['SinglePi0Pt30To160_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU_m100']
-#decays = ['SinglePi0Pt60_m100To400_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['DoublePi0Pt60_m0To400_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['SinglePi0Pt60_m0To400_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['SinglePi0Pt60_m0To150_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-#decays = ['DoublePi0Pt30To90_m0To1400_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
-decays = ['DoublePhotonPt30To90_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU']
+eosDir='/eos/uscms/store/user/mba2012/IMGs/SinglePi0_scan'
+decays = ['SinglePi0Pt60_pythia8_2016_25ns_Moriond17MC_PoissonOOTPU_m800']
 
 chunk_size_ = 250
 scale = 1.
@@ -62,16 +45,13 @@ for j,decay in enumerate(decays):
         continue
 
     #tfile_str = 'output.root'
-    #tfile_str = '%s/%s_IMGcrop.root'%(eosDir,decay)
-    tfile_str = '%s/%s_AODSIM_IMGcrop.root'%(eosDir,decay)
-    #tfile_str = '%s/%s_FEVTDEBUG_IMG.root'%(eosDir,decay)
-    #tfile_str = '%s/%s_FEVTDEBUG_nXXX_IMG.root'%(eosDir,decay)
+    tfile_str = '%s/%s_IMG.root'%(eosDir,decay)
     tfile = ROOT.TFile(tfile_str)
     tree = tfile.Get('fevt/RHTree')
     nevts = tree.GetEntries()
     neff = (nevts//1000)*1000
     #neff = int(nevts)
-    #neff = 112000
+    neff = 96000
     chunk_size = chunk_size_
     #chunk_size = int(nevts)
     if neff > nevts:
@@ -106,18 +86,6 @@ for j,decay in enumerate(decays):
                 for i in range(0,neff,chunk_size)])
     print " >> Expected shape:", X_crop0.shape
 
-    # SC1
-    readouts = [32,32]
-    branches = ["SC_energy1"]
-    X_crop1 = da.concatenate([\
-                da.from_delayed(\
-                    load_X(tree,i,i+chunk_size, branches, readouts, scale),\
-                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
-                    dtype=np.float32)\
-                for i in range(0,neff,chunk_size)])
-    print " >> Expected shape:", X_crop1.shape
-    X_crop0 = da.concatenate([X_crop0, X_crop1], axis=0)
-
     # SC0
     readouts = [32,32]
     branches = ["SC_energyT0", "SC_energyZ0"]
@@ -128,18 +96,6 @@ for j,decay in enumerate(decays):
                     dtype=np.float32)\
                 for i in range(0,neff,chunk_size)])
     print " >> Expected shape:", X_crop_stack0.shape
-
-    # SC1
-    readouts = [32,32]
-    branches = ["SC_energyT1", "SC_energyZ1"]
-    X_crop_stack1 = da.concatenate([\
-                da.from_delayed(\
-                    load_X(tree,i,i+chunk_size, branches, readouts, scale),\
-                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
-                    dtype=np.float32)\
-                for i in range(0,neff,chunk_size)])
-    print " >> Expected shape:", X_crop_stack1.shape
-    X_crop_stack0 = da.concatenate([X_crop_stack0, X_crop_stack1], axis=0)
 
     # SC_mass0 
     branches = ["SC_mass0"]
@@ -161,28 +117,6 @@ for j,decay in enumerate(decays):
                 for i in range(0,neff,chunk_size)])
     print " >> Expected shape:", y_pT0.shape
 
-    # SC_mass1 
-    branches = ["SC_mass1"]
-    y_mass1 = da.concatenate([\
-                da.from_delayed(\
-                    load_single(tree,i,i+chunk_size, branches),\
-                    shape=(chunk_size,),\
-                    dtype=np.float32)\
-                for i in range(0,neff,chunk_size)])
-    print " >> Expected shape:", y_mass1.shape
-    y_mass0 = da.concatenate([y_mass0, y_mass1], axis=0)
-
-    # SC_pT1 
-    branches = ["SC_pT1"]
-    y_pT1 = da.concatenate([\
-                da.from_delayed(\
-                    load_single(tree,i,i+chunk_size, branches),\
-                    shape=(chunk_size,),\
-                    dtype=np.float32)\
-                for i in range(0,neff,chunk_size)])
-    print " >> Expected shape:", y_pT1.shape
-    y_pT0 = da.concatenate([y_pT0, y_pT1], axis=0)
-
     # SC_DR0 
     branches = ["SC_DR0"]
     y_DR0 = da.concatenate([\
@@ -192,17 +126,6 @@ for j,decay in enumerate(decays):
                     dtype=np.float32)\
                 for i in range(0,neff,chunk_size)])
     print " >> Expected shape:", y_DR0.shape
-
-    ## SC1
-    #readouts = [32,32]
-    #branches = ["SC_energy1"]
-    #X_crop1 = da.concatenate([\
-    #            da.from_delayed(\
-    #                load_X(tree,i,i+chunk_size, branches, readouts, scale),\
-    #                shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
-    #                dtype=np.float32)\
-    #            for i in range(0,neff,chunk_size)])
-    #print " >> Expected shape:", X_crop1.shape
 
     # pho_pT0 
     branches = ["pho_pT0"]
@@ -262,8 +185,7 @@ for j,decay in enumerate(decays):
             np.full(X.shape[0], label, dtype=np.float32),\
             chunks=(chunk_size,))
 
-    #file_out_str = "%s/%s_IMG_RH%d_n%dk_label%d.hdf5"%(eosDir,decay,int(scale),neff//1000.,label)
-    file_out_str = "%s/%s_IMG_RH%d_n%dkx2.hdf5"%(eosDir,decay,int(scale),neff//1000.)
+    file_out_str = "%s/%s_IMG_RH%d_n%dk.hdf5"%(eosDir,decay,int(scale),neff//1000.)
     #file_out_str = "test.hdf5"
     print " >> Writing to:", file_out_str
     #da.to_hdf5(file_out_str, {'/X': X, '/y': y, 'eventId': eventId, 'X_crop0': X_crop0, 'X_crop1': X_crop1}, compression='lzf')
