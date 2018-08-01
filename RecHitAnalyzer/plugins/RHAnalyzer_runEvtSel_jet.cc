@@ -19,7 +19,6 @@ const int nJets = 1;
 const int search_window = 7;
 //const int image_padding = 14;
 const int image_padding = 12;
-const bool debug = true;
 float vJetSeed_iphi_[nJets];
 float vJetSeed_ieta_[nJets];
 
