@@ -41,7 +41,8 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 
   // These will be use to create the actual images
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
-  branchesEvtSel       ( RHTree, fs );
+  //branchesEvtSel       ( RHTree, fs );
+  branchesEvtSel_jet   ( RHTree, fs );
   branchesEB           ( RHTree, fs );
   branchesEE           ( RHTree, fs );
   branchesHBHE         ( RHTree, fs );
@@ -80,7 +81,8 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // ----- Apply event selection cuts ----- //
 
   bool passedSelection = false;
-  passedSelection = runEvtSel( iEvent, iSetup );
+  //passedSelection = runEvtSel( iEvent, iSetup );
+  passedSelection = runEvtSel_jet( iEvent, iSetup );
 
   if ( !passedSelection ) return;
 

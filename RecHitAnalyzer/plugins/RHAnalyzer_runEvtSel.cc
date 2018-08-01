@@ -1,8 +1,6 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
 
-// Fill EB rec hits ////////////////////////////////
-// Store event rechits in a vector of length equal
-// to number of crystals in EB (ieta:170 x iphi:360)
+// Run event selection ////////////////////////////////
 
 TH1D *h_pT;
 TH1D *h_E;
@@ -30,9 +28,9 @@ void RecHitAnalyzer::branchesEvtSel ( TTree* tree, edm::Service<TFileService> &f
   //RHTree->Branch("diPhoE",         &diPhoE_);
   //RHTree->Branch("diPhoPt",        &diPhoPt_);
 
-} // branchesEB()
+} // branchesEvtSel()
 
-// Fill EB rechits _________________________________________________________________//
+// Run event selection _______________________________________________________________//
 bool RecHitAnalyzer::runEvtSel ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
   edm::Handle<reco::PhotonCollection> photons;
@@ -91,7 +89,7 @@ bool RecHitAnalyzer::runEvtSel ( const edm::Event& iEvent, const edm::EventSetup
 
   return true;
 
-} // fillEB()
+} // runEvtSel()
 
 /*
 //____ Apply event selection cuts _____//
