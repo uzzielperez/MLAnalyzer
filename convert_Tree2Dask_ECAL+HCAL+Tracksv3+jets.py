@@ -138,8 +138,8 @@ for j,decay in enumerate(decays):
         pass
         #continue
 
-    tfile_str = 'output.root'
-    #tfile_str = 'output_numEvent20.root'
+    #tfile_str = 'output.root'
+    tfile_str = 'output_w.root'
     #tfile_str = '%s/%s_IMG.root'%(eosDir,decay)
     #tfile_str = '%s/ggtree_mc_single.root'%(eosDir)
     #tfile_str = '%s/ggtree_mc.root'%(eosDir)
@@ -152,8 +152,8 @@ for j,decay in enumerate(decays):
     #neff = 84600
     #neff = 175000
     #neff = 135600
-    #neff = 200
-    neff = int(nevts)
+    neff = 200
+    #neff = int(nevts)
     chunk_size = chunk_size_
     if neff < chunk_size:
       chunk_size = neff
@@ -348,8 +348,8 @@ for j,decay in enumerate(decays):
             np.full(len(m0), label, dtype=np.float32),\
             chunks=(chunk_size,))
 
-    file_out_str = "test_jets.hdf5"
-    #file_out_str = "test%d_numEvent1.hdf5"%label
+    #file_out_str = "test_jets.hdf5"
+    file_out_str = "test_w.hdf5"
     #file_out_str = "%s/%s_IMGall_RH%d_n%d_label%d.hdf5"%(eosDir,decay,int(scale[0]),neff,label)
     #file_out_str = "%s/%s_IMG_RH%d_n%dk.hdf5"%(eosDir,decay,int(scale[0]),neff//1000.)
     #file_out_str = "%s/%s_IMG_EBEEHBup_RH%d_n%dk.hdf5"%(eosDir,decay,int(scale[0]),neff//1000.)

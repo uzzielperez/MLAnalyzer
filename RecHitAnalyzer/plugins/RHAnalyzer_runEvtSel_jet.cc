@@ -15,6 +15,7 @@ TH1D *h_jet_m0;
 TH1D *h_jet_nJet;
 float jet_eventId_;
 float jet_m0_;
+float jet_pt_;
 const int nJets = 1;
 const int search_window = 7;
 //const int image_padding = 14;
@@ -33,6 +34,7 @@ void RecHitAnalyzer::branchesEvtSel_jet ( TTree* tree, edm::Service<TFileService
 
   RHTree->Branch("eventId",        &jet_eventId_);
   RHTree->Branch("m0",             &jet_m0_);
+  RHTree->Branch("jetPt",          &jet_pt_);
   RHTree->Branch("jetSeed_iphi",   &vJetSeed_iphi_[0]);
   RHTree->Branch("jetSeed_ieta",   &vJetSeed_ieta_[0]);
 
@@ -166,6 +168,7 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
   h_jet_m0->Fill( leadJet->mass() );
 
   // Write out event ID
+  jet_pt_ = leadJet->pt();
   jet_m0_ = leadJet->mass();
   jet_eventId_ = iEvent.id().event();
 
