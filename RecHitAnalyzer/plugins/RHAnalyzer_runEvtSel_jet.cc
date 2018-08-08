@@ -43,6 +43,36 @@ void RecHitAnalyzer::branchesEvtSel_jet ( TTree* tree, edm::Service<TFileService
 // Run event selection ___________________________________________________________________//
 bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
+  edm::Handle<reco::GenParticleCollection> genParticles;
+  iEvent.getByToken( genParticleCollectionT_, genParticles );
+
+  int ngg = 0;
+
+  std::cout << " >>>>>>>>>>>>>>>>>>>> evt:" << std::endl;
+  for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
+      iGen != genParticles->end();
+      ++iGen) {
+
+    if ( ngg == 2 ) break;
+
+    //if ( iGen->pdgId() != 2212 ) continue;
+    //if ( iGen->status() != 3 ) continue;
+    if ( iGen->status() == 1 ) continue;
+    std::cout << " >> id:" << iGen->pdgId() << " status:" << iGen->status() << " nDaught:" << iGen->numberOfDaughters() << " pt:"<< iGen->pt() << std::endl;
+    for ( unsigned int iD = 0; iD < iGen->numberOfDaughters(); iD++ ) {
+      //if ( ngg == 2 ) break;
+      const reco::Candidate* iDaughter = iGen->daughter(iD);
+      //if ( iDaughter->status() != 3 ) continue;
+      std::cout << " >>>> id:" << iDaughter->pdgId() << " status:" << iDaughter->status() << " nDaught:" << iDaughter->numberOfDaughters()
+      <<  " pt:" << iDaughter->pt() << std::endl;
+      if ( std::abs(iDaughter->pdgId()) != 21 ) continue;
+      ngg++;
+      //std::cout << " >>>> id:" << iDaughter->pdgId() << " status:" << iDaughter->status() << " nDaught:" << iDaughter->numberOfDaughters()
+      //<<  iDaughter->pt() << std::endl;
+    }
+
+  }
+
   edm::Handle<HBHERecHitCollection> HBHERecHitsH_;
   iEvent.getByToken( HBHERecHitCollectionT_, HBHERecHitsH_ );
 
