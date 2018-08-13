@@ -61,6 +61,10 @@ process.fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , genJetCollection = cms.InputTag('ak4GenJets')
     , trackRecHitCollection = cms.InputTag('generalTracks')
     , trackCollection = cms.InputTag("generalTracks")
+    , mode = cms.string("JetLevel") 
+    , nJets = cms.int32(1) 
+    , minJetPt = cms.double(20.) 
+    , maxJetEta = cms.double(2.4) 
     )
 
 process.TFileService = cms.Service("TFileService",

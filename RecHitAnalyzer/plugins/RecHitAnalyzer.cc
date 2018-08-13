@@ -30,6 +30,21 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   genJetCollectionT_ = consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genJetCollection"));
   trackCollectionT_ = consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("trackCollection"));
 
+  //johnda add configuration
+  minJetPt_ = iConfig.getParameter<double>("minJetPt");
+  maxJetEta_ = iConfig.getParameter<double>("maxJetEta");
+  mode_ = iConfig.getParameter<std::string>("mode");
+  std::cout << " Mode set to " << mode_ << std::endl;
+  if( mode_ == "JetLevel"){
+    doJets_    = true;
+    nJets_ = iConfig.getParameter<int>("nJets");
+  }else if (mode_ == "EventLevel"){
+    doJets_ = false;
+  } else {
+    std::cout << " Assuming EventLevel Config. " << std::endl;
+    doJets_ = false;
+  }
+
   // Initialize file writer
   // NOTE: initializing dynamic-memory histograms outside of TFileService
   // will cause memory leaks
@@ -41,8 +56,12 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 
   // These will be use to create the actual images
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
-  branchesEvtSel       ( RHTree, fs );
-  //branchesEvtSel_jet   ( RHTree, fs );
+  if(doJets_){
+    branchesEvtSel_jet( RHTree, fs );
+  }else{
+    branchesEvtSel( RHTree, fs );
+  }
+
   branchesEB           ( RHTree, fs );
   branchesEE           ( RHTree, fs );
   branchesHBHE         ( RHTree, fs );
@@ -81,8 +100,12 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // ----- Apply event selection cuts ----- //
 
   bool passedSelection = false;
-  passedSelection = runEvtSel( iEvent, iSetup );
-  //passedSelection = runEvtSel_jet( iEvent, iSetup );
+  if(doJets_){
+    passedSelection = runEvtSel_jet( iEvent, iSetup );
+  }else{
+    passedSelection = runEvtSel( iEvent, iSetup );
+  }
+
 
   if ( !passedSelection ) return;
 

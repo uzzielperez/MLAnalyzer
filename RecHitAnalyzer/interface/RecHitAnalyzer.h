@@ -113,6 +113,12 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<reco::TrackCollection> trackCollectionT_;
     //edm::InputTag trackTags_; //used to select what tracks to read from configuration file
 
+    double minJetPt_;
+    double maxJetEta_;
+    std::string mode_ = "EventLevel";  // EventLevel / JetLevel
+    bool doJets_;
+    int  nJets_;
+
     // Diagnostic histograms
     //TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES]; 
     //TH1D * hHBHE_depth; 
