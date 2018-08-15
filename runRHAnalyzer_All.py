@@ -2,13 +2,15 @@ import os
 #from glob import glob
 import re
 
-listname = 'CMS_MonteCarlo2012_Summer12_DR53X_DiPhotonBorn_Pt-25To250_8TeV_ext-pythia6_AODSIM_PU_RD1_START53_V7N-v2_10000_file_index.txt'
+#listname = 'CMS_MonteCarlo2012_Summer12_DR53X_DiPhotonBorn_Pt-25To250_8TeV_ext-pythia6_AODSIM_PU_RD1_START53_V7N-v2_10000_file_index.txt'
 #listname = 'CMS_MonteCarlo2012_Summer12_DR53X_DiPhotonBox_Pt-25To250_8TeV_ext-pythia6_AODSIM_PU_RD1_START53_V7N-v2_10000_file_index.txt'
 #listname = 'CMS_MonteCarlo2012_Summer12_DR53X_GJet_Pt40_doubleEMEnriched_TuneZ2star_8TeV_ext-pythia6_AODSIM_PU_RD1_START53_V7N-v1_20000_file_index.txt'
 #listname = 'CMS_MonteCarlo2012_Summer12_DR53X_GJet_Pt40_doubleEMEnriched_TuneZ2star_8TeV_ext-pythia6_AODSIM_PU_RD1_START53_V7N-v1_20001_file_index.txt'
 #listname = 'CMS_MonteCarlo2012_Summer12_DR53X_GluGluHToGG_M-125_8TeV-pythia6_AODSIM_PU_RD1_START53_V7N-v2_00000_file_index.txt'
 #listname = 'CMS_MonteCarlo2012_Summer12_DR53X_GluGluHToGG_M-125_8TeV-pythia6_AODSIM_PU_RD1_START53_V7N-v2_10000_file_index.txt'
 #listname = 'CMS_MonteCarlo2012_Summer12_DR53X_GluGluHToGG_M-125_8TeV-pythia6_AODSIM_PU_RD1_START53_V7N-v2_20000_file_index.txt'
+#listname = 'CMS_MonteCarlo2012_Summer12_DR53X_WZJetsTo2L2Q_TuneZ2star_8TeV-madgraph-tauola_AODSIM_PU_RD1_START53_V7N-v1_10000_file_index.txt'
+listname = 'CMS_MonteCarlo2012_Summer12_DR53X_QCD_Pt_80_170_EMEnriched_TuneZ2star_8TeV_pythia6_AODSIM_PU_RD1_START53_V7N-v3_00000_file_index.txt'
 
 eosDir='/eos/cms/store/user/mandrews/OPENDATA'
 #decay='%s_FEVTDEBUG'%args.decay
@@ -28,7 +30,7 @@ decay = '%s_%s'%(proc,idx)
 print(decay)
 
 maxEvents_=-1
-#maxEvents_=500000
+maxEvents_=1
 skipEvents_=0
 
 #cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d"%(cfg,inputFiles_,maxEvents_,skipEvents_)

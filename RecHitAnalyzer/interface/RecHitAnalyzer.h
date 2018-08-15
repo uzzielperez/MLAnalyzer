@@ -61,6 +61,8 @@
 #include "DataFormats/JetReco/interface/GenJet.h"
 #include "DataFormats/JetReco/interface/GenJetCollection.h"
 
+#include "DataFormats/Math/interface/deltaR.h"
+#include "DataFormats/Math/interface/deltaPhi.h"
 //
 // class declaration
 //
@@ -101,7 +103,8 @@ class RecHitAnalyzer : public edm::EDAnalyzer  {
     //TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES]; 
     //TH1D * hHBHE_depth; 
     TH1F *h_sel; 
-    int runCount[3];
+    int runCount[4];
+    int nTotal;
 
     // Main TTree
     TTree* RHTree;
@@ -113,6 +116,7 @@ class RecHitAnalyzer : public edm::EDAnalyzer  {
   
     // Selection and filling functions
     void branchesEvtSel         ( TTree*, edm::Service<TFileService>& );
+    void branchesEvtSel_jet     ( TTree*, edm::Service<TFileService>& );
     void branchesEB             ( TTree*, edm::Service<TFileService>& );
     void branchesEE             ( TTree*, edm::Service<TFileService>& );
     void branchesHBHE           ( TTree*, edm::Service<TFileService>& );
@@ -127,6 +131,7 @@ class RecHitAnalyzer : public edm::EDAnalyzer  {
     //void branchesTRKvolumeAtECAL( TTree*, edm::Service<TFileService>& );
 
     bool runEvtSel          ( const edm::Event&, const edm::EventSetup& );
+    bool runEvtSel_jet      ( const edm::Event&, const edm::EventSetup& );
     void fillEB             ( const edm::Event&, const edm::EventSetup& );
     void fillEE             ( const edm::Event&, const edm::EventSetup& );
     void fillHBHE           ( const edm::Event&, const edm::EventSetup& );
@@ -140,6 +145,8 @@ class RecHitAnalyzer : public edm::EDAnalyzer  {
     //void fillTRKvolumeAtEBEE( const edm::Event&, const edm::EventSetup& );
     //void fillTRKvolumeAtECAL( const edm::Event&, const edm::EventSetup& );
 
+    bool has_w2jet_z2invisible( const edm::Event&, const edm::EventSetup& );
+    bool has_dijet( const edm::Event&, const edm::EventSetup& );
 
 }; // class RecHitAnalyzer
 
@@ -158,6 +165,7 @@ static const int EE_MAX_IY = 100;
 static const int EE_NC_PER_ZSIDE = EE_MAX_IX*EE_MAX_IY; // 100*100
 static const int HBHE_IETA_MAX_FINE = 20;
 static const int HBHE_IETA_MAX_HB = 16;
+static const int HBHE_IETA_MIN_HB = 1;
 static const int HBHE_IETA_MAX_HE = 29;
 static const int HBHE_IETA_MAX_EB = HBHE_IETA_MAX_HB + 1; // 17
 static const int HBHE_IPHI_NUM = 72;

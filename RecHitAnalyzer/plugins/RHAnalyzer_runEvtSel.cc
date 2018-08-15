@@ -1,6 +1,4 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
-#include "DataFormats/Math/interface/deltaR.h"
-#include "DataFormats/Math/interface/deltaPhi.h"
 
 // Fill EB rec hits ////////////////////////////////
 // Store event rechits in a vector of length equal

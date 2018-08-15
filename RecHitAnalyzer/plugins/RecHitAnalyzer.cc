@@ -44,7 +44,8 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 
   // These will be use to create the actual images
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
-  branchesEvtSel       ( RHTree, fs );
+  //branchesEvtSel       ( RHTree, fs );
+  branchesEvtSel_jet   ( RHTree, fs );
   branchesEB           ( RHTree, fs );
   branchesEE           ( RHTree, fs );
   branchesHBHE         ( RHTree, fs );
@@ -79,16 +80,17 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 
   using namespace edm;
+  nTotal++;
 
   // Check run-dependent count
   unsigned int run = iEvent.id().run();
-  if ( run == 194533 && !(runCount[0] < runTotal[0]) ) {
-    return;
-  } else if ( run == 200519 && !(runCount[1] < runTotal[1]) ) {
-    return;
-  } else if ( run == 206859 && !(runCount[2] < runTotal[2]) ) {
-    return;
-  }
+  //if ( run == 194533 && !(runCount[0] < runTotal[0]) ) {
+  //  return;
+  //} else if ( run == 200519 && !(runCount[1] < runTotal[1]) ) {
+  //  return;
+  //} else if ( run == 206859 && !(runCount[2] < runTotal[2]) ) {
+  //  return;
+  //}
 
   // ----- Apply event selection cuts ----- //
 
@@ -99,7 +101,8 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   //std::cout << "GenCol.size: " << genParticles->size() << std::endl;
   bool passedSelection = false;
-  passedSelection = runEvtSel( iEvent, iSetup );
+  //passedSelection = runEvtSel( iEvent, iSetup );
+  passedSelection = runEvtSel_jet( iEvent, iSetup );
 
   if ( !passedSelection ) {
     h_sel->Fill( 0. );
@@ -131,6 +134,8 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     runCount[1]++;
   } else if ( run == 206859 ) {
     runCount[2]++;
+  } else {
+    runCount[3]++;
   }
 
 } // analyze()
@@ -140,19 +145,21 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 void 
 RecHitAnalyzer::beginJob()
 {
-  for ( int i=0; i < 3; i++ ) {
+  for ( int i=0; i < 4; i++ ) {
     runCount[i] = 0;
   }
+  nTotal = 0;
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 RecHitAnalyzer::endJob() 
 {
-  for ( int i=0; i < 3; i++ ) {
-    std::cout << "i: " << i << " runCount:" << runCount[i] << std::endl;
+  for ( int i=0; i < 4; i++ ) {
+    std::cout << " >> i:" << i << " runCount:" << runCount[i] << std::endl;
   }
-  std::cout << "Total: " << runCount[0]+runCount[1]+runCount[2] << std::endl;
+  std::cout << " >> nPassed[0:2]: " << runCount[0]+runCount[1]+runCount[2] << std::endl;
+  std::cout << " >> nTotal: " << nTotal << std::endl;
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
