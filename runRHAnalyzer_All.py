@@ -7,7 +7,8 @@ parser = argparse.ArgumentParser(description='Run RHAnalyzer')
 parser.add_argument('-d','--decay', required=True, help='Decay:Single*Pt50',type=str)
 args = parser.parse_args()
 
-eosDir='/eos/cms/store/user/mandrews/ML'
+eosDir='/eos/uscms/store/user/mba2012'
+#eosDir='/eos/cms/store/user/mandrews/ML'
 #decay='%s_FEVTDEBUG'%args.decay
 decay=args.decay
 
@@ -23,6 +24,7 @@ with open(listname, 'w') as list_file:
 maxEvents_=-1
 skipEvents_=0
 
+decay=decay.replace('_AODSIM','')
 #cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d"%(cfg,inputFiles_,maxEvents_,skipEvents_)
 cmd="cmsRun %s inputFiles_load=%s maxEvents=%d skipEvents=%d outputFile=%s/IMGs/%s_IMG.root"%(cfg,listname,maxEvents_,skipEvents_,eosDir,decay)
 #print '%s'%cmd

@@ -157,13 +157,15 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     void fillTRKvolumeAtEBEE( const edm::Event&, const edm::EventSetup& );
     //void fillTRKvolumeAtECAL( const edm::Event&, const edm::EventSetup& );
 
+    bool has_dijet( const edm::Event&, const edm::EventSetup& );
 
 }; // class RecHitAnalyzer
 
 //
 // constants, enums and typedefs
 //
-static const bool debug = true;
+//static const bool debug = true;
+static const bool debug = false;
 
 static const int nEE = 2;
 static const int nTOB = 6;

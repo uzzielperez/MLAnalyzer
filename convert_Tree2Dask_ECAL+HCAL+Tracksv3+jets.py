@@ -5,14 +5,14 @@ from dask.delayed import delayed
 import dask.array as da
 from skimage.measure import block_reduce
 
-#eosDir='/eos/uscms/store/user/mba2012/IMGs'
+eosDir='/eos/uscms/store/user/mba2012/IMGs'
 #eosDir='~/work/MLHEP/CMSSW_8_0_26_patch1/src/ggAnalysis/ggNtuplizer/test'
-eosDir='/eos/cms/store/user/mandrews/OPENDATA/IMGs/MGG90_Eta23'
-decays = ['DiPhotonBorn_MGG90_Eta23', 'GluGluHToGG_MGG90_Eta23', 'GJet_MGG90_Eta23']
-decays = ['dummy']
+#eosDir='/eos/cms/store/user/mandrews/OPENDATA/IMGs/MGG90_Eta23'
+decays = ['QCDToGG_Pt_80_120_13TeV_TuneCUETP8M1_noPU']
+#decays = ['dummy']
 
 #chunk_size_ = 250
-chunk_size_ = 200
+chunk_size_ = 100
 #scale = [100., 150.]
 scale = [1., 1.]
 jet_shape = 125
@@ -38,6 +38,13 @@ def load_X(tree, start_, stop_, branches_, readouts, scale):
 def load_single(tree, start_, stop_, branches_):
     X = tree2array(tree, start=start_, stop=stop_, branches=branches_)
     X = np.array([x[0] for x in X])
+
+    return X
+
+@delayed
+def load_single_bool(tree, start_, stop_, branches_):
+    X = tree2array(tree, start=start_, stop=stop_, branches=branches_)
+    X = np.array([x[0] for x in X]).astype(bool)
 
     return X
 
@@ -74,8 +81,8 @@ def tile_array(x, b0, b1):
     r, c = x.shape                                    # number of rows/columns
     rs, cs = x.strides                                # row/column strides 
     x = as_strided(x, (r, b0, c, b1), (rs, 0, cs, 0)) # view a as larger 4D array
-    return x.reshape(r*b0, c*b1)                      # create new 2D array
-#    return x.reshape(r*b0, c*b1)/(b0*b1)              # create new 2D array
+    #return x.reshape(r*b0, c*b1)                      # create new 2D array
+    return x.reshape(r*b0, c*b1)/(b0*b1)              # create new 2D array, conserve energy
 
 def block_resample_EE(X):
 
@@ -133,26 +140,32 @@ def crop_jet_block(Xs, iphis, ietas):
 
 for j,decay in enumerate(decays):
 
+  #for jetlabel in range(2):
+  for jetlabel in [1]:
+
+    print 'jetlabel',jetlabel
+
     if j == 0:
     #if j == 0 or j == 1:
         pass
         #continue
 
     #tfile_str = 'output.root'
-    tfile_str = 'output_w.root'
-    #tfile_str = '%s/%s_IMG.root'%(eosDir,decay)
+    #tfile_str = 'output_qg.root'
+    #tfile_str = 'output_qqgg.root'
+    tfile_str = '%s/%s_IMG.root'%(eosDir,decay)
     #tfile_str = '%s/ggtree_mc_single.root'%(eosDir)
     #tfile_str = '%s/ggtree_mc.root'%(eosDir)
     tfile = ROOT.TFile(tfile_str)
     tree = tfile.Get('fevt/RHTree')
     #tree = tfile.Get('ggNtuplizer/EventTree')
     nevts = tree.GetEntries()
-    #neff = (nevts//1000)*1000
+    neff = (nevts//1000)*1000
     #neff = (nevts//100)*100
     #neff = 84600
     #neff = 175000
     #neff = 135600
-    neff = 200
+    #neff = 11
     #neff = int(nevts)
     chunk_size = chunk_size_
     if neff < chunk_size:
@@ -165,26 +178,26 @@ for j,decay in enumerate(decays):
     print " >> Total events:", nevts
     print " >> Effective events:", neff
 
-    ## eventId
-    ##branches = ["event"]
-    #branches = ["eventId"]
-    #eventId = da.concatenate([\
-    #            da.from_delayed(\
-    #                load_single(tree,i,i+chunk_size, branches),\
-    #                shape=(chunk_size,),\
-    #                dtype=np.int32)\
-    #            for i in range(0,neff,chunk_size)])
-    #print " >> %s: %s"%(branches[0],eventId.shape)
+    # eventId
+    #branches = ["event"]
+    branches = ["eventId"]
+    eventId = da.concatenate([\
+                da.from_delayed(\
+                    load_single(tree,i,i+chunk_size, branches),\
+                    shape=(chunk_size,),\
+                    dtype=np.int32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> %s: %s"%(branches[0],eventId.shape)
 
-    ## runId
-    #branches = ["runId"]
-    #runId = da.concatenate([\
-    #            da.from_delayed(\
-    #                load_single(tree,i,i+chunk_size, branches),\
-    #                shape=(chunk_size,),\
-    #                dtype=np.int32)\
-    #            for i in range(0,neff,chunk_size)])
-    #print " >> %s: %s"%(branches[0],runId.shape)
+    # runId
+    branches = ["runId"]
+    runId = da.concatenate([\
+                da.from_delayed(\
+                    load_single(tree,i,i+chunk_size, branches),\
+                    shape=(chunk_size,),\
+                    dtype=np.int32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> %s: %s"%(branches[0],runId.shape)
 
     # ECAL
     readouts = [280,360]
@@ -222,158 +235,122 @@ for j,decay in enumerate(decays):
                     shape=(chunk_size, readouts[0]*upscale, readouts[1]*upscale, len(branches)),\
                     dtype=np.float32)\
                 for i in range(0,neff,chunk_size)])
-    print " >> %s(upsampled): %s"%(branches[0],X_HBHE_up.shape)
+    #print " >> %s(upsampled): %s"%(branches[0],X_HBHE_up.shape)
 
     X_ECAL_stacked = da.concatenate([X_TracksAtECAL, X_ECAL_EEup, X_HBHE_up], axis=-1)
     print " >> %s: %s"%('X_ECAL_stacked', X_ECAL_stacked.shape)
 
-    # EB
-    readouts = [170,360]
-    #branches = ["HBHE_energy_EB"]
-    branches = ["TracksPt_EB","EB_energy"]
-    #branches = ["EB_energy"]
-    #branches = ["EB_energy","HBHE_energy_EB","Tracks_EB"]
-    X_EB = da.concatenate([\
-                da.from_delayed(\
-                    load_X(tree,i,i+chunk_size, branches, readouts, scale[0]),\
-                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
-                    dtype=np.float32)\
-                for i in range(0,neff,chunk_size)])
-    print " >> %s: %s"%(branches[0],X_EB.shape)
+    jetM_, jetPt_, jetSeed_iphi_, jetSeed_ieta_, jetIsQuark_, X_jets_ = {}, {}, {}, {}, {}, {} 
+    #for ijet in range(2):
+    for ijet in [jetlabel]:
 
-    # EE-
-    readouts = [100,100]
-    branches = ["TracksPt_EEm","EEm_energy","HBHE_energy_EEm"]
-    #branches = ["EEm_energy","HBHE_energy_EEm","Tracks_EEm"]
-    X_EEm = da.concatenate([\
-                da.from_delayed(\
-                    load_X(tree,i,i+chunk_size, branches, readouts, scale[1]),\
-                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
-                    dtype=np.float32)\
-                for i in range(0,neff,chunk_size)])
-    print " >> %s: %s"%(branches[0],X_EEm.shape)
+      # jet mass
+      branches = ["jetM%d"%ijet]
+      jetM_[ijet] = da.concatenate([\
+                  da.from_delayed(\
+                      load_single(tree,i,i+chunk_size, branches),\
+                      shape=(chunk_size,),\
+                      dtype=np.float32)\
+                  for i in range(0,neff,chunk_size)])
 
-    # EE+
-    readouts = [100,100]
-    branches = ["TracksPt_EEp","EEp_energy","HBHE_energy_EEp"]
-    #branches = ["EEp_energy","HBHE_energy_EEp","Tracks_EEp"]
-    X_EEp = da.concatenate([\
-                da.from_delayed(\
-                    load_X(tree,i,i+chunk_size, branches, readouts, scale[1]),\
-                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
-                    dtype=np.float32)\
-                for i in range(0,neff,chunk_size)])
-    print " >> %s: %s"%(branches[0],X_EEp.shape)
+      # jet pt 
+      branches = ["jetPt%d"%ijet]
+      jetPt_[ijet] = da.concatenate([\
+                  da.from_delayed(\
+                      load_single(tree,i,i+chunk_size, branches),\
+                      shape=(chunk_size,),\
+                      dtype=np.float32)\
+                  for i in range(0,neff,chunk_size)])
 
-    # HBHE
-    readouts = [56,72]
-    branches = ["HBHE_energy"]
-    X_HBHE = da.concatenate([\
-                da.from_delayed(\
-                    load_X(tree,i,i+chunk_size, branches, readouts, scale[1]),\
-                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
-                    dtype=np.float32)\
-                for i in range(0,neff,chunk_size)])
-    print " >> %s: %s"%(branches[0],X_HBHE.shape)
+      # jet seed iphi
+      branches = ["jetSeed_iphi%d"%ijet]
+      jetSeed_iphi_[ijet] = da.concatenate([\
+                  da.from_delayed(\
+                      load_single(tree,i,i+chunk_size, branches),\
+                      shape=(chunk_size,),\
+                      dtype=np.float32)\
+                  for i in range(0,neff,chunk_size)])
 
-    # HBHE_EM
-    #readouts = [56,72]
-    #branches = ["HBHE_EMenergy"]
-    #X_HBHE_EM = da.concatenate([\
-    #            da.from_delayed(\
-    #                load_X(tree,i,i+chunk_size, branches, readouts, scale[1]),\
-    #                shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
-    #                dtype=np.float32)\
-    #            for i in range(0,neff,chunk_size)])
-    #print " >> %s: %s"%(branches[0],X_HBHE_EM.shape)
+      # jet seed ieta
+      branches = ["jetSeed_ieta%d"%ijet]
+      jetSeed_ieta_[ijet] = da.concatenate([\
+                  da.from_delayed(\
+                      load_single(tree,i,i+chunk_size, branches),\
+                      shape=(chunk_size,),\
+                      dtype=np.float32)\
+                  for i in range(0,neff,chunk_size)])
 
-    # HB_EB upsample
-    readouts = [34,72]
-    branches = ["HBHE_energy_EB"]
-    upscale = 5
-    X_HBHE_EB_up = da.concatenate([\
-                da.from_delayed(\
-                    load_X_upsampled(tree,i,i+chunk_size, branches, readouts, scale[1], upscale),\
-                    shape=(chunk_size, readouts[0]*upscale, readouts[1]*upscale, len(branches)),\
-                    dtype=np.float32)\
-                for i in range(0,neff,chunk_size)])
-    print " >> %s(upsampled): %s"%(branches[0],X_HBHE_EB_up.shape)
+      # jet is quark
+      branches = ["jetIsQuark%d"%ijet]
+      jetIsQuark_[ijet] = da.concatenate([\
+                  da.from_delayed(\
+                      load_single(tree,i,i+chunk_size, branches),\
+                      shape=(chunk_size,),\
+                      dtype=np.float32)\
+                  for i in range(0,neff,chunk_size)])
 
-    X_EB = da.concatenate([X_EB, X_HBHE_EB_up], axis=-1)
-    print " >> %s: %s"%('X_EB', X_EB.shape)
+      # X_jets
+      X_jets_[ijet] = da.concatenate([\
+                  da.from_delayed(\
+                      crop_jet_block(X_ECAL_stacked[i:i+chunk_size], jetSeed_iphi_[ijet][i:i+chunk_size], jetSeed_ieta_[ijet][i:i+chunk_size]),\
+                      shape=(chunk_size, jet_shape, jet_shape, 3),\
+                      dtype=np.float32)\
+                  for i in range(0,neff,chunk_size)])
 
-    # m0
-    branches = ["m0"]
-    m0 = da.concatenate([\
-                da.from_delayed(\
-                    load_single(tree,i,i+chunk_size, branches),\
-                    shape=(chunk_size,),\
-                    dtype=np.float32)\
-                for i in range(0,neff,chunk_size)])
-    print " >> Expected shape:", m0.shape
+    jetIsQuark = da.concatenate([jetIsQuark_[k] for k in range(1)], axis=0)
+    jetMask = (jetIsQuark==j).compute()
+    n_jets = (len(jetMask[jetMask==True])//1000)*1000
+    print " >> N jets @ label%d: %d -> %d"%(j, len(jetMask[jetMask==True]), n_jets)
 
-    # jet seed iphi
-    branches = ["jetSeed_iphi"]
-    jetSeed_iphi = da.concatenate([\
-                da.from_delayed(\
-                    load_single(tree,i,i+chunk_size, branches),\
-                    shape=(chunk_size,),\
-                    dtype=np.float32)\
-                for i in range(0,neff,chunk_size)])
-    print " >> Expected shape:", jetSeed_iphi.shape
-
-    # jet seed ieta
-    branches = ["jetSeed_ieta"]
-    jetSeed_ieta = da.concatenate([\
-                da.from_delayed(\
-                    load_single(tree,i,i+chunk_size, branches),\
-                    shape=(chunk_size,),\
-                    dtype=np.float32)\
-                for i in range(0,neff,chunk_size)])
-    print " >> Expected shape:", jetSeed_ieta.shape
-
-    X_jets = da.concatenate([\
-                da.from_delayed(\
-                    crop_jet_block(X_ECAL_stacked[i:i+chunk_size], jetSeed_iphi[i:i+chunk_size], jetSeed_ieta[i:i+chunk_size]),\
-                    shape=(chunk_size, jet_shape, jet_shape, 3),\
-                    dtype=np.float32)\
-                for i in range(0,neff,chunk_size)])
+    jetIsQuark = jetIsQuark[jetMask][:n_jets]
+    print " >> %s: %s"%('jetIsQuark', jetIsQuark.shape)
+    jetM = da.concatenate([jetM_[k] for k in range(1)], axis=0)[jetMask][:n_jets]
+    print " >> %s: %s"%('jetM', jetM.shape)
+    jetPt = da.concatenate([jetPt_[k] for k in range(1)], axis=0)[jetMask][:n_jets]
+    print " >> %s: %s"%('jetPt', jetPt.shape)
+    jetSeed_iphi = da.concatenate([jetSeed_iphi_[k] for k in range(1)], axis=0)[jetMask][:n_jets]
+    print " >> %s: %s"%('jetSeed_iphi', jetSeed_iphi.shape)
+    jetSeed_ieta = da.concatenate([jetSeed_ieta_[k] for k in range(1)], axis=0)[jetMask][:n_jets]
+    print " >> %s: %s"%('jetSeed_ieta', jetSeed_ieta.shape)
+    X_jets = da.concatenate([X_jets_[k] for k in range(1)], axis=0)[jetMask][:n_jets]
+    print " >> %s: %s"%('X_jets', X_jets.shape)
+    jetEventId = da.concatenate([eventId for _ in range(1)], axis=0)[jetMask][:n_jets]
+    jetRunId = da.concatenate([runId for _ in range(1)], axis=0)[jetMask][:n_jets]
 
     # Class label
     label = j
     #label = 1
     print " >> Class label:",label
     y = da.from_array(\
-            #np.full(len(eventId), label, dtype=np.float32),\
-            np.full(len(m0), label, dtype=np.float32),\
+            np.full(len(eventId), label, dtype=np.float32),\
+            chunks=(chunk_size,))
+    y_jets = da.from_array(\
+            np.full(len(jetEventId), label, dtype=np.float32),\
             chunks=(chunk_size,))
 
     #file_out_str = "test_jets.hdf5"
-    file_out_str = "test_w.hdf5"
-    #file_out_str = "%s/%s_IMGall_RH%d_n%d_label%d.hdf5"%(eosDir,decay,int(scale[0]),neff,label)
-    #file_out_str = "%s/%s_IMG_RH%d_n%dk.hdf5"%(eosDir,decay,int(scale[0]),neff//1000.)
+    #file_out_str = "test_qg.hdf5"
+    #file_out_str = "test_qqgg.hdf5"
+    file_out_str = "%s/%s_IMGjet_RH%d_n%dk_label%d_jet%d.hdf5"%(eosDir,decay,int(scale[0]),neff//1000,label,jetlabel)
     #file_out_str = "%s/%s_IMG_EBEEHBup_RH%d_n%dk.hdf5"%(eosDir,decay,int(scale[0]),neff//1000.)
     #file_out_str = "%s/%s_IMG_RH%d-%d_n%dk.hdf5"%(eosDir,decay,int(scale[0]),int(scale[1]),neff//1000.)
     print " >> Writing to:", file_out_str
     #da.to_hdf5(file_out_str, {'/X_EB': X_EB, 'X_EEm': X_EEm, 'X_EEp': X_EEp, 'X_HBHE': X_HBHE, '/y': y}, compression='lzf')
     #da.to_hdf5(file_out_str, {'/X': X_EB, 'X_EEm': X_EEm, 'X_EEp': X_EEp, 'X_HBHE': X_HBHE, '/y': y}, compression='lzf')
     da.to_hdf5(file_out_str, {
-                              #'eventId': eventId,
                               #'runId': runId,
-                              'X_ECAL': X_ECAL,
-                              #'X_ECAL_EEup': X_ECAL_EEup,
-                              'X_ECAL_stacked': X_ECAL_stacked,
-                              'X_EB': X_EB,
-                              'X_EEm': X_EEm,
-                              'X_EEp': X_EEp,
-                              'X_HBHE': X_HBHE,
-                              #'X_HBHE_EM': X_HBHE_EM,
-                              'X_HBHE_EB_up': X_HBHE_EB_up,
+                              #'lumiId': lumiId,
+                              #'eventId': eventId,
+                              #'X_ECAL_stacked': X_ECAL_stacked,
+                              #'y': y,
+                              'jetRunId': jetRunId,
+                              'jetEventId': jetEventId,
                               'jetSeed_iphi': jetSeed_iphi,
                               'jetSeed_ieta': jetSeed_ieta,
+                              'jetM': jetM,
+                              'jetPt': jetPt,
                               'X_jets': X_jets,
-                              'm0': m0,
-                              '/y': y
+                              'y_jets': y_jets 
                               }, compression='lzf')
 
     print " >> Done.\n"
