@@ -38,6 +38,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   if( mode_ == "JetLevel"){
     doJets_    = true;
     nJets_ = iConfig.getParameter<int>("nJets");
+    std::cout << " \t nJets set to " << nJets_ << std::endl;
   }else if (mode_ == "EventLevel"){
     doJets_ = false;
   } else {
