@@ -76,6 +76,7 @@ void
 RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 
+  nTotal++;
   using namespace edm;
 
   // ----- Apply event selection cuts ----- //
@@ -105,6 +106,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // Fill RHTree
   RHTree->Fill();
   h_sel->Fill( 1. );
+  nPassed++;
 
 } // analyze()
 
@@ -113,12 +115,15 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 void 
 RecHitAnalyzer::beginJob()
 {
+  nTotal = 0;
+  nPassed = 0;
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 RecHitAnalyzer::endJob() 
 {
+  std::cout << " selected: " << nPassed << "/" << nTotal << std::endl;
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
