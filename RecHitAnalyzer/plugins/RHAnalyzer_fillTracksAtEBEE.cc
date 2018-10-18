@@ -8,15 +8,11 @@ TH2F *hTracks_EB;
 TH2F *hTracksPt_EE[nEE];
 TH2F *hTracksPt_EB;
 std::vector<float> vTracksPt_EE_[nEE];
-std::vector<float> vEndTracksPt_EE_[nEE];
 std::vector<float> vTracksQPt_EE_[nEE];
 std::vector<float> vTracks_EE_[nEE];
-std::vector<float> vMuonsPt_EE_[nEE];
 std::vector<float> vTracksPt_EB_;
-std::vector<float> vEndTracksPt_EB_;
 std::vector<float> vTracksQPt_EB_;
 std::vector<float> vTracks_EB_;
-std::vector<float> vMuonsPt_EB_;
 
 // Initialize branches ____________________________________________________________//
 void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileService> &fs ) {
@@ -24,9 +20,7 @@ void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileServi
   // Branches for images
   tree->Branch("Tracks_EB",   &vTracks_EB_);
   tree->Branch("TracksPt_EB", &vTracksPt_EB_);
-  tree->Branch("EndTracksPt_EB", &vEndTracksPt_EB_);
   tree->Branch("TracksQPt_EB", &vTracksQPt_EB_);
-  tree->Branch("MuonsPt_EB", &vMuonsPt_EB_);
 
   // Histograms for monitoring
   hTracks_EB = fs->make<TH2F>("Tracks_EB", "N(i#phi,i#eta);i#phi;i#eta",
@@ -45,12 +39,8 @@ void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileServi
     tree->Branch(hname,        &vTracks_EE_[iz]);
     sprintf(hname, "TracksPt_EE%s",zside);
     tree->Branch(hname,        &vTracksPt_EE_[iz]);
-    sprintf(hname, "EndTracksPt_EE%s",zside);
-    tree->Branch(hname,        &vEndTracksPt_EE_[iz]);
     sprintf(hname, "TracksQPt_EE%s",zside);
     tree->Branch(hname,        &vTracksQPt_EE_[iz]);
-    sprintf(hname, "MuonsPt_EE%s",zside);
-    tree->Branch(hname,        &vMuonsPt_EE_[iz]);
 
     // Histograms for monitoring
     sprintf(hname, "Tracks_EE%s",zside);
@@ -77,22 +67,15 @@ void RecHitAnalyzer::fillTracksAtEBEE ( const edm::Event& iEvent, const edm::Eve
 
   vTracks_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
   vTracksPt_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
-  vEndTracksPt_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
   vTracksQPt_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
-  vMuonsPt_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
   for ( int iz(0); iz < nEE; iz++ ) {
     vTracks_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
     vTracksPt_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
-    vEndTracksPt_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
     vTracksQPt_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
-    vMuonsPt_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
   }
 
   edm::Handle<reco::TrackCollection> tracksH_;
   iEvent.getByToken( trackCollectionT_, tracksH_ );
-
-  edm::Handle<PFCollection> pfCandsH_;
-  iEvent.getByToken( pfCollectionT_, pfCandsH_ );
 
   // Provides access to global cell position
   edm::ESHandle<CaloGeometry> caloGeomH_;
@@ -139,43 +122,5 @@ void RecHitAnalyzer::fillTracksAtEBEE ( const edm::Event& iEvent, const edm::Eve
     } 
   } // tracks
 
-
-  for ( PFCollection::const_iterator iPFC = pfCandsH_->begin();
-        iPFC != pfCandsH_->end(); ++iPFC ) {
-    const reco::Track* thisTrk = iPFC->bestTrack();
-    if(!thisTrk) continue;
-
-    const math::XYZPointF& ecalPos = iPFC->positionAtECALEntrance();
-    eta = ecalPos.eta();
-    phi = ecalPos.phi();
-    
-    if ( std::abs(eta) > 3. ) continue;
-    DetId id( spr::findDetIdECAL( caloGeom, eta, phi, false ) );
-    if ( id.subdetId() == EcalBarrel ) {
-      EBDetId ebId( id );
-      iphi_ = ebId.iphi() - 1;
-      ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
-
-      idx_ = ebId.hashedIndex(); // (ieta_+EB_IETA_MAX)*EB_IPHI_MAX + iphi_
-      // Fill vectors for images
-      
-      vEndTracksPt_EB_[idx_] += thisTrk->pt();
-      if(iPFC->particleId() == 3)
-	vMuonsPt_EB_[idx_] += thisTrk->pt();
-
-    } else if ( id.subdetId() == EcalEndcap ) {
-      EEDetId eeId( id );
-      ix_ = eeId.ix() - 1;
-      iy_ = eeId.iy() - 1;
-      iz_ = (eeId.zside() > 0) ? 1 : 0;
-        
-      // Create hashed Index: maps from [iy][ix] -> [idx_]
-      idx_ = iy_*EE_MAX_IX + ix_;
-      // Fill vectors for images
-      vEndTracksPt_EE_[iz_][idx_] += thisTrk->pt();
-      if(iPFC->particleId() == 3)
-	vMuonsPt_EE_[iz_][idx_] += thisTrk->pt();
-    } 
-  }//PF Candidates
 
 } // fillEB()
