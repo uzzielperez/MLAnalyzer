@@ -42,6 +42,23 @@ def load_single(tree, start_, stop_, branches_):
     return X
 
 @delayed
+def load_vector(tree, start_, stop_, branches_):
+    X = tree2array(tree, start=start_, stop=stop_, branches=branches_)
+    try: 
+        X = np.array([x[0][0] for x in X])
+        #X_all = []
+        #for x in X:
+        #    for iLen in range(len(x)):
+        #        X_all.append(x[iLen])
+        #X = np.array(X_all)
+    except:
+        print ("loading single")
+        X = np.array([x[0] for x in X])
+    return X
+
+
+
+@delayed
 def load_X_upsampled(tree, start_, stop_, branches_, readouts, scale, upscale):
     X = tree2array(tree, start=start_, stop=stop_, branches=branches_) 
     # Convert the object array X to a multidim array:
@@ -134,9 +151,9 @@ def crop_jet_block(Xs, iphis, ietas):
     print returnVal.shape
     return returnVal
 
-@delayed
-def crop_jet_block_new(Xs, iphis, ietas):
-    return np.array([crop_jet(x,iphi,ieta) for x,iphi,ieta in zip(Xs,iphis,ietas)])
+#@delayed
+#def crop_jet_block_new(Xs, iphis, ietas):
+#    return np.array([crop_jet(x,iphi,ieta) for x,iphi,ieta in zip(Xs,iphis,ietas)])
 
 
 for j,decay in enumerate(decays):
@@ -175,7 +192,7 @@ for j,decay in enumerate(decays):
 
     # jet seed iphi
     X = tree2array(tree, start=0, stop=chunk_size, branches=["jetSeed_iphi"])
-    print "X was ",type(X)
+    print "jetSeed_iphi was ",type(X)
     print X.shape
     for x in X: 
         print x, len(x)
@@ -184,11 +201,6 @@ for j,decay in enumerate(decays):
     print X.shape
     for x in X: 
         print x
-
-
-    #import sys
-    #sys.exit(-1)
-    #print " >> Total jets:", njets
 
 
     ## eventId
@@ -222,158 +234,166 @@ for j,decay in enumerate(decays):
                     dtype=np.float32)\
                 for i in range(0,neff,chunk_size)])
     print " >> %s: %s"%(branches[0],X_ECAL.shape)
-###
-###    # ECAL with resampled EE
-###    X_ECAL_EEup = X_ECAL.map_blocks(lambda x: block_resample_EE(x), dtype=np.float32)
-###    print " >> %s: %s"%('ECAL_EEup_energy',X_ECAL_EEup.shape)
-###
-###    # Tracks at ECAL
-###    readouts = [280,360]
-###    branches = ["ECAL_tracksPt"]
-###    X_TracksAtECAL = da.concatenate([\
-###                da.from_delayed(\
-###                    load_X(tree,i,i+chunk_size, branches, readouts, scale[0]),\
-###                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
-###                    dtype=np.float32)\
-###                for i in range(0,neff,chunk_size)])
-###    #print " >> %s: %s"%(branches[0],X_ECAL.shape)
-###
-###    # HBHE upsample
-###    readouts = [56,72]
-###    branches = ["HBHE_energy"]
-###    upscale = 5
-###    X_HBHE_up = da.concatenate([\
-###                da.from_delayed(\
-###                    load_X_upsampled(tree,i,i+chunk_size, branches, readouts, scale[1], upscale),\
-###                    shape=(chunk_size, readouts[0]*upscale, readouts[1]*upscale, len(branches)),\
-###                    dtype=np.float32)\
-###                for i in range(0,neff,chunk_size)])
-###    print " >> %s(upsampled): %s"%(branches[0],X_HBHE_up.shape)
-###
-###    X_ECAL_stacked = da.concatenate([X_TracksAtECAL, X_ECAL_EEup, X_HBHE_up], axis=-1)
-###    print " >> %s: %s"%('X_ECAL_stacked', X_ECAL_stacked.shape)
-###
-###    # EB
-###    readouts = [170,360]
-###    #branches = ["HBHE_energy_EB"]
-###    branches = ["TracksPt_EB","EB_energy"]
-###    #branches = ["EB_energy"]
-###    #branches = ["EB_energy","HBHE_energy_EB","Tracks_EB"]
-###    X_EB = da.concatenate([\
-###                da.from_delayed(\
-###                    load_X(tree,i,i+chunk_size, branches, readouts, scale[0]),\
-###                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
-###                    dtype=np.float32)\
-###                for i in range(0,neff,chunk_size)])
-###    print " >> %s: %s"%(branches[0],X_EB.shape)
-###
-###    # EE-
-###    readouts = [100,100]
-###    branches = ["TracksPt_EEm","EEm_energy","HBHE_energy_EEm"]
-###    #branches = ["EEm_energy","HBHE_energy_EEm","Tracks_EEm"]
-###    X_EEm = da.concatenate([\
-###                da.from_delayed(\
-###                    load_X(tree,i,i+chunk_size, branches, readouts, scale[1]),\
-###                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
-###                    dtype=np.float32)\
-###                for i in range(0,neff,chunk_size)])
-###    print " >> %s: %s"%(branches[0],X_EEm.shape)
-###
-###    # EE+
-###    readouts = [100,100]
-###    branches = ["TracksPt_EEp","EEp_energy","HBHE_energy_EEp"]
-###    #branches = ["EEp_energy","HBHE_energy_EEp","Tracks_EEp"]
-###    X_EEp = da.concatenate([\
-###                da.from_delayed(\
-###                    load_X(tree,i,i+chunk_size, branches, readouts, scale[1]),\
-###                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
-###                    dtype=np.float32)\
-###                for i in range(0,neff,chunk_size)])
-###    print " >> %s: %s"%(branches[0],X_EEp.shape)
-###
-###    # HBHE
-###    readouts = [56,72]
-###    branches = ["HBHE_energy"]
-###    X_HBHE = da.concatenate([\
-###                da.from_delayed(\
-###                    load_X(tree,i,i+chunk_size, branches, readouts, scale[1]),\
-###                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
-###                    dtype=np.float32)\
-###                for i in range(0,neff,chunk_size)])
-###    print " >> %s: %s"%(branches[0],X_HBHE.shape)
-###
-###    # HBHE_EM
-###    #readouts = [56,72]
-###    #branches = ["HBHE_EMenergy"]
-###    #X_HBHE_EM = da.concatenate([\
-###    #            da.from_delayed(\
-###    #                load_X(tree,i,i+chunk_size, branches, readouts, scale[1]),\
-###    #                shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
-###    #                dtype=np.float32)\
-###    #            for i in range(0,neff,chunk_size)])
-###    #print " >> %s: %s"%(branches[0],X_HBHE_EM.shape)
-###
-###    # HB_EB upsample
-###    readouts = [34,72]
-###    branches = ["HBHE_energy_EB"]
-###    upscale = 5
-###    X_HBHE_EB_up = da.concatenate([\
-###                da.from_delayed(\
-###                    load_X_upsampled(tree,i,i+chunk_size, branches, readouts, scale[1], upscale),\
-###                    shape=(chunk_size, readouts[0]*upscale, readouts[1]*upscale, len(branches)),\
-###                    dtype=np.float32)\
-###                for i in range(0,neff,chunk_size)])
-###    print " >> %s(upsampled): %s"%(branches[0],X_HBHE_EB_up.shape)
-###
-###    X_EB = da.concatenate([X_EB, X_HBHE_EB_up], axis=-1)
-###    print " >> %s: %s"%('X_EB', X_EB.shape)
-###
-###    # m0
-###    branches = ["m0"]
-###    m0 = da.concatenate([\
-###                da.from_delayed(\
-###                    load_single(tree,i,i+chunk_size, branches),\
-###                    shape=(chunk_size,),\
-###                    dtype=np.float32)\
-###                for i in range(0,neff,chunk_size)])
-###    print " >> Expected shape m0:", m0.shape
-###
-###    # jet seed iphi
-###    branches = ["jetSeed_iphi"]
-###    jetSeed_iphi = da.concatenate([\
-###                da.from_delayed(\
-###                    load_single(tree,i,i+chunk_size, branches),\
-###                    shape=(chunk_size,),\
-###                    dtype=np.float32)\
-###                for i in range(0,neff,chunk_size)])
-###    print " >> Expected shape jetSeed_iphi:", jetSeed_iphi.shape
-###
-###    # jet seed ieta
-###    branches = ["jetSeed_ieta"]
-###    jetSeed_ieta = da.concatenate([\
-###                da.from_delayed(\
-###                    load_single(tree,i,i+chunk_size, branches),\
-###                    shape=(chunk_size,),\
-###                    dtype=np.float32)\
-###                for i in range(0,neff,chunk_size)])
-###    print " >> Expected shape jetSeed_ieta:", jetSeed_ieta.shape
-###
-###    X_jets = da.concatenate([\
-###                da.from_delayed(\
-###                    crop_jet_block(X_ECAL_stacked[i:i+chunk_size], jetSeed_iphi[i:i+chunk_size], jetSeed_ieta[i:i+chunk_size]),\
-###                    shape=(chunk_size, jet_shape, jet_shape, 3),\
-###                    dtype=np.float32)\
-###                for i in range(0,neff,chunk_size)])
-###
-###    # Class label
-###    label = j
-###    #label = 1
-###    print " >> Class label:",label
-###    y = da.from_array(\
-###            #np.full(len(eventId), label, dtype=np.float32),\
-###            np.full(len(m0), label, dtype=np.float32),\
-###            chunks=(chunk_size,))
-###    print " >> y shape:",y.shape
+
+    # ECAL with resampled EE
+    X_ECAL_EEup = X_ECAL.map_blocks(lambda x: block_resample_EE(x), dtype=np.float32)
+    print " >> %s: %s"%('ECAL_EEup_energy',X_ECAL_EEup.shape)
+
+    # Tracks at ECAL
+    readouts = [280,360]
+    #branches = ["ECAL_tracksPt"]
+    #branches = ["ECAL_tracksQPt"]
+    branches = ["ECAL_EndtracksPt"]
+    X_TracksAtECAL = da.concatenate([\
+                da.from_delayed(\
+                    load_X(tree,i,i+chunk_size, branches, readouts, scale[0]),\
+                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    #print " >> %s: %s"%(branches[0],X_ECAL.shape)
+
+    # HBHE upsample
+    readouts = [56,72]
+    branches = ["HBHE_energy"]
+    upscale = 5
+    X_HBHE_up = da.concatenate([\
+                da.from_delayed(\
+                    load_X_upsampled(tree,i,i+chunk_size, branches, readouts, scale[1], upscale),\
+                    shape=(chunk_size, readouts[0]*upscale, readouts[1]*upscale, len(branches)),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> %s(upsampled): %s"%(branches[0],X_HBHE_up.shape)
+
+    X_ECAL_stacked = da.concatenate([X_TracksAtECAL, X_ECAL_EEup, X_HBHE_up], axis=-1)
+    print " >> %s: %s"%('X_ECAL_stacked', X_ECAL_stacked.shape)
+
+    # EB
+    readouts = [170,360]
+    #branches = ["HBHE_energy_EB"]
+    #branches = ["TracksQPt_EB","EB_energy"]
+    #branches = ["TracksPt_EB","EB_energy"]
+    branches = ["EndTracksPt_EB","EB_energy"]
+    #branches = ["EB_energy"]
+    #branches = ["EB_energy","HBHE_energy_EB","Tracks_EB"]
+    X_EB = da.concatenate([\
+                da.from_delayed(\
+                    load_X(tree,i,i+chunk_size, branches, readouts, scale[0]),\
+                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> %s: %s"%(branches[0],X_EB.shape)
+
+    # EE-
+    readouts = [100,100]
+    #branches = ["TracksPt_EEm","EEm_energy","HBHE_energy_EEm"]
+    branches = ["EndTracksPt_EEm","EEm_energy","HBHE_energy_EEm"]
+    #branches = ["TracksQPt_EEm","EEm_energy","HBHE_energy_EEm"]
+    #branches = ["EEm_energy","HBHE_energy_EEm","Tracks_EEm"]
+    X_EEm = da.concatenate([\
+                da.from_delayed(\
+                    load_X(tree,i,i+chunk_size, branches, readouts, scale[1]),\
+                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> %s: %s"%(branches[0],X_EEm.shape)
+
+    # EE+
+    readouts = [100,100]
+    #branches = ["TracksPt_EEp","EEp_energy","HBHE_energy_EEp"]
+    branches = ["EndTracksPt_EEp","EEp_energy","HBHE_energy_EEp"]
+    #branches = ["TracksQPt_EEp","EEp_energy","HBHE_energy_EEp"]
+    #branches = ["EEp_energy","HBHE_energy_EEp","Tracks_EEp"]
+    X_EEp = da.concatenate([\
+                da.from_delayed(\
+                    load_X(tree,i,i+chunk_size, branches, readouts, scale[1]),\
+                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> %s: %s"%(branches[0],X_EEp.shape)
+
+    # HBHE
+    readouts = [56,72]
+    branches = ["HBHE_energy"]
+    X_HBHE = da.concatenate([\
+                da.from_delayed(\
+                    load_X(tree,i,i+chunk_size, branches, readouts, scale[1]),\
+                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> %s: %s"%(branches[0],X_HBHE.shape)
+
+    # HBHE_EM
+    #readouts = [56,72]
+    #branches = ["HBHE_EMenergy"]
+    #X_HBHE_EM = da.concatenate([\
+    #            da.from_delayed(\
+    #                load_X(tree,i,i+chunk_size, branches, readouts, scale[1]),\
+    #                shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
+    #                dtype=np.float32)\
+    #            for i in range(0,neff,chunk_size)])
+    #print " >> %s: %s"%(branches[0],X_HBHE_EM.shape)
+
+    # HB_EB upsample
+    readouts = [34,72]
+    branches = ["HBHE_energy_EB"]
+    upscale = 5
+    X_HBHE_EB_up = da.concatenate([\
+                da.from_delayed(\
+                    load_X_upsampled(tree,i,i+chunk_size, branches, readouts, scale[1], upscale),\
+                    shape=(chunk_size, readouts[0]*upscale, readouts[1]*upscale, len(branches)),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> %s(upsampled): %s"%(branches[0],X_HBHE_EB_up.shape)
+
+    X_EB = da.concatenate([X_EB, X_HBHE_EB_up], axis=-1)
+    print " >> %s: %s"%('X_EB', X_EB.shape)
+
+    # m0
+    branches = ["m0"]
+    m0 = da.concatenate([\
+                da.from_delayed(\
+                    load_single(tree,i,i+chunk_size, branches),\
+                    shape=(chunk_size,),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> Expected shape m0:", m0.shape
+
+    # jet seed iphi
+    branches = ["jetSeed_iphi"]
+    jetSeed_iphi = da.concatenate([\
+                da.from_delayed(\
+                    load_vector(tree,i,i+chunk_size, branches),\
+                    shape=(chunk_size,),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> Expected shape jetSeed_iphi:", jetSeed_iphi.shape
+
+    # jet seed ieta
+    branches = ["jetSeed_ieta"]
+    jetSeed_ieta = da.concatenate([\
+                da.from_delayed(\
+                    load_vector(tree,i,i+chunk_size, branches),\
+                    shape=(chunk_size,),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> Expected shape jetSeed_ieta:", jetSeed_ieta.shape
+
+    X_jets = da.concatenate([\
+                da.from_delayed(\
+                    crop_jet_block(X_ECAL_stacked[i:i+chunk_size], jetSeed_iphi[i:i+chunk_size], jetSeed_ieta[i:i+chunk_size]),\
+                    shape=(chunk_size, jet_shape, jet_shape, 3),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+
+    # Class label
+    label = j
+    #label = 1
+    print " >> Class label:",label
+    y = da.from_array(\
+            #np.full(len(eventId), label, dtype=np.float32),\
+            np.full(len(m0), label, dtype=np.float32),\
+            chunks=(chunk_size,))
+    print " >> y shape:",y.shape
     file_out_str = "test_jets.hdf5"
     #file_out_str = "test%d_numEvent1.hdf5"%label
     #file_out_str = "%s/%s_IMGall_RH%d_n%d_label%d.hdf5"%(eosDir,decay,int(scale[0]),neff,label)
@@ -388,18 +408,18 @@ for j,decay in enumerate(decays):
                               #'runId': runId,
                               'X_ECAL': X_ECAL,
                               #'X_ECAL_EEup': X_ECAL_EEup,
-#                              'X_ECAL_stacked': X_ECAL_stacked,
-#                              'X_EB': X_EB,
-#                              'X_EEm': X_EEm,
-#                              'X_EEp': X_EEp,
-#                              'X_HBHE': X_HBHE,
+                              'X_ECAL_stacked': X_ECAL_stacked,
+                              'X_EB': X_EB,
+                              'X_EEm': X_EEm,
+                              'X_EEp': X_EEp,
+                              'X_HBHE': X_HBHE,
                               #'X_HBHE_EM': X_HBHE_EM,
-#                              'X_HBHE_EB_up': X_HBHE_EB_up,
-#                              'jetSeed_iphi': jetSeed_iphi,
-#                              'jetSeed_ieta': jetSeed_ieta,
-#                              'X_jets': X_jets,
-#                              'm0': m0,
-#                              '/y': y
+                              'X_HBHE_EB_up': X_HBHE_EB_up,
+                              'jetSeed_iphi': jetSeed_iphi,
+                              'jetSeed_ieta': jetSeed_ieta,
+                              'X_jets': X_jets,
+                              'm0': m0,
+                              '/y': y
                               }, compression='lzf')
 
     print " >> Done.\n"
