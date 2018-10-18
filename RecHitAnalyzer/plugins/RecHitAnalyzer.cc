@@ -29,6 +29,8 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   jetCollectionT_ = consumes<reco::PFJetCollection>(iConfig.getParameter<edm::InputTag>("ak4PFJetCollection"));
   genJetCollectionT_ = consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genJetCollection"));
   trackCollectionT_ = consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("trackCollection"));
+  pfCollectionT_ = consumes<PFCollection>(iConfig.getParameter<edm::InputTag>("pfCollection"));
+
 
   //johnda add configuration
   minJetPt_ = iConfig.getParameter<double>("minJetPt");
@@ -160,6 +162,76 @@ RecHitAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //desc.addUntracked<edm::InputTag>("tracks","ctfWithMaterialTracks");
   //descriptions.addDefault(desc);
 }
+
+const reco::PFCandidate*
+RecHitAnalyzer::getPFCand(edm::Handle<PFCollection> pfCands, float eta, float phi, float& minDR, bool debug ) {
+
+  float minDR2 = 100;
+  const reco::PFCandidate* minDRCand = nullptr;
+  
+  for ( PFCollection::const_iterator iPFC = pfCands->begin();
+        iPFC != pfCands->end(); ++iPFC ) {
+    //if((iPFC->particleId() != 1) && (iPFC->particleId() != 2) && (iPFC->particleId() != 3) ) continue;
+    //reco::TrackRef thisTrk = iPFC->trackRef();
+    const reco::Track* thisTrk = iPFC->bestTrack();
+    if(!thisTrk) continue;
+    //if(!thisTrk.isNonnull()) continue;
+    //if(!thisTrk.isAvailable()) continue;
+
+    float etaDiff = (eta - thisTrk->eta());
+    float phiDiff = (phi - thisTrk->phi());
+    if(phiDiff > 3.14)  phiDiff -= 2*3.14;
+    if(phiDiff < -3.14)  phiDiff += 2*3.14;
+    if(debug) std::cout << "\t\tphidiff " << phiDiff << std::endl;
+    float thisDr2 = (etaDiff*etaDiff + phiDiff*phiDiff);
+    if(debug) std::cout << "\tthisDr2: " << thisDr2 << " " << thisTrk->pt() << " " << iPFC->particleId() << std::endl;
+
+    const reco::PFCandidate& thisPFCand = (*iPFC);
+      
+    if( (thisDr2 < 0.001) && (thisDr2 <minDR2)){
+      minDR2    = thisDr2; 
+      minDRCand = &thisPFCand;
+    }
+  }
+
+  minDR = sqrtf(minDR2);
+  return minDRCand;  
+}
+
+
+const reco::Track*
+RecHitAnalyzer::getTrackCand(edm::Handle<reco::TrackCollection> trackCands, float eta, float phi, float& minDR, bool debug ) {
+
+  float minDR2 = 100;
+  const reco::Track* minDRCand = nullptr;
+  reco::Track::TrackQuality tkQt_ = reco::Track::qualityByName("highPurity");
+
+  for ( reco::TrackCollection::const_iterator iTk = trackCands->begin();
+        iTk != trackCands->end(); ++iTk ) {
+    if ( !(iTk->quality(tkQt_)) ) continue;  
+
+
+    float etaDiff = (eta - iTk->eta());
+    float phiDiff = (phi - iTk->phi());
+    if(phiDiff > 3.14)  phiDiff -= 2*3.14;
+    if(phiDiff < -3.14)  phiDiff += 2*3.14;
+    if(debug) std::cout << "\t\tphidiff " << phiDiff << std::endl;
+    float thisDr2 = (etaDiff*etaDiff + phiDiff*phiDiff);
+    if(debug) std::cout << "\tthisDr2: " << thisDr2 << " " << iTk->pt() << std::endl;
+
+    const reco::Track& thisTrackCand = (*iTk);
+      
+    if( (thisDr2 < 0.001) && (thisDr2 <minDR2)){
+      minDR2    = thisDr2; 
+      minDRCand = &thisTrackCand;
+    }
+  }
+
+  minDR = sqrtf(minDR2);
+  return minDRCand;  
+}
+
+
 
 /*
 //____ Fill FC diphoton variables _____//

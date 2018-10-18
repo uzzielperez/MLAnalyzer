@@ -66,6 +66,7 @@
 #include "TStyle.h"
 #include "TMath.h"
 
+#include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/EgammaCandidates/interface/Photon.h"
 #include "DataFormats/EgammaCandidates/interface/PhotonFwd.h" // reco::PhotonCollection defined here
@@ -111,6 +112,9 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<reco::PFJetCollection> jetCollectionT_;
     edm::EDGetTokenT<reco::GenJetCollection> genJetCollectionT_;
     edm::EDGetTokenT<reco::TrackCollection> trackCollectionT_;
+
+    typedef std::vector<reco::PFCandidate>  PFCollection;
+    edm::EDGetTokenT<PFCollection> pfCollectionT_;
     //edm::InputTag trackTags_; //used to select what tracks to read from configuration file
 
     double minJetPt_;
@@ -162,6 +166,9 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     //void fillTRKlayersAtECAL( const edm::Event&, const edm::EventSetup& );
     void fillTRKvolumeAtEBEE( const edm::Event&, const edm::EventSetup& );
     //void fillTRKvolumeAtECAL( const edm::Event&, const edm::EventSetup& );
+
+    const reco::PFCandidate* getPFCand(edm::Handle<PFCollection> pfCands, float eta, float phi, float& minDr, bool debug = false);
+    const reco::Track* getTrackCand(edm::Handle<reco::TrackCollection> trackCands, float eta, float phi, float& minDr, bool debug = false);
 
 
 }; // class RecHitAnalyzer
