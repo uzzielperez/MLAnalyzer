@@ -15,25 +15,6 @@ std::vector<float> vTracksPt_EB_;
 std::vector<float> vEndTracksPt_EB_;
 std::vector<float> vTracksQPt_EB_;
 std::vector<float> vTracks_EB_;
-TH1F *hTracks_minDr;
-TH1F *hTracks_matchPt;
-TH1F *hTracks_matchEta;
-TH1F *hTracks_matchPhi;
-
-TH1F *hTracks_NomatchPt;
-TH1F *hTracks_NomatchEta;
-TH1F *hTracks_NomatchPhi;
-
-TH1F *hPFlow_minDr;
-TH1F *hPFlow_matchPt;
-TH1F *hPFlow_matchEta;
-TH1F *hPFlow_matchPhi;
-TH1F *hPFlow_matchID;
-
-TH1F *hPFlow_NomatchPt;
-TH1F *hPFlow_NomatchEta;
-TH1F *hPFlow_NomatchPhi;
-TH1F *hPFlow_NomatchID;
 
 
 // Initialize branches ____________________________________________________________//
@@ -52,29 +33,6 @@ void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileServi
   hTracksPt_EB = fs->make<TH2F>("TracksPt_EB", "pT(i#phi,i#eta);i#phi;i#eta",
       EB_IPHI_MAX  , EB_IPHI_MIN-1, EB_IPHI_MAX,
       2*EB_IETA_MAX,-EB_IETA_MAX,   EB_IETA_MAX );
-
-
-  hTracks_minDr = fs->make<TH1F>("Tracks_minDr", "MinDr;dR;Tracks",100, -0.01,0.1);
-
-  hTracks_matchPt  = fs->make<TH1F>("Tracks_matchPt",  "MatchPt;PT;Tracks",  100, -0.01,100);
-  hTracks_matchEta = fs->make<TH1F>("Tracks_matchEta", "MatchEta;Eta;Tracks",100, -2.6,2.6);
-  hTracks_matchPhi = fs->make<TH1F>("Tracks_matchPhi", "MatchPhi;Phi;Tracks",100, -3.2,3.2);
-
-  hTracks_NomatchPt  = fs->make<TH1F>("Tracks_NomatchPt",  "NoMatchPt;PT;Tracks",  100, -0.01,100);
-  hTracks_NomatchEta = fs->make<TH1F>("Tracks_NomatchEta", "NoMatchEta;Eta;Tracks",100, -2.6,2.6);
-  hTracks_NomatchPhi = fs->make<TH1F>("Tracks_NomatchPhi", "NoMatchPhi;Phi;Tracks",100, -3.2,3.2);
-
-  hPFlow_minDr = fs->make<TH1F>("PFlow_minDr", "MinDr;dR;PFlow",100, -0.01,0.1);
-
-  hPFlow_matchPt  = fs->make<TH1F>("PFlow_matchPt",  "MatchPt;PT;PFlow",  100, -0.01,100);
-  hPFlow_matchEta = fs->make<TH1F>("PFlow_matchEta", "MatchEta;Eta;PFlow",100, -2.6,2.6);
-  hPFlow_matchPhi = fs->make<TH1F>("PFlow_matchPhi", "MatchPhi;Phi;PFlow",100, -3.2,3.2);
-  hPFlow_matchID  = fs->make<TH1F>("PFlow_matchID",  "MatchID;ID;PFlow",  10,  -0.5,9.5);
-
-  hPFlow_NomatchPt  = fs->make<TH1F>("PFlow_NomatchPt",  "NoMatchPt;PT;PFlow",  100, -0.01,100);
-  hPFlow_NomatchEta = fs->make<TH1F>("PFlow_NomatchEta", "NoMatchEta;Eta;PFlow",100, -2.6,2.6);
-  hPFlow_NomatchPhi = fs->make<TH1F>("PFlow_NomatchPhi", "NoMatchPhi;Phi;PFlow",100, -3.2,3.2);
-  hPFlow_NomatchID  = fs->make<TH1F>("PFlow_NomatchID",  "NoMatchID;ID;PFlow",  10,  -0.5,9.5);
 
 
   char hname[50], htitle[50];
@@ -145,22 +103,6 @@ void RecHitAnalyzer::fillTracksAtEBEE ( const edm::Event& iEvent, const edm::Eve
     phi = iTk->phi();
     if ( std::abs(eta) > 3. ) continue;
 
-    float minDr = 10;
-    const reco::PFCandidate* pfCand = getPFCand(pfCandsH_,eta,phi,minDr);
-    hTracks_minDr->Fill(minDr);
-    if(!pfCand){
-      std::cout << "No PFCand: " << iTk->pt() << " " << eta << " " << phi << std::endl;
-      getPFCand(pfCandsH_, eta, phi, minDr, true);
-      hTracks_NomatchPt  -> Fill(iTk->pt());
-      hTracks_NomatchEta -> Fill(iTk->eta());
-      hTracks_NomatchPhi -> Fill(iTk->phi());
-    }else{
-      hTracks_matchPt  -> Fill(iTk->pt());
-      hTracks_matchEta -> Fill(iTk->eta());
-      hTracks_matchPhi -> Fill(iTk->phi());
-    }
-
-
     DetId id( spr::findDetIdECAL( caloGeom, eta, phi, false ) );
     if ( id.subdetId() == EcalBarrel ) {
       EBDetId ebId( id );
@@ -196,25 +138,6 @@ void RecHitAnalyzer::fillTracksAtEBEE ( const edm::Event& iEvent, const edm::Eve
         iPFC != pfCandsH_->end(); ++iPFC ) {
     const reco::Track* thisTrk = iPFC->bestTrack();
     if(!thisTrk) continue;
-
-    //if ( !(thisTrk->quality(tkQt_)) ) continue;
-
-    float minDr = 10;
-    const reco::Track* trackCand = getTrackCand(tracksH_,thisTrk->eta(),thisTrk->phi(),minDr);
-    hPFlow_minDr->Fill(minDr);
-    if(!trackCand){
-      std::cout << "No trackCand: " << thisTrk->pt() << " " << thisTrk->eta() << " " << thisTrk->phi() << std::endl;
-      getTrackCand(tracksH_, thisTrk->eta(), thisTrk->phi(), minDr, true);
-      hPFlow_NomatchPt  -> Fill(thisTrk->pt());
-      hPFlow_NomatchEta -> Fill(thisTrk->eta());
-      hPFlow_NomatchPhi -> Fill(thisTrk->phi());
-      hPFlow_NomatchID -> Fill(iPFC->particleId());
-    }else{
-      hPFlow_matchPt  -> Fill(thisTrk->pt());
-      hPFlow_matchEta -> Fill(thisTrk->eta());
-      hPFlow_matchPhi -> Fill(thisTrk->phi());
-      hPFlow_matchID -> Fill(iPFC->particleId());
-    }
 
     const math::XYZPointF& ecalPos = iPFC->positionAtECALEntrance();
     eta = ecalPos.eta();
