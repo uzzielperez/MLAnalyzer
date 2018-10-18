@@ -252,6 +252,21 @@ for j,decay in enumerate(decays):
                 for i in range(0,neff,chunk_size)])
     #print " >> %s: %s"%(branches[0],X_ECAL.shape)
 
+    # Muons at ECAL
+    readouts = [280,360]
+    #branches = ["ECAL_tracksPt"]
+    #branches = ["ECAL_tracksQPt"]
+    branches = ["ECAL_muonsPt"]
+    X_MuonsAtECAL = da.concatenate([\
+                da.from_delayed(\
+                    load_X(tree,i,i+chunk_size, branches, readouts, scale[0]),\
+                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    #print " >> %s: %s"%(branches[0],X_ECAL.shape)
+
+
+
     # HBHE upsample
     readouts = [56,72]
     branches = ["HBHE_energy"]
@@ -263,8 +278,9 @@ for j,decay in enumerate(decays):
                     dtype=np.float32)\
                 for i in range(0,neff,chunk_size)])
     print " >> %s(upsampled): %s"%(branches[0],X_HBHE_up.shape)
-
-    X_ECAL_stacked = da.concatenate([X_TracksAtECAL, X_ECAL_EEup, X_HBHE_up], axis=-1)
+    
+    #X_MuonsAtECAL, 
+    X_ECAL_stacked = da.concatenate([X_MuonsAtECAL,X_TracksAtECAL, X_ECAL_EEup, X_HBHE_up], axis=-1)
     print " >> %s: %s"%('X_ECAL_stacked', X_ECAL_stacked.shape)
 
     # EB
@@ -381,7 +397,7 @@ for j,decay in enumerate(decays):
     X_jets = da.concatenate([\
                 da.from_delayed(\
                     crop_jet_block(X_ECAL_stacked[i:i+chunk_size], jetSeed_iphi[i:i+chunk_size], jetSeed_ieta[i:i+chunk_size]),\
-                    shape=(chunk_size, jet_shape, jet_shape, 3),\
+                    shape=(chunk_size, jet_shape, jet_shape, 4),\
                     dtype=np.float32)\
                 for i in range(0,neff,chunk_size)])
 

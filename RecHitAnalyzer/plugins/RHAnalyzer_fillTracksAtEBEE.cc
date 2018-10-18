@@ -11,11 +11,12 @@ std::vector<float> vTracksPt_EE_[nEE];
 std::vector<float> vEndTracksPt_EE_[nEE];
 std::vector<float> vTracksQPt_EE_[nEE];
 std::vector<float> vTracks_EE_[nEE];
+std::vector<float> vMuonsPt_EE_[nEE];
 std::vector<float> vTracksPt_EB_;
 std::vector<float> vEndTracksPt_EB_;
 std::vector<float> vTracksQPt_EB_;
 std::vector<float> vTracks_EB_;
-
+std::vector<float> vMuonsPt_EB_;
 
 // Initialize branches ____________________________________________________________//
 void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileService> &fs ) {
@@ -25,6 +26,7 @@ void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileServi
   tree->Branch("TracksPt_EB", &vTracksPt_EB_);
   tree->Branch("EndTracksPt_EB", &vEndTracksPt_EB_);
   tree->Branch("TracksQPt_EB", &vTracksQPt_EB_);
+  tree->Branch("MuonsPt_EB", &vMuonsPt_EB_);
 
   // Histograms for monitoring
   hTracks_EB = fs->make<TH2F>("Tracks_EB", "N(i#phi,i#eta);i#phi;i#eta",
@@ -47,6 +49,8 @@ void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileServi
     tree->Branch(hname,        &vEndTracksPt_EE_[iz]);
     sprintf(hname, "TracksQPt_EE%s",zside);
     tree->Branch(hname,        &vTracksQPt_EE_[iz]);
+    sprintf(hname, "MuonsPt_EE%s",zside);
+    tree->Branch(hname,        &vMuonsPt_EE_[iz]);
 
     // Histograms for monitoring
     sprintf(hname, "Tracks_EE%s",zside);
@@ -75,11 +79,13 @@ void RecHitAnalyzer::fillTracksAtEBEE ( const edm::Event& iEvent, const edm::Eve
   vTracksPt_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
   vEndTracksPt_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
   vTracksQPt_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
+  vMuonsPt_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
   for ( int iz(0); iz < nEE; iz++ ) {
     vTracks_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
     vTracksPt_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
     vEndTracksPt_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
     vTracksQPt_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
+    vMuonsPt_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
   }
 
   edm::Handle<reco::TrackCollection> tracksH_;
@@ -152,7 +158,10 @@ void RecHitAnalyzer::fillTracksAtEBEE ( const edm::Event& iEvent, const edm::Eve
 
       idx_ = ebId.hashedIndex(); // (ieta_+EB_IETA_MAX)*EB_IPHI_MAX + iphi_
       // Fill vectors for images
+      
       vEndTracksPt_EB_[idx_] += thisTrk->pt();
+      if(iPFC->particleId() == 3)
+	vMuonsPt_EB_[idx_] += thisTrk->pt();
 
     } else if ( id.subdetId() == EcalEndcap ) {
       EEDetId eeId( id );
@@ -164,6 +173,8 @@ void RecHitAnalyzer::fillTracksAtEBEE ( const edm::Event& iEvent, const edm::Eve
       idx_ = iy_*EE_MAX_IX + ix_;
       // Fill vectors for images
       vEndTracksPt_EE_[iz_][idx_] += thisTrk->pt();
+      if(iPFC->particleId() == 3)
+	vMuonsPt_EE_[iz_][idx_] += thisTrk->pt();
     } 
   }//PF Candidates
 

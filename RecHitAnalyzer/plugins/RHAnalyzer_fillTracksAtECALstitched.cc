@@ -6,13 +6,16 @@
 TH2F *hEvt_EE_tracksPt[nEE];
 TH2F *hEvt_EE_EndtracksPt[nEE];
 TH2F *hEvt_EE_tracksQPt[nEE];
+TH2F *hEvt_EE_muonsPt[nEE];
 TProfile2D *hECAL_tracks;
 TProfile2D *hECAL_tracksPt;
 TProfile2D *hECAL_EndtracksPt;
 TProfile2D *hECAL_tracksQPt;
+TProfile2D *hECAL_muonsPt;
 std::vector<float> vECAL_tracksPt_;
 std::vector<float> vECAL_EndtracksPt_;
 std::vector<float> vECAL_tracksQPt_;
+std::vector<float> vECAL_muonsPt_;
 
 // Initialize branches _______________________________________________________________//
 void RecHitAnalyzer::branchesTracksAtECALstitched ( TTree* tree, edm::Service<TFileService> &fs ) {
@@ -21,6 +24,8 @@ void RecHitAnalyzer::branchesTracksAtECALstitched ( TTree* tree, edm::Service<TF
   tree->Branch("ECAL_tracksPt",    &vECAL_tracksPt_);
   tree->Branch("ECAL_EndtracksPt",    &vECAL_EndtracksPt_);
   tree->Branch("ECAL_tracksQPt",    &vECAL_tracksQPt_);
+  tree->Branch("ECAL_muonsPt",    &vECAL_muonsPt_);
+
   // Intermediate helper histogram (single event only)
   hEvt_EE_tracksPt[0] = new TH2F("evt_EEm_tracksPt", "E(i#phi,i#eta);i#phi;i#eta",
       EB_IPHI_MAX, -TMath::Pi(), TMath::Pi(),
@@ -37,7 +42,6 @@ void RecHitAnalyzer::branchesTracksAtECALstitched ( TTree* tree, edm::Service<TF
       5*(HBHE_IETA_MAX_HE-1-HBHE_IETA_MAX_EB), eta_bins_EEp );
 
 
-
   hEvt_EE_tracksQPt[0] = new TH2F("evt_EEm_tracksQPt", "qxPt(i#phi,i#eta);i#phi;i#eta",
       EB_IPHI_MAX, -TMath::Pi(), TMath::Pi(),
       5*(HBHE_IETA_MAX_HE-1-HBHE_IETA_MAX_EB), eta_bins_EEm );
@@ -46,10 +50,20 @@ void RecHitAnalyzer::branchesTracksAtECALstitched ( TTree* tree, edm::Service<TF
       5*(HBHE_IETA_MAX_HE-1-HBHE_IETA_MAX_EB), eta_bins_EEp );
 
 
+  hEvt_EE_muonsPt[0] = new TH2F("evt_EEm_muonsPt", "E(i#phi,i#eta);i#phi;i#eta",
+      EB_IPHI_MAX, -TMath::Pi(), TMath::Pi(),
+      5*(HBHE_IETA_MAX_HE-1-HBHE_IETA_MAX_EB), eta_bins_EEm );
+  hEvt_EE_muonsPt[1] = new TH2F("evt_EEp_muonsPt", "E(i#phi,i#eta);i#phi;i#eta",
+      EB_IPHI_MAX, -TMath::Pi(), TMath::Pi(),
+      5*(HBHE_IETA_MAX_HE-1-HBHE_IETA_MAX_EB), eta_bins_EEp );
+
+
+
   // Histograms for monitoring
   hECAL_tracks = fs->make<TProfile2D>("ECAL_tracks", "E(i#phi,i#eta);i#phi;i#eta",
       EB_IPHI_MAX,    EB_IPHI_MIN-1, EB_IPHI_MAX,
       2*ECAL_IETA_MAX_EXT, -ECAL_IETA_MAX_EXT,   ECAL_IETA_MAX_EXT );
+
   hECAL_tracksPt = fs->make<TProfile2D>("ECAL_tracksPt", "E(i#phi,i#eta);i#phi;i#eta",
       EB_IPHI_MAX,    EB_IPHI_MIN-1, EB_IPHI_MAX,
       2*ECAL_IETA_MAX_EXT, -ECAL_IETA_MAX_EXT,   ECAL_IETA_MAX_EXT );
@@ -62,17 +76,21 @@ void RecHitAnalyzer::branchesTracksAtECALstitched ( TTree* tree, edm::Service<TF
       EB_IPHI_MAX,    EB_IPHI_MIN-1, EB_IPHI_MAX,
       2*ECAL_IETA_MAX_EXT, -ECAL_IETA_MAX_EXT,   ECAL_IETA_MAX_EXT );
 
+  hECAL_muonsPt = fs->make<TProfile2D>("ECAL_muonsPt", "E(i#phi,i#eta);i#phi;i#eta",
+      EB_IPHI_MAX,    EB_IPHI_MIN-1, EB_IPHI_MAX,
+      2*ECAL_IETA_MAX_EXT, -ECAL_IETA_MAX_EXT,   ECAL_IETA_MAX_EXT );
 
 } // branchesTracksAtECALstitched()
 
 // Function to map EE(phi,eta) histograms to ECAL(iphi,ieta) vector _______________________________//
-void fillTracksAtECAL_with_EEproj ( TH2F *hEvt_EE_tracksPt_, TH2F *hEvt_EE_EndtracksPt_, TH2F *hEvt_EE_tracksQPt_, int ieta_global_offset, int ieta_signed_offset ) {
+void fillTracksAtECAL_with_EEproj ( TH2F *hEvt_EE_tracksPt_, TH2F *hEvt_EE_EndtracksPt_, TH2F *hEvt_EE_tracksQPt_, TH2F *hEvt_EE_muonsPt_, int ieta_global_offset, int ieta_signed_offset ) {
 
   int ieta_global_, ieta_signed_;
   int ieta_, iphi_, idx_;
   float trackPt_;
   float EndtrackPt_;
   float trackQPt_;
+  float muonPt_;
 
   for (int ieta = 1; ieta < hEvt_EE_tracksPt_->GetNbinsY()+1; ieta++) {
     ieta_ = ieta - 1;
@@ -83,7 +101,8 @@ void fillTracksAtECAL_with_EEproj ( TH2F *hEvt_EE_tracksPt_, TH2F *hEvt_EE_Endtr
       trackPt_ = hEvt_EE_tracksPt_->GetBinContent( iphi, ieta );
       EndtrackPt_ = hEvt_EE_EndtracksPt_->GetBinContent( iphi, ieta );
       trackQPt_ = hEvt_EE_tracksQPt_->GetBinContent( iphi, ieta );
-      if ( trackPt_ == 0. ) continue;
+      muonPt_ = hEvt_EE_muonsPt_->GetBinContent( iphi, ieta );
+      if ( (trackPt_ == 0.) && (EndtrackPt_ == 0.)  && (muonPt_ == 0.)) continue;
       // NOTE: EB iphi = 1 does not correspond to physical phi = -pi so need to shift!
       iphi_ = iphi  + 5*38; // shift
       iphi_ = iphi_ > EB_IPHI_MAX ? iphi_-EB_IPHI_MAX : iphi_; // wrap-around
@@ -93,11 +112,13 @@ void fillTracksAtECAL_with_EEproj ( TH2F *hEvt_EE_tracksPt_, TH2F *hEvt_EE_Endtr
       vECAL_tracksPt_[idx_] = trackPt_;
       vECAL_EndtracksPt_[idx_] = EndtrackPt_;
       vECAL_tracksQPt_[idx_] = trackQPt_;
+      vECAL_muonsPt_[idx_] = muonPt_;
       // Fill histogram for monitoring
       hECAL_tracks->Fill( iphi_, ieta_signed_, 1. );
       hECAL_tracksPt->Fill( iphi_, ieta_signed_, trackPt_ );
       hECAL_EndtracksPt->Fill( iphi_, ieta_signed_, EndtrackPt_ );
       hECAL_tracksQPt->Fill( iphi_, ieta_signed_, trackQPt_ );
+      hECAL_muonsPt->Fill( iphi_, ieta_signed_, muonPt_ );
 
     } // iphi_
   } // ieta_
@@ -116,9 +137,11 @@ void RecHitAnalyzer::fillTracksAtECALstitched ( const edm::Event& iEvent, const 
   vECAL_tracksPt_.assign( 2*ECAL_IETA_MAX_EXT*EB_IPHI_MAX, 0. );
   vECAL_EndtracksPt_.assign( 2*ECAL_IETA_MAX_EXT*EB_IPHI_MAX, 0. );
   vECAL_tracksQPt_.assign( 2*ECAL_IETA_MAX_EXT*EB_IPHI_MAX, 0. );
+  vECAL_muonsPt_.assign( 2*ECAL_IETA_MAX_EXT*EB_IPHI_MAX, 0. );
   for ( int iz(0); iz < nEE; ++iz ) hEvt_EE_tracksPt[iz]->Reset();
   for ( int iz(0); iz < nEE; ++iz ) hEvt_EE_EndtracksPt[iz]->Reset();
   for ( int iz(0); iz < nEE; ++iz ) hEvt_EE_tracksQPt[iz]->Reset();
+  for ( int iz(0); iz < nEE; ++iz ) hEvt_EE_muonsPt[iz]->Reset();
 
   edm::Handle<EcalRecHitCollection> EBRecHitsH_;
   iEvent.getByToken( EBRecHitCollectionT_, EBRecHitsH_ );
@@ -169,6 +192,8 @@ void RecHitAnalyzer::fillTracksAtECALstitched ( const edm::Event& iEvent, const 
       iz_ = (eta > 0.) ? 1 : 0;
       // Fill intermediate helper histogram by eta,phi
       hEvt_EE_EndtracksPt[iz_]->Fill( phi, eta, thisTrk->pt() );
+      if(iPFC->particleId() == 3)
+	hEvt_EE_muonsPt[iz_]->Fill( phi, eta, thisTrk->pt() );
     }
   } // pfCands
 
@@ -177,7 +202,7 @@ void RecHitAnalyzer::fillTracksAtECALstitched ( const edm::Event& iEvent, const 
   // Map EE-(phi,eta) to bottom part of ECAL(iphi,ieta)
   ieta_global_offset = 0;
   ieta_signed_offset = -ECAL_IETA_MAX_EXT;
-  fillTracksAtECAL_with_EEproj( hEvt_EE_tracksPt[0], hEvt_EE_EndtracksPt[0], hEvt_EE_tracksQPt[0], ieta_global_offset, ieta_signed_offset );
+  fillTracksAtECAL_with_EEproj( hEvt_EE_tracksPt[0], hEvt_EE_EndtracksPt[0], hEvt_EE_tracksQPt[0], hEvt_EE_muonsPt[0], ieta_global_offset, ieta_signed_offset );
 
   // Fill middle part of ECAL(iphi,ieta) with the EB rechits.
   ieta_global_offset = 55;
@@ -213,9 +238,9 @@ void RecHitAnalyzer::fillTracksAtECALstitched ( const edm::Event& iEvent, const 
 
   for ( PFCollection::const_iterator iPFC = pfCandsH_->begin();
         iPFC != pfCandsH_->end(); ++iPFC ) {
-    if(iPFC->particleId() != 1) continue;
-    reco::TrackRef thisTrk = iPFC->trackRef();
-    if ( !(thisTrk->quality(tkQt_)) ) continue;
+    const reco::Track* thisTrk = iPFC->bestTrack();
+    if(!thisTrk) continue;
+
     const math::XYZPointF& ecalPos = iPFC->positionAtECALEntrance();
     eta = ecalPos.eta();
     phi = ecalPos.phi();
@@ -238,6 +263,10 @@ void RecHitAnalyzer::fillTracksAtECALstitched ( const edm::Event& iEvent, const 
 
       // Fill histogram for monitoring
       hECAL_EndtracksPt->Fill( iphi_, ieta_signed, trackPt_ );
+      if(iPFC->particleId() == 3){
+	vECAL_muonsPt_[idx_] += trackPt_;
+	hECAL_muonsPt->Fill( iphi_, ieta_signed, trackPt_ );
+      }
     }
 
   } // EB PFCands
@@ -246,6 +275,6 @@ void RecHitAnalyzer::fillTracksAtECALstitched ( const edm::Event& iEvent, const 
   // Map EE+(phi,eta) to upper part of ECAL(iphi,ieta)
   ieta_global_offset = ECAL_IETA_MAX_EXT + EB_IETA_MAX;
   ieta_signed_offset = EB_IETA_MAX;
-  fillTracksAtECAL_with_EEproj( hEvt_EE_tracksPt[1], hEvt_EE_EndtracksPt[1], hEvt_EE_tracksQPt[1], ieta_global_offset, ieta_signed_offset );
+  fillTracksAtECAL_with_EEproj( hEvt_EE_tracksPt[1], hEvt_EE_EndtracksPt[1], hEvt_EE_tracksQPt[1], hEvt_EE_muonsPt[1], ieta_global_offset, ieta_signed_offset );
 
 } // fillTracksAtECALstitched()
