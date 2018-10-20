@@ -181,7 +181,7 @@ RecHitAnalyzer::getPFCand(edm::Handle<PFCollection> pfCands, float eta, float ph
     if(!thisTrk) continue;
 
     float thisdR = reco::deltaR( eta, phi, thisTrk->eta(), thisTrk->phi() );
-    if(debug) std::cout << "\tthisDr2: " << thisdR << " " << thisTrk->pt() << " " << iPFC->particleId() << std::endl;
+    if(debug) std::cout << "\tthisdR: " << thisdR << " " << thisTrk->pt() << " " << iPFC->particleId() << std::endl;
 
     const reco::PFCandidate& thisPFCand = (*iPFC);
       
@@ -207,7 +207,7 @@ RecHitAnalyzer::getTrackCand(edm::Handle<reco::TrackCollection> trackCands, floa
     if ( !(iTk->quality(tkQt_)) ) continue;  
 
     float thisdR = reco::deltaR( eta, phi, iTk->eta(),iTk->phi() );
-    if(debug) std::cout << "\tthisDr2: " << thisdR << " " << iTk->pt() << std::endl;
+    if(debug) std::cout << "\tthisdR: " << thisdR << " " << iTk->pt() << std::endl;
 
     const reco::Track& thisTrackCand = (*iTk);
       
