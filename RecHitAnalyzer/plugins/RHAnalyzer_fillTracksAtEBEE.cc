@@ -8,8 +8,10 @@ TH2F *hTracks_EB;
 TH2F *hTracksPt_EE[nEE];
 TH2F *hTracksPt_EB;
 std::vector<float> vTracksPt_EE_[nEE];
+std::vector<float> vTracksQPt_EE_[nEE];
 std::vector<float> vTracks_EE_[nEE];
 std::vector<float> vTracksPt_EB_;
+std::vector<float> vTracksQPt_EB_;
 std::vector<float> vTracks_EB_;
 
 // Initialize branches ____________________________________________________________//
@@ -18,6 +20,7 @@ void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileServi
   // Branches for images
   tree->Branch("Tracks_EB",   &vTracks_EB_);
   tree->Branch("TracksPt_EB", &vTracksPt_EB_);
+  tree->Branch("TracksQPt_EB", &vTracksQPt_EB_);
 
   // Histograms for monitoring
   hTracks_EB = fs->make<TH2F>("Tracks_EB", "N(i#phi,i#eta);i#phi;i#eta",
@@ -27,6 +30,7 @@ void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileServi
       EB_IPHI_MAX  , EB_IPHI_MIN-1, EB_IPHI_MAX,
       2*EB_IETA_MAX,-EB_IETA_MAX,   EB_IETA_MAX );
 
+
   char hname[50], htitle[50];
   for ( int iz(0); iz < nEE; iz++ ) {
     // Branches for images
@@ -35,6 +39,8 @@ void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileServi
     tree->Branch(hname,        &vTracks_EE_[iz]);
     sprintf(hname, "TracksPt_EE%s",zside);
     tree->Branch(hname,        &vTracksPt_EE_[iz]);
+    sprintf(hname, "TracksQPt_EE%s",zside);
+    tree->Branch(hname,        &vTracksQPt_EE_[iz]);
 
     // Histograms for monitoring
     sprintf(hname, "Tracks_EE%s",zside);
@@ -61,13 +67,16 @@ void RecHitAnalyzer::fillTracksAtEBEE ( const edm::Event& iEvent, const edm::Eve
 
   vTracks_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
   vTracksPt_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
+  vTracksQPt_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
   for ( int iz(0); iz < nEE; iz++ ) {
     vTracks_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
     vTracksPt_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
+    vTracksQPt_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
   }
 
   edm::Handle<reco::TrackCollection> tracksH_;
   iEvent.getByToken( trackCollectionT_, tracksH_ );
+
   // Provides access to global cell position
   edm::ESHandle<CaloGeometry> caloGeomH_;
   iSetup.get<CaloGeometryRecord>().get( caloGeomH_ );
@@ -78,9 +87,11 @@ void RecHitAnalyzer::fillTracksAtEBEE ( const edm::Event& iEvent, const edm::Eve
   for ( reco::TrackCollection::const_iterator iTk = tracksH_->begin();
         iTk != tracksH_->end(); ++iTk ) {
     if ( !(iTk->quality(tkQt_)) ) continue;
+
     eta = iTk->eta();
     phi = iTk->phi();
     if ( std::abs(eta) > 3. ) continue;
+
     DetId id( spr::findDetIdECAL( caloGeom, eta, phi, false ) );
     if ( id.subdetId() == EcalBarrel ) {
       EBDetId ebId( id );
@@ -93,6 +104,7 @@ void RecHitAnalyzer::fillTracksAtEBEE ( const edm::Event& iEvent, const edm::Eve
       // Fill vectors for images
       vTracks_EB_[idx_] += 1.;
       vTracksPt_EB_[idx_] += iTk->pt();
+      vTracksQPt_EB_[idx_] += (iTk->charge()*iTk->pt());
     } else if ( id.subdetId() == EcalEndcap ) {
       EEDetId eeId( id );
       ix_ = eeId.ix() - 1;
@@ -106,7 +118,9 @@ void RecHitAnalyzer::fillTracksAtEBEE ( const edm::Event& iEvent, const edm::Eve
       // Fill vectors for images
       vTracks_EE_[iz_][idx_] += 1.;
       vTracksPt_EE_[iz_][idx_] += iTk->pt();
+      vTracksQPt_EE_[iz_][idx_] += (iTk->charge()*iTk->pt());
     } 
   } // tracks
+
 
 } // fillEB()

@@ -29,6 +29,24 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   jetCollectionT_ = consumes<reco::PFJetCollection>(iConfig.getParameter<edm::InputTag>("ak4PFJetCollection"));
   genJetCollectionT_ = consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genJetCollection"));
   trackCollectionT_ = consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("trackCollection"));
+  pfCollectionT_ = consumes<PFCollection>(iConfig.getParameter<edm::InputTag>("pfCollection"));
+
+
+  //johnda add configuration
+  minJetPt_ = iConfig.getParameter<double>("minJetPt");
+  maxJetEta_ = iConfig.getParameter<double>("maxJetEta");
+  mode_ = iConfig.getParameter<std::string>("mode");
+  std::cout << " Mode set to " << mode_ << std::endl;
+  if( mode_ == "JetLevel"){
+    doJets_    = true;
+    nJets_ = iConfig.getParameter<int>("nJets");
+    std::cout << " \t nJets set to " << nJets_ << std::endl;
+  }else if (mode_ == "EventLevel"){
+    doJets_ = false;
+  } else {
+    std::cout << " Assuming EventLevel Config. " << std::endl;
+    doJets_ = false;
+  }
 
   // Initialize file writer
   // NOTE: initializing dynamic-memory histograms outside of TFileService
@@ -41,8 +59,12 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 
   // These will be use to create the actual images
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
-  branchesEvtSel       ( RHTree, fs );
-  //branchesEvtSel_jet   ( RHTree, fs );
+  if(doJets_){
+    branchesEvtSel_jet( RHTree, fs );
+  }else{
+    branchesEvtSel( RHTree, fs );
+  }
+
   branchesEB           ( RHTree, fs );
   branchesEE           ( RHTree, fs );
   branchesHBHE         ( RHTree, fs );
@@ -51,6 +73,9 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   branchesHCALatEBEE   ( RHTree, fs );
   branchesTracksAtEBEE(RHTree, fs);
   branchesTracksAtECALstitched( RHTree, fs);
+  branchesPFCandsAtEBEE(RHTree, fs);
+  branchesPFCandsAtECALstitched( RHTree, fs);
+
   //branchesTRKlayersAtEBEE(RHTree, fs);
   //branchesTRKlayersAtECAL(RHTree, fs);
   //branchesTRKvolumeAtEBEE(RHTree, fs);
@@ -81,8 +106,12 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // ----- Apply event selection cuts ----- //
 
   bool passedSelection = false;
-  passedSelection = runEvtSel( iEvent, iSetup );
-  //passedSelection = runEvtSel_jet( iEvent, iSetup );
+  if(doJets_){
+    passedSelection = runEvtSel_jet( iEvent, iSetup );
+  }else{
+    passedSelection = runEvtSel( iEvent, iSetup );
+  }
+
 
   if ( !passedSelection ) return;
 
@@ -94,6 +123,8 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   fillHCALatEBEE( iEvent, iSetup );
   fillTracksAtEBEE( iEvent, iSetup );
   fillTracksAtECALstitched( iEvent, iSetup );
+  fillPFCandsAtEBEE( iEvent, iSetup );
+  fillPFCandsAtECALstitched( iEvent, iSetup );
   //fillTRKlayersAtEBEE( iEvent, iSetup );
   //fillTRKlayersAtECAL( iEvent, iSetup );
   //fillTRKvolumeAtEBEE( iEvent, iSetup );
@@ -136,6 +167,60 @@ RecHitAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //desc.addUntracked<edm::InputTag>("tracks","ctfWithMaterialTracks");
   //descriptions.addDefault(desc);
 }
+
+const reco::PFCandidate*
+RecHitAnalyzer::getPFCand(edm::Handle<PFCollection> pfCands, float eta, float phi, float& minDr, bool debug ) {
+
+  minDr = 10;
+  const reco::PFCandidate* minDRCand = nullptr;
+  
+  for ( PFCollection::const_iterator iPFC = pfCands->begin();
+        iPFC != pfCands->end(); ++iPFC ) {
+
+    const reco::Track* thisTrk = iPFC->bestTrack();
+    if(!thisTrk) continue;
+
+    float thisdR = reco::deltaR( eta, phi, thisTrk->eta(), thisTrk->phi() );
+    if(debug) std::cout << "\tthisdR: " << thisdR << " " << thisTrk->pt() << " " << iPFC->particleId() << std::endl;
+
+    const reco::PFCandidate& thisPFCand = (*iPFC);
+      
+    if( (thisdR < 0.01) && (thisdR <minDr)){
+      minDr    = thisdR; 
+      minDRCand = &thisPFCand;
+    }
+  }
+
+  return minDRCand;  
+}
+
+
+const reco::Track*
+RecHitAnalyzer::getTrackCand(edm::Handle<reco::TrackCollection> trackCands, float eta, float phi, float& minDr, bool debug ) {
+
+  minDr = 10;
+  const reco::Track* minDRCand = nullptr;
+  reco::Track::TrackQuality tkQt_ = reco::Track::qualityByName("highPurity");
+
+  for ( reco::TrackCollection::const_iterator iTk = trackCands->begin();
+        iTk != trackCands->end(); ++iTk ) {
+    if ( !(iTk->quality(tkQt_)) ) continue;  
+
+    float thisdR = reco::deltaR( eta, phi, iTk->eta(),iTk->phi() );
+    if(debug) std::cout << "\tthisdR: " << thisdR << " " << iTk->pt() << std::endl;
+
+    const reco::Track& thisTrackCand = (*iTk);
+      
+    if( (thisdR < 0.01) && (thisdR <minDr)){
+      minDr    = thisdR; 
+      minDRCand = &thisTrackCand;
+    }
+  }
+
+  return minDRCand;  
+}
+
+
 
 /*
 //____ Fill FC diphoton variables _____//

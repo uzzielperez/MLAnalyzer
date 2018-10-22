@@ -46,6 +46,11 @@ def load_vector(tree, start_, stop_, branches_):
     X = tree2array(tree, start=start_, stop=stop_, branches=branches_)
     try: 
         X = np.array([x[0][0] for x in X])
+        #X_all = []
+        #for x in X:
+        #    for iLen in range(len(x)):
+        #        X_all.append(x[iLen])
+        #X = np.array(X_all)
     except:
         print ("loading single")
         X = np.array([x[0] for x in X])
@@ -141,9 +146,14 @@ def crop_jet(imgECAL, iphi, ieta):
 
 @delayed
 def crop_jet_block(Xs, iphis, ietas):
+    print "crop_jet_block"
     returnVal = np.array([crop_jet(x,iphi,ieta) for x,iphi,ieta in zip(Xs,iphis,ietas)])
     print returnVal.shape
     return returnVal
+
+#@delayed
+#def crop_jet_block_new(Xs, iphis, ietas):
+#    return np.array([crop_jet(x,iphi,ieta) for x,iphi,ieta in zip(Xs,iphis,ietas)])
 
 
 for j,decay in enumerate(decays):
@@ -180,6 +190,17 @@ for j,decay in enumerate(decays):
     print " >> Total events:", nevts
     print " >> Effective events:", neff
 
+    # jet seed iphi
+    X = tree2array(tree, start=0, stop=chunk_size, branches=["jetSeed_iphi"])
+    print "jetSeed_iphi was ",type(X)
+    print X.shape
+    for x in X: 
+        print x, len(x)
+    X = np.array([x[0] for x in X])
+    print "X is ",type(X)
+    print X.shape
+    for x in X: 
+        print x
 
 
     ## eventId
@@ -220,16 +241,31 @@ for j,decay in enumerate(decays):
 
     # Tracks at ECAL
     readouts = [280,360]
-    branches = ["ECAL_tracksPt"]
-    #branches = ["ECAL_tracksQPt"] # for Qxpt weighted 
-    #branches = ["ECAL_EndtracksPt"] # for pt weighted at ECAL face
+    #branches = ["ECAL_tracksPt"]
+    #branches = ["ECAL_tracksQPt"]
+    branches = ["ECAL_EndtracksPt"]
     X_TracksAtECAL = da.concatenate([\
                 da.from_delayed(\
                     load_X(tree,i,i+chunk_size, branches, readouts, scale[0]),\
                     shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
                     dtype=np.float32)\
                 for i in range(0,neff,chunk_size)])
-    print " >> %s: %s"%(branches[0],X_ECAL.shape)
+    #print " >> %s: %s"%(branches[0],X_ECAL.shape)
+
+    # Muons at ECAL
+    readouts = [280,360]
+    #branches = ["ECAL_tracksPt"]
+    #branches = ["ECAL_tracksQPt"]
+    branches = ["ECAL_muonsPt"]
+    X_MuonsAtECAL = da.concatenate([\
+                da.from_delayed(\
+                    load_X(tree,i,i+chunk_size, branches, readouts, scale[0]),\
+                    shape=(chunk_size, readouts[0], readouts[1], len(branches)),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    #print " >> %s: %s"%(branches[0],X_ECAL.shape)
+
+
 
     # HBHE upsample
     readouts = [56,72]
@@ -244,7 +280,7 @@ for j,decay in enumerate(decays):
     print " >> %s(upsampled): %s"%(branches[0],X_HBHE_up.shape)
     
     #X_MuonsAtECAL, 
-    X_ECAL_stacked = da.concatenate([X_TracksAtECAL, X_ECAL_EEup, X_HBHE_up], axis=-1)
+    X_ECAL_stacked = da.concatenate([X_MuonsAtECAL,X_TracksAtECAL, X_ECAL_EEup, X_HBHE_up], axis=-1)
     print " >> %s: %s"%('X_ECAL_stacked', X_ECAL_stacked.shape)
 
     # EB
@@ -265,9 +301,9 @@ for j,decay in enumerate(decays):
 
     # EE-
     readouts = [100,100]
-    branches = ["TracksPt_EEm","EEm_energy","HBHE_energy_EEm"]
-    #branches = ["EndTracksPt_EEm","EEm_energy","HBHE_energy_EEm"] # for pt weighted at ECAL face
-    #branches = ["TracksQPt_EEm","EEm_energy","HBHE_energy_EEm"] # for Qxpt weighted 
+    #branches = ["TracksPt_EEm","EEm_energy","HBHE_energy_EEm"]
+    branches = ["EndTracksPt_EEm","EEm_energy","HBHE_energy_EEm"]
+    #branches = ["TracksQPt_EEm","EEm_energy","HBHE_energy_EEm"]
     #branches = ["EEm_energy","HBHE_energy_EEm","Tracks_EEm"]
     X_EEm = da.concatenate([\
                 da.from_delayed(\
@@ -279,9 +315,9 @@ for j,decay in enumerate(decays):
 
     # EE+
     readouts = [100,100]
-    branches = ["TracksPt_EEp","EEp_energy","HBHE_energy_EEp"]
-    #branches = ["EndTracksPt_EEp","EEp_energy","HBHE_energy_EEp"] # for pt weighted at ECAL face
-    #branches = ["TracksQPt_EEp","EEp_energy","HBHE_energy_EEp"] # for Qxpt weighted
+    #branches = ["TracksPt_EEp","EEp_energy","HBHE_energy_EEp"]
+    branches = ["EndTracksPt_EEp","EEp_energy","HBHE_energy_EEp"]
+    #branches = ["TracksQPt_EEp","EEp_energy","HBHE_energy_EEp"]
     #branches = ["EEp_energy","HBHE_energy_EEp","Tracks_EEp"]
     X_EEp = da.concatenate([\
                 da.from_delayed(\
@@ -361,7 +397,7 @@ for j,decay in enumerate(decays):
     X_jets = da.concatenate([\
                 da.from_delayed(\
                     crop_jet_block(X_ECAL_stacked[i:i+chunk_size], jetSeed_iphi[i:i+chunk_size], jetSeed_ieta[i:i+chunk_size]),\
-                    shape=(chunk_size, jet_shape, jet_shape, 3),\
+                    shape=(chunk_size, jet_shape, jet_shape, 4),\
                     dtype=np.float32)\
                 for i in range(0,neff,chunk_size)])
 

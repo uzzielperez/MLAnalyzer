@@ -3,3 +3,4 @@
 *.txt
 *.pyc
 __init__.py
+log
