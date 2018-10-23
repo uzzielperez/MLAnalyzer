@@ -158,7 +158,10 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     void fillTRKvolumeAtEBEE( const edm::Event&, const edm::EventSetup& );
     //void fillTRKvolumeAtECAL( const edm::Event&, const edm::EventSetup& );
 
-    bool has_dijet( const edm::Event&, const edm::EventSetup& );
+    void branchesEvtSel_dijet_gg_qq( TTree*, edm::Service<TFileService>& );
+    bool runEvtSel_dijet_gg_qq( const edm::Event&, const edm::EventSetup& );
+
+    std::vector<int> vGoodJetIdxs;
 
     int nTotal, nPassed;
 

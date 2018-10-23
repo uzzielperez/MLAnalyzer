@@ -2,4 +2,6 @@
 *.log
 *.txt
 *.pyc
+*.cc
+*.h
 __init__.py
