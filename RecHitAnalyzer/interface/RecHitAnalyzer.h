@@ -99,6 +99,7 @@ class RecHitAnalyzer : public edm::EDAnalyzer  {
     edm::InputTag jetCollectionT_;
     edm::InputTag genJetCollectionT_;
     edm::InputTag trackCollectionT_;
+    edm::InputTag pfCandCollectionT_;
 
     // Diagnostic histograms
     //TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES]; 

@@ -70,6 +70,7 @@ process.fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , trackCollection = cms.InputTag("generalTracks")
     , photonID = cms.InputTag('PhotonIDProd:PhotonCutBasedIDLoose')
     , jetID = cms.InputTag('ak5JetID')
+    , pfCandCollection = cms.InputTag('particleFlow')
     )
 
 process.TFileService = cms.Service("TFileService",

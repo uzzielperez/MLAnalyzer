@@ -35,6 +35,10 @@ std::vector<float> vSubJetE_[nJets];
 std::vector<float> vSubJetPx_[nJets];
 std::vector<float> vSubJetPy_[nJets];
 std::vector<float> vSubJetPz_[nJets];
+std::vector<float> vSubJetN_E_;
+std::vector<float> vSubJetN_Px_;
+std::vector<float> vSubJetN_Py_;
+std::vector<float> vSubJetN_Pz_;
 std::vector<int> vGoodJetIdxs;
 std::vector<int> vJetIds;
 
@@ -77,6 +81,10 @@ void RecHitAnalyzer::branchesEvtSel_jet ( TTree* tree, edm::Service<TFileService
     sprintf(hname, "subJet%d_Pz", iJ);
     RHTree->Branch(hname,            &vSubJetPz_[iJ]);
   }
+  RHTree->Branch("subJetN_E",     &vSubJetN_E_);
+  RHTree->Branch("subJetN_Px",    &vSubJetN_Px_);
+  RHTree->Branch("subJetN_Py",    &vSubJetN_Py_);
+  RHTree->Branch("subJetN_Pz",    &vSubJetN_Pz_);
 
 } // branchesEvtSel_jet()
 
@@ -207,6 +215,30 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
     }
 
   } // good jets 
+
+  vSubJetN_E_.clear();
+  vSubJetN_Px_.clear();
+  vSubJetN_Py_.clear();
+  vSubJetN_Pz_.clear();
+  int nPF = 0;
+  for ( unsigned iJ(0); iJ != jets->size(); ++iJ ) {
+    reco::PFJetRef iJet( jets, iJ );
+    nPF += iJet->getPFConstituents().size();
+  }
+  std::cout << " nJetConstituents from jets:" << nPF << std::endl;
+
+  int nPFCand = 0;
+  edm::Handle<reco::PFCandidateCollection> pfCands;
+  iEvent.getByLabel(pfCandCollectionT_, pfCands);
+  for ( unsigned iC(0); iC != pfCands->size(); ++iC ) {
+    reco::PFCandidateRef iCand( pfCands, iC );
+    vSubJetN_E_.push_back( iCand->energy() );
+    vSubJetN_Px_.push_back( iCand->px() );
+    vSubJetN_Py_.push_back( iCand->py() );
+    vSubJetN_Pz_.push_back( iCand->pz() );
+    nPFCand++;
+  }
+  std::cout << " nJetConstituents from PF:" << nPFCand << std::endl;
 
   jet_eventId_ = iEvent.id().event();
   jet_runId_ = iEvent.id().run();

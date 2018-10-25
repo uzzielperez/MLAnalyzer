@@ -32,6 +32,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   jetCollectionT_ = iConfig.getParameter<edm::InputTag>("PFJetCollection");
   genJetCollectionT_ = iConfig.getParameter<edm::InputTag>("genJetCollection");
   trackCollectionT_ = iConfig.getParameter<edm::InputTag>("trackCollection");
+  pfCandCollectionT_ = iConfig.getParameter<edm::InputTag>("pfCandCollection");
 
   // Initialize file writer
   // NOTE: initializing dynamic-memory histograms outside of TFileService
