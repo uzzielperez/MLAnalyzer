@@ -4,13 +4,12 @@
 //
 // Package:    MLAnalyzer/RecHitAnalyzer
 // Class:      RecHitAnalyzer
-// 
+//
 //
 // Original Author:  Michael Andrews
 //         Created:  Sat, 14 Jan 2017 17:45:54 GMT
 //
 //
-
 
 // system include files
 #include <memory>
@@ -71,6 +70,7 @@
 #include "DataFormats/EgammaCandidates/interface/Photon.h"
 #include "DataFormats/EgammaCandidates/interface/PhotonFwd.h" // reco::PhotonCollection defined here
 #include "DataFormats/JetReco/interface/PFJet.h"
+#include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
 #include "DataFormats/JetReco/interface/GenJet.h"
 #include "DataFormats/JetReco/interface/GenJetCollection.h"
 #include "DataFormats/Math/interface/deltaR.h"
@@ -94,7 +94,6 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
     static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
-
   private:
     virtual void beginJob() override;
     virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
@@ -116,12 +115,6 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     typedef std::vector<reco::PFCandidate>  PFCollection;
     edm::EDGetTokenT<PFCollection> pfCollectionT_;
     //edm::InputTag trackTags_; //used to select what tracks to read from configuration file
-
-    double minJetPt_;
-    double maxJetEta_;
-    std::string mode_ = "EventLevel";  // EventLevel / JetLevel
-    bool doJets_;
-    int  nJets_;
 
     // Diagnostic histograms
     //TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES]; 
@@ -174,6 +167,21 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     const reco::PFCandidate* getPFCand(edm::Handle<PFCollection> pfCands, float eta, float phi, float& minDr, bool debug = false);
     const reco::Track* getTrackCand(edm::Handle<reco::TrackCollection> trackCands, float eta, float phi, float& minDr, bool debug = false);
 
+    // Jet level functions
+    std::string mode_;  // EventLevel / JetLevel
+    bool doJets_;
+    int  nJets_;
+    double minJetPt_;
+    double maxJetEta_;
+    std::vector<int> vJetIdxs;
+    void branchesEvtSel_jet_dijet      ( TTree*, edm::Service<TFileService>& );
+    void branchesEvtSel_jet_dijet_gg_qq( TTree*, edm::Service<TFileService>& );
+    bool runEvtSel_jet_dijet      ( const edm::Event&, const edm::EventSetup& );
+    bool runEvtSel_jet_dijet_gg_qq( const edm::Event&, const edm::EventSetup& );
+    void fillEvtSel_jet_dijet      ( const edm::Event&, const edm::EventSetup& );
+    void fillEvtSel_jet_dijet_gg_qq( const edm::Event&, const edm::EventSetup& );
+
+    int nTotal, nPassed;
 
 }; // class RecHitAnalyzer
 
@@ -181,6 +189,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 // constants, enums and typedefs
 //
 static const bool debug = true;
+//static const bool debug = false;
 
 static const int nEE = 2;
 static const int nTOB = 6;
