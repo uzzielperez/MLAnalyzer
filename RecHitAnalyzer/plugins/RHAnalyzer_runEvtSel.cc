@@ -40,14 +40,14 @@ void RecHitAnalyzer::branchesEvtSel ( TTree* tree, edm::Service<TFileService> &f
   h_jetE   = fs->make<TH1F>("h_jetE"  , "E;E;Particles"        , 100,  0., 800.);
   h_jetEta = fs->make<TH1F>("h_jetEta", "#eta;#eta;Particles"  , 100, -5., 5.);
 
-  RHTree->Branch("eventId",        &eventId_);
-  RHTree->Branch("runId",          &runId_);
-  RHTree->Branch("lumiId",         &lumiId_);
-  RHTree->Branch("m0",             &m0_);
-  RHTree->Branch("nJet",           &nJet_);
-  RHTree->Branch("FC_inputs",      &vFC_inputs_);
-  RHTree->Branch("diPhoE",         &diPhoE_);
-  RHTree->Branch("diPhoPt",        &diPhoPt_);
+  tree->Branch("eventId",        &eventId_);
+  tree->Branch("runId",          &runId_);
+  tree->Branch("lumiId",         &lumiId_);
+  tree->Branch("m0",             &m0_);
+  tree->Branch("nJet",           &nJet_);
+  tree->Branch("FC_inputs",      &vFC_inputs_);
+  tree->Branch("diPhoE",         &diPhoE_);
+  tree->Branch("diPhoPt",        &diPhoPt_);
 
 } // branchesEvtSel()
 

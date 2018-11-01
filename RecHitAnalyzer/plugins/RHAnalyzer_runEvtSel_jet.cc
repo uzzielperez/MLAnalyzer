@@ -41,6 +41,7 @@ std::vector<float> vSubJetN_Py_;
 std::vector<float> vSubJetN_Pz_;
 std::vector<int> vGoodJetIdxs;
 std::vector<int> vJetIds;
+std::vector<float> vDijet_inputs_;
 
 // Initialize branches _____________________________________________________//
 void RecHitAnalyzer::branchesEvtSel_jet ( TTree* tree, edm::Service<TFileService> &fs ) {
@@ -54,37 +55,38 @@ void RecHitAnalyzer::branchesEvtSel_jet ( TTree* tree, edm::Service<TFileService
   h_nQQ       = fs->make<TH1D>("h_nQQ"     , "nQQ;nQQ;Events"       ,   3,  0.,   3.);
 
   char hname[50];
-  RHTree->Branch("eventId",        &jet_eventId_);
-  RHTree->Branch("runId",          &jet_runId_);
-  RHTree->Branch("lumiId",         &jet_lumiId_);
+  tree->Branch("eventId",        &jet_eventId_);
+  tree->Branch("runId",          &jet_runId_);
+  tree->Branch("lumiId",         &jet_lumiId_);
   for ( unsigned iJ = 0; iJ != nJets; iJ++ ) {
     sprintf(hname, "jetM%d",  iJ);
-    RHTree->Branch(hname,            &vJet_m0_[iJ]);
+    tree->Branch(hname,            &vJet_m0_[iJ]);
     sprintf(hname, "jetPt%d", iJ);
-    RHTree->Branch(hname,            &vJet_pt_[iJ]);
+    tree->Branch(hname,            &vJet_pt_[iJ]);
     sprintf(hname, "jetSeed_iphi%d", iJ);
-    RHTree->Branch(hname,            &vJetSeed_iphi_[iJ]);
+    tree->Branch(hname,            &vJetSeed_iphi_[iJ]);
     sprintf(hname, "jetSeed_ieta%d", iJ);
-    RHTree->Branch(hname,            &vJetSeed_ieta_[iJ]);
+    tree->Branch(hname,            &vJetSeed_ieta_[iJ]);
     sprintf(hname, "jetIsQuark%d", iJ);
-    RHTree->Branch(hname,            &vJetIsQuark_[iJ]);
+    tree->Branch(hname,            &vJetIsQuark_[iJ]);
     sprintf(hname, "jetIds%d", iJ);
-    RHTree->Branch(hname,            &vJetIds_[iJ]);
+    tree->Branch(hname,            &vJetIds_[iJ]);
 
 
     sprintf(hname, "subJet%d_E", iJ);
-    RHTree->Branch(hname,            &vSubJetE_[iJ]);
+    tree->Branch(hname,            &vSubJetE_[iJ]);
     sprintf(hname, "subJet%d_Px", iJ);
-    RHTree->Branch(hname,            &vSubJetPx_[iJ]);
+    tree->Branch(hname,            &vSubJetPx_[iJ]);
     sprintf(hname, "subJet%d_Py", iJ);
-    RHTree->Branch(hname,            &vSubJetPy_[iJ]);
+    tree->Branch(hname,            &vSubJetPy_[iJ]);
     sprintf(hname, "subJet%d_Pz", iJ);
-    RHTree->Branch(hname,            &vSubJetPz_[iJ]);
+    tree->Branch(hname,            &vSubJetPz_[iJ]);
   }
-  RHTree->Branch("subJetN_E",     &vSubJetN_E_);
-  RHTree->Branch("subJetN_Px",    &vSubJetN_Px_);
-  RHTree->Branch("subJetN_Py",    &vSubJetN_Py_);
-  RHTree->Branch("subJetN_Pz",    &vSubJetN_Pz_);
+  tree->Branch("subJetN_E",     &vSubJetN_E_);
+  tree->Branch("subJetN_Px",    &vSubJetN_Px_);
+  tree->Branch("subJetN_Py",    &vSubJetN_Py_);
+  tree->Branch("subJetN_Pz",    &vSubJetN_Pz_);
+  tree->Branch("Dijet_inputs",     &vDijet_inputs_);
 
 } // branchesEvtSel_jet()
 
@@ -225,7 +227,7 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
     reco::PFJetRef iJet( jets, iJ );
     nPF += iJet->getPFConstituents().size();
   }
-  std::cout << " nJetConstituents from jets:" << nPF << std::endl;
+  if ( debug ) std::cout << " nJetConstituents from jets:" << nPF << std::endl;
 
   int nPFCand = 0;
   edm::Handle<reco::PFCandidateCollection> pfCands;
@@ -238,7 +240,18 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
     vSubJetN_Pz_.push_back( iCand->pz() );
     nPFCand++;
   }
-  std::cout << " nJetConstituents from PF:" << nPFCand << std::endl;
+  if ( debug ) std::cout << " nJetConstituents from PF:" << nPFCand << std::endl;
+
+  // Write out 4-momenta
+  float dphi[2] = {0., 0.};
+  vDijet_inputs_.clear();
+  for ( unsigned iJ(0); iJ != nJets; ++iJ ) {
+    reco::PFJetRef iJet( jets, vGoodJetIdxs[iJ] );
+    vDijet_inputs_.push_back( iJet->pt() );
+    vDijet_inputs_.push_back( iJet->eta() );
+    dphi[iJ] = iJet->phi();
+  }
+  vDijet_inputs_.push_back( TMath::Cos(reco::deltaPhi(dphi[0], dphi[1])) );
 
   jet_eventId_ = iEvent.id().event();
   jet_runId_ = iEvent.id().run();
@@ -303,6 +316,10 @@ bool RecHitAnalyzer::has_dijet( const edm::Event& iEvent, const edm::EventSetup&
   } // gen particles 
   h_jet_nJet->Fill( vGoodJetIdxs.size() );
   if ( vGoodJetIdxs.size() != nJets ) return false;
+  std::sort(vGoodJetIdxs.begin(), vGoodJetIdxs.end());
+  //for ( int thisJetIdx : vGoodJetIdxs ) {
+  //  std::cout << " index order:" << thisJetIdx << std::endl;
+  //}
 
   for ( unsigned iJ(0); iJ != nJets; ++iJ ) {
     if ( vJetIds[iJ] < 4 ) nQQ++;

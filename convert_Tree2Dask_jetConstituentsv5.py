@@ -1,19 +1,21 @@
 import numpy as np
 import ROOT
 from root_numpy import tree2array, root2array
-import glob
+import glob, os
 import h5py
 
 #eosDir='/eos/uscms/store/user/mba2012/IMGs'
-eosDir='/eos/uscms/store/user/mba2012/IMG'
+#eosDir='/eos/uscms/store/user/mba2012/IMG'
+eosDir='/eos/cms/store/user/mandrews/IMG'
 #eosDir='/uscms/home/mba2012/nobackup'
 #eosDir='~/work/MLHEP/CMSSW_8_0_26_patch1/src/ggAnalysis/ggNtuplizer/test'
 #eosDir='/eos/cms/store/user/mandrews/OPENDATA/IMGs/MGG90_Eta23'
 #decays = ['QCDToGG_Pt_80_120_13TeV_TuneCUETP8M1_noPU', 'QCDToQQ_Pt_80_120_13TeV_TuneCUETP8M1_noPU']
 #decays = ['dummy']
-list_idx = '00001'
-#date_str = '180919_131137'
-date_str = '181004_170631'
+list_idx = '00000'
+#list_idx = '00001'
+date_str = '181029_120833'
+#date_str = '181025_233834'
 decays = ['QCD_Pt_80_170_%s'%list_idx, 'QCD_Pt_80_170_%s'%list_idx]
 
 def load_X(tree, start_, stop_, branches_):
@@ -30,7 +32,7 @@ def load_single(tree, start_, stop_, branches_):
 
 for d,decay in enumerate(decays):
 
-  if d == 1:
+  if d == 0:
     pass
     #continue
   print ' >> decay:',d
@@ -86,6 +88,8 @@ for d,decay in enumerate(decays):
       print '  >> n_jets:', n_jets
 
       # Initialize output file
+      if not os.path.isdir("%s/%s_FC"%(eosDir,decay)):
+        os.makedirs("%s/%s_FC"%(eosDir,decay))
       file_out_str = '%s/%s_FC/%s_label%d_ijet%d_%s.hdf5'%(eosDir, decay, decay, d, ijet, n)
       print "  >> Writing to:", file_out_str
       f = h5py.File(file_out_str)

@@ -5,19 +5,22 @@ import dask.array as da
 import glob
 
 #eosDir='/eos/uscms/store/user/mba2012/IMGs'
-eosDir='/eos/uscms/store/user/mba2012/IMG'
+#eosDir='/eos/uscms/store/user/mba2012/IMG'
+eosDir='/eos/cms/store/user/mandrews/IMG'
 #decay = 'QCD_Pt_80_170_00000_IMGjet_RH1'
-list_idx = '00001'
+list_idx = '00000'
 decay = 'QCD_Pt_80_170_%s_IMGjet'%list_idx
 label = 0
 #label = 1
-files = glob.glob('%s/%s/%s_*_label%d_*_list%s_*.hdf5'%(eosDir,decay,decay,label,list_idx))
+ijet = 0
+#files = glob.glob('%s/%s/%s_*_label%d_*_list%s_*.hdf5'%(eosDir,decay,decay,label,list_idx))
+files = glob.glob('%s/%s/%s_*_label%d_jet%d_list%s_*.hdf5'%(eosDir,decay,decay,label,ijet,list_idx))
 print " >> N files:",len(files)
 #files = glob.glob('%s/%s/%s_RH1_n*_label%d.hdf5'%(eosDir,decay,decay,label))
 dsets = [h5py.File(f) for f in files]
 #tgtNjets = [213626, 294986, 276988]
-#tgtNjets = [107778, 148990, 140182]
-tgtNjets = [18136, 23770, 27747]
+tgtNjets = [107778, 148990, 140182] #00000
+#tgtNjets = [18136, 23770, 27747] #00001
 
 # runId
 jetEventId_ = da.concatenate([da.from_array(dset['jetEventId'], chunks=dset['jetEventId'].chunks) for dset in dsets])
@@ -93,7 +96,8 @@ for i,r in enumerate(runs):
   #jetRunId = runId[jetMask]
 
   #file_out_str = "test_jets.hdf5"
-  file_out_str = "%s/%s/%s_n%d_label%d_run%d.hdf5"%(eosDir, decay, decay, nJets, label, i)
+  #file_out_str = "%s/%s/%s_n%d_label%d_run%d.hdf5"%(eosDir, decay, decay, nJets, label, i)
+  file_out_str = "%s/%s/%s_n%d_label%d_jet%d_run%d.hdf5"%(eosDir, decay, decay, nJets, label, ijet, i)
   print " >> Writing to:", file_out_str
   da.to_hdf5(file_out_str, {
                             #'runId': runId,

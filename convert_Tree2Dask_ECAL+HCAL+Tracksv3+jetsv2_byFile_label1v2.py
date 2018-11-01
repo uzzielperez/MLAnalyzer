@@ -4,18 +4,19 @@ from root_numpy import tree2array, root2array
 from dask.delayed import delayed
 import dask.array as da
 from skimage.measure import block_reduce
-import glob
+import glob, os
 
 #eosDir='/eos/uscms/store/user/mba2012/IMGs'
-eosDir='/eos/uscms/store/user/mba2012/IMG'
+#eosDir='/eos/uscms/store/user/mba2012/IMG'
+eosDir='/eos/cms/store/user/mandrews/IMG'
 #eosDir='~/work/MLHEP/CMSSW_8_0_26_patch1/src/ggAnalysis/ggNtuplizer/test'
 #eosDir='/eos/cms/store/user/mandrews/OPENDATA/IMGs/MGG90_Eta23'
 #decays = ['QCDToGG_Pt_80_120_13TeV_TuneCUETP8M1_noPU', 'QCDToQQ_Pt_80_120_13TeV_TuneCUETP8M1_noPU']
 #decays = ['dummy']
-#list_idx = '00000'
-list_idx = '00001'
-#date_str = '180919_131137'
-date_str = '181004_170631'
+list_idx = '00000'
+#list_idx = '00001'
+date_str = '181029_120833'
+#date_str = '181025_233834'
 decays = ['QCD_Pt_80_170_%s'%list_idx, 'QCD_Pt_80_170_%s'%list_idx]
 
 #chunk_size_ = 250
@@ -169,14 +170,20 @@ for d,decay in enumerate(decays):
 
   tfile_idxs = glob.glob('%s/%s*_AODSIM/%s/*/output_*.root'%(eosDir,decay,date_str))
   tfile_idxs = [s.replace('.root','').split('_')[-1] for s in tfile_idxs]
+  tfile_idxs = [int(i) for i in tfile_idxs]
+  tfile_idxs.sort()
   print tfile_idxs
 
   #for n in tfile_idxs[:1]:
   for n in tfile_idxs:
-
+    
+    if n < 9:
+      pass
+      #continue
+    
     #tfile_str = 'output.root'
     #tfile_str = '%s/%s_AODSIM/180919_131137/*/output_1.root'%(eosDir, decay)
-    tfile_str = glob.glob('%s/%s*_AODSIM/%s/*/output_%s.root'%(eosDir,decay,date_str,n))[0]
+    tfile_str = glob.glob('%s/%s*_AODSIM/%s/*/output_%d.root'%(eosDir,decay,date_str,n))[0]
     tfile = ROOT.TFile(tfile_str)
     tree = tfile.Get('fevt/RHTree')
     nevts = tree.GetEntries()
@@ -281,7 +288,7 @@ for d,decay in enumerate(decays):
             np.full(len(eventId), label, dtype=np.float32),\
             chunks=eventId.chunks)
 
-    for ijet in [0]: # only keep leading jet
+    for ijet in [0, 1]: # only keep leading jet
 
       print ' >> ijet:',ijet
 
@@ -386,7 +393,9 @@ for d,decay in enumerate(decays):
       #file_out_str = "test_qg.hdf5"
       #file_out_str = "test_qqgg.hdf5"
       #file_out_str = "%s/%s_IMGjet_RH%d_n%dk_label%d_jet%d.hdf5"%(eosDir,decay,int(scale[0]),neff//1000,label,ijet)
-      file_out_str = "%s/%s_IMGjet/%s_IMGjet_RH%d_n%d_label%d_jet%d_list%s_%s.hdf5"%(eosDir,decay,decay,int(scale[0]),n_jets,label,ijet,list_idx,n)
+      if not os.path.isdir("%s/%s_IMGjet"%(eosDir,decay)):
+        os.makedirs("%s/%s_IMGjet"%(eosDir,decay))
+      file_out_str = "%s/%s_IMGjet/%s_IMGjet_RH%d_n%d_label%d_jet%d_list%s_%d.hdf5"%(eosDir,decay,decay,int(scale[0]),n_jets,label,ijet,list_idx,n)
       #file_out_str = "%s/%s_IMG_EBEEHBup_RH%d_n%dk.hdf5"%(eosDir,decay,int(scale[0]),neff//1000.)
       #file_out_str = "%s/%s_IMG_RH%d-%d_n%dk.hdf5"%(eosDir,decay,int(scale[0]),int(scale[1]),neff//1000.)
       print "  >> Writing to:", file_out_str

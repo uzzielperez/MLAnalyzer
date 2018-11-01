@@ -10,7 +10,7 @@ cfg='RecHitAnalyzer/python/ConfFile_cfg.py'
 #inputFiles_='root://eospublic.cern.ch//eos/opendata/cms/MonteCarlo2012/Summer12_DR53X/DiPhotonJets_M0_8TeV-madgraph/AODSIM/PU_RD1_START53_V7N-v1/10000/00665E6E-12D6-E211-9202-20CF305616E2.root'
 #inputFiles_='root://eospublic.cern.ch//eos/opendata/cms/MonteCarlo2012/Summer12_DR53X/WZJetsTo2L2Q_TuneZ2star_8TeV-madgraph-tauola/AODSIM/PU_RD1_START53_V7N-v1/10000/0037DF27-90D9-E211-9A2E-20CF3056170A.root'
 inputFiles_='root://eospublic.cern.ch//eos/opendata/cms/MonteCarlo2012/Summer12_DR53X/QCD_Pt_80_170_EMEnriched_TuneZ2star_8TeV_pythia6/AODSIM/PU_RD1_START53_V7N-v3/00000/001C975B-E099-E311-816C-0025905A610A.root'
-maxEvents_=-1
+maxEvents_=50
 skipEvents_=0 #9, 20
 
 cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d"%(cfg,inputFiles_,maxEvents_,skipEvents_)
