@@ -117,6 +117,7 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     float vPho_eta_[nPhotons];
     float vPho_phi_[nPhotons];
     float vPho_r9_[nPhotons];
+    float vPho_sieie_[nPhotons];
     float vSC_mass_[nPhotons];
     float vSC_DR_[nPhotons];
     float vSC_pT_[nPhotons];
@@ -206,6 +207,8 @@ SCRegressor::SCRegressor(const edm::ParameterSet& iConfig)
     RHTree->Branch(hname,      &vPho_phi_[iPho]);
     sprintf(hname, "pho_r9%d",iPho);
     RHTree->Branch(hname,      &vPho_r9_[iPho]);
+    sprintf(hname, "pho_sieie%d",iPho);
+    RHTree->Branch(hname,      &vPho_sieie_[iPho]);
   }
 }
 
@@ -360,7 +363,10 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     if ( iPho->pt() < ptCut ) continue;
     if ( std::abs(iPho->eta()) > etaCut ) continue;
     if ( debug ) std::cout << " >> pT: " << iPho->pt() << " eta: " << iPho->eta() << std::endl;
-    if ( iPho->r9() < 0.7 ) continue;
+    if ( iPho->r9() < 0.5 ) continue;
+    if ( iPho->hadTowOverEm() > 0.07 ) continue;
+    if ( iPho->full5x5_sigmaIetaIeta() > 0.0105 ) continue;
+    if ( iPho->hasPixelSeed() == true ) continue;
 
     isGenMatched = false;
     for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
@@ -498,6 +504,7 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     vPho_phi_[i] = iPho->phi();
     //std::cout << "r9: " << iPho->r9() << std::endl;
     vPho_r9_[i] = iPho->r9();
+    vPho_sieie_[i] = iPho->full5x5_sigmaIetaIeta(); 
   } // photons
   for ( int i = 0; i < nPi0; i++ ) {
     mPi0 = (vPhoPairs[i][0] + vPhoPairs[i][1]).mass();
