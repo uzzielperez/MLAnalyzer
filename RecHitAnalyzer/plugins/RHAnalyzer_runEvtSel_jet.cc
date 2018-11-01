@@ -230,10 +230,10 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
   if ( debug ) std::cout << " nJetConstituents from jets:" << nPF << std::endl;
 
   int nPFCand = 0;
-  edm::Handle<reco::PFCandidateCollection> pfCands;
-  iEvent.getByLabel(pfCandCollectionT_, pfCands);
-  for ( unsigned iC(0); iC != pfCands->size(); ++iC ) {
-    reco::PFCandidateRef iCand( pfCands, iC );
+  edm::Handle<reco::PFCandidateCollection> pfCandsH_;
+  iEvent.getByLabel(pfCandCollectionT_, pfCandsH_);
+  for ( unsigned iC(0); iC != pfCandsH_->size(); ++iC ) {
+    reco::PFCandidateRef iCand( pfCandsH_, iC );
     vSubJetN_E_.push_back( iCand->energy() );
     vSubJetN_Px_.push_back( iCand->px() );
     vSubJetN_Py_.push_back( iCand->py() );

@@ -2,4 +2,7 @@
 *.log
 *.txt
 *.pyc
+*.png
+*.hdf5
+.*.*
 __init__.py
