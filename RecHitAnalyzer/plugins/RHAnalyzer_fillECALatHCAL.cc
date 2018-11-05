@@ -54,7 +54,7 @@ void RecHitAnalyzer::fillECALatHCAL ( const edm::Event& iEvent, const edm::Event
         iRHit != EBRecHitsH_->end(); ++iRHit ) {
 
     energy_ = iRHit->energy();
-    if ( energy_ == 0. ) continue;
+    if ( energy_ <= zs ) continue;
     // Get position of cell centers
     pos = caloGeom->getPosition( iRHit->id() );
     eta = pos.eta();
@@ -71,7 +71,7 @@ void RecHitAnalyzer::fillECALatHCAL ( const edm::Event& iEvent, const edm::Event
         iRHit != EERecHitsH_->end(); ++iRHit ) {
 
     energy_ = iRHit->energy();
-    if ( energy_ == 0. ) continue;
+    if ( energy_ <= zs ) continue;
     // Get position of cell centers
     pos = caloGeom->getPosition( iRHit->id() );
     eta = pos.eta();
@@ -89,7 +89,7 @@ void RecHitAnalyzer::fillECALatHCAL ( const edm::Event& iEvent, const edm::Event
     for (int iphi = 1; iphi < hEvt_HBHE_EMenergy->GetNbinsX()+1; iphi++) {
 
       energy_ = hEvt_HBHE_EMenergy->GetBinContent( iphi, ieta );
-      if ( energy_ == 0. ) continue;
+      if ( energy_ <= zs ) continue;
       // NOTE: EB iphi = 1 does not correspond to physical phi = -pi so need to shift!
       iphi_ = iphi  + 38; // shift
       iphi_ = iphi_ > HBHE_IPHI_MAX ? iphi_-HBHE_IPHI_MAX : iphi_; // wrap-around

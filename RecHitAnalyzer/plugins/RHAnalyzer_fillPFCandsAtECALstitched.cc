@@ -60,7 +60,7 @@ void fillPFCandsAtECAL_with_EEproj ( TH2F *hEvt_EE_EndtracksPt_, TH2F *hEvt_EE_m
 
       EndtrackPt_ = hEvt_EE_EndtracksPt_->GetBinContent( iphi, ieta );
       muonPt_ = hEvt_EE_muonsPt_->GetBinContent( iphi, ieta );
-      if ( (EndtrackPt_ == 0.)  && (muonPt_ == 0.)) continue;
+      if ( (EndtrackPt_ <= zs)  && (muonPt_ <= zs)) continue;
       // NOTE: EB iphi = 1 does not correspond to physical phi = -pi so need to shift!
       iphi_ = iphi  + 5*38; // shift
       iphi_ = iphi_ > EB_IPHI_MAX ? iphi_-EB_IPHI_MAX : iphi_; // wrap-around
@@ -154,7 +154,7 @@ void RecHitAnalyzer::fillPFCandsAtECALstitched ( const edm::Event& iEvent, const
       EBDetId ebId( id );
       iphi_ = ebId.iphi() - 1;
       ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
-      if ( trackPt_ == 0. ) continue;
+      if ( trackPt_ <= zs ) continue;
       // Fill vector for image
       ieta_signed = ieta_;
       ieta_global = ieta_ + EB_IETA_MAX + ieta_global_offset;
