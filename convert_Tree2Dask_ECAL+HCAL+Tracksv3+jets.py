@@ -292,6 +292,7 @@ for d, decay in enumerate(decays):
             print "  >> Writing to:", file_out_str
             da.to_hdf5(file_out_str, {
                                       'eventId': eventId,
+                                      #'lumiId': lumiId,
                                       'runId': runId,
                                       'X_ECAL': X_ECAL,
                                       #'X_ECAL_EEup': X_ECAL_EEup,
