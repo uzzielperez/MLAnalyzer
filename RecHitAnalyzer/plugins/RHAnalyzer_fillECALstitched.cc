@@ -52,7 +52,7 @@ void fillECAL_with_EEproj ( TH2F *hEvt_EE_energy_, int ieta_global_offset, int i
     for (int iphi = 1; iphi < hEvt_EE_energy_->GetNbinsX()+1; iphi++) {
 
       energy_ = hEvt_EE_energy_->GetBinContent( iphi, ieta );
-      if ( energy_ == 0. ) continue;
+      if ( energy_ <= zs ) continue;
       // NOTE: EB iphi = 1 does not correspond to physical phi = -pi so need to shift!
       iphi_ = iphi  + 5*38; // shift
       iphi_ = iphi_ > EB_IPHI_MAX ? iphi_-EB_IPHI_MAX : iphi_; // wrap-around
@@ -93,7 +93,7 @@ void RecHitAnalyzer::fillECALstitched ( const edm::Event& iEvent, const edm::Eve
         iRHit != EERecHitsH_->end(); ++iRHit ) {
 
     energy_ = iRHit->energy();
-    if ( energy_ == 0. ) continue;
+    if ( energy_ <= zs ) continue;
     // Get detector id
     EEDetId eeId( iRHit->id() );
     iz_ = ( eeId.zside() > 0 ) ? 1 : 0;
@@ -117,7 +117,7 @@ void RecHitAnalyzer::fillECALstitched ( const edm::Event& iEvent, const edm::Eve
         iRHit != EBRecHitsH_->end(); ++iRHit ) {
 
     energy_ = iRHit->energy();
-    if ( energy_ == 0. ) continue;
+    if ( energy_ <= zs ) continue;
     // Get detector id and convert to histogram-friendly coordinates
     EBDetId ebId( iRHit->id() );
     iphi_ = ebId.iphi() - 1;

@@ -75,7 +75,7 @@ void RecHitAnalyzer::fillHCALatEBEE ( const edm::Event& iEvent, const edm::Event
       //energy_ = (ieta*iphi);
       //energy_ += 10.;
       energy_ = iRHit->energy();
-      if ( energy_ == 0. ) continue;
+      if ( energy_ <= zs ) continue;
       HcalDetId hId( iRHit->id() );
 
       if ( hId.ietaAbs() <= HBHE_IETA_MAX_EB ) continue;
@@ -157,7 +157,7 @@ void RecHitAnalyzer::fillHCALatEBEE ( const edm::Event& iEvent, const edm::Event
       iRHit != HBHERecHitsH_->end(); ++iRHit ) {
 
     energy_ = iRHit->energy();
-    if ( energy_ == 0. ) continue;
+    if ( energy_ <= zs ) continue;
     DetId id( spr::findDetIdECAL( caloGeom, eta, phi, false ) );
 
     if ( id.subdetId() == EcalBarrel ) continue; 
