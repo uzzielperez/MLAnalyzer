@@ -55,7 +55,7 @@ void RecHitAnalyzer::fillEE ( const edm::Event& iEvent, const edm::EventSetup& i
         iRHit != EERecHitsH_->end(); ++iRHit ) {
 
     energy_ = iRHit->energy();
-    if ( energy_ == 0. ) continue;
+    if ( energy_ <= zs ) continue;
     // Get detector id and convert to histogram-friendly coordinates
     EEDetId eeId( iRHit->id() );
     ix_ = eeId.ix() - 1;

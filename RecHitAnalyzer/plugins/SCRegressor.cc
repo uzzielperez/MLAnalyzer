@@ -130,6 +130,7 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 //
 // constants, enums and typedefs
 //
+static const float zs = 0.;
 
 //
 // static data member definitions
@@ -437,7 +438,7 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     // Apply selection on position of shower seed
     //std::cout << " >> Found: iphi_Emax,ieta_Emax: " << iphi_Emax << ", " << ieta_Emax << std::endl;
-    if ( Emax == 0. ) continue;
+    if ( Emax <= zs ) continue;
     if ( ieta_Emax > 169 - 15 || ieta_Emax < 15 ) continue;
     vGoodPhotonIdxs_.push_back( idx );
     vIphi_Emax.push_back( iphi_Emax );
@@ -530,6 +531,8 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   for(EcalRecHitCollection::const_iterator iRHit = EBRecHitsH->begin();
       iRHit != EBRecHitsH->end();
       ++iRHit) {
+
+    if ( iRHit->energy() < zs ) continue;
 
     // Convert detector coordinates to ordinals
     EBDetId ebId( iRHit->id() );

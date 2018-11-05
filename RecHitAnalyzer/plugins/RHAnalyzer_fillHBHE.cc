@@ -66,7 +66,7 @@ void RecHitAnalyzer::fillHBHE ( const edm::Event& iEvent, const edm::EventSetup&
         iRHit != HBHERecHitsH_->end(); ++iRHit ) {
 
     energy_ = iRHit->energy();
-    if ( energy_ == 0. ) continue;
+    if ( energy_ <= zs ) continue;
     // Get detector id and convert to histogram-friendly coordinates
     // NOTE: HBHE detector ids are indexed by (ieta,iphi,depth)!
     HcalDetId hId( iRHit->id() );
@@ -123,7 +123,7 @@ void RecHitAnalyzer::fillHBHE ( const edm::Event& iEvent, const edm::EventSetup&
     for (int iphi = 1; iphi < hEvt_HBHE_energy->GetNbinsX()+1; iphi++) {
 
       energy_ = hEvt_HBHE_energy->GetBinContent( iphi, ieta );
-      if ( energy_ == 0. ) continue;
+      if ( energy_ <= zs ) continue;
       idx_ = (ieta-1)*HBHE_IPHI_NUM + (iphi-1);
       // Fill vector for image
       vHBHE_energy_[idx_] = energy_;
