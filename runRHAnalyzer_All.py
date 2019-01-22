@@ -11,6 +11,7 @@ import re
 #listname = 'CMS_MonteCarlo2012_Summer12_DR53X_GluGluHToGG_M-125_8TeV-pythia6_AODSIM_PU_RD1_START53_V7N-v2_20000_file_index.txt'
 #listname = 'CMS_MonteCarlo2012_Summer12_DR53X_WZJetsTo2L2Q_TuneZ2star_8TeV-madgraph-tauola_AODSIM_PU_RD1_START53_V7N-v1_10000_file_index.txt'
 listname = 'CMS_MonteCarlo2012_Summer12_DR53X_QCD_Pt_80_170_EMEnriched_TuneZ2star_8TeV_pythia6_AODSIM_PU_RD1_START53_V7N-v3_00000_file_index.txt'
+#listname = 'list.txt'
 
 eosDir='/eos/cms/store/user/mandrews/OPENDATA'
 #decay='%s_FEVTDEBUG'%args.decay
@@ -30,11 +31,12 @@ decay = '%s_%s'%(proc,idx)
 print(decay)
 
 maxEvents_=-1
-maxEvents_=1
+#maxEvents_=1
 skipEvents_=0
 
 #cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d"%(cfg,inputFiles_,maxEvents_,skipEvents_)
 cmd="cmsRun %s inputFiles_load=LISTS/%s maxEvents=%d skipEvents=%d outputFile=%s/IMGs/%s_IMG.root"%(cfg,listname,maxEvents_,skipEvents_,eosDir,decay)
+#cmd="cmsRun %s inputFiles_load=LISTS/%s maxEvents=%d skipEvents=%d"%(cfg,listname,maxEvents_,skipEvents_)
 #print '%s'%cmd
 os.system(cmd)
 

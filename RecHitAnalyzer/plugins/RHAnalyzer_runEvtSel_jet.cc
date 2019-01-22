@@ -22,6 +22,7 @@ TH1D *h_jet_m0;
 TH1D *h_jet_nJet;
 TH1D *h_nGG;
 TH1D *h_nQQ;
+TH1D *h_ptHat;
 unsigned int jet_eventId_;
 unsigned int jet_runId_;
 unsigned int jet_lumiId_;
@@ -42,6 +43,7 @@ std::vector<float> vSubJetN_Pz_;
 std::vector<int> vGoodJetIdxs;
 std::vector<int> vJetIds;
 std::vector<float> vDijet_inputs_;
+math::PtEtaPhiELorentzVectorD vDijet;
 
 // Initialize branches _____________________________________________________//
 void RecHitAnalyzer::branchesEvtSel_jet ( TTree* tree, edm::Service<TFileService> &fs ) {
@@ -53,6 +55,7 @@ void RecHitAnalyzer::branchesEvtSel_jet ( TTree* tree, edm::Service<TFileService
   h_jet_m0    = fs->make<TH1D>("h_jet_m0"  , "m0;m0;Events"         ,  60, 50., 110.);
   h_nGG       = fs->make<TH1D>("h_nGG"     , "nGG;nGG;Events"       ,   3,  0.,   3.);
   h_nQQ       = fs->make<TH1D>("h_nQQ"     , "nQQ;nQQ;Events"       ,   3,  0.,   3.);
+  h_ptHat     = fs->make<TH1D>("h_ptHat"   , "ptHat;ptHat;Events"   , 100,  0., 200.);
 
   char hname[50];
   tree->Branch("eventId",        &jet_eventId_);
@@ -105,10 +108,11 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
   iSetup.get<CaloTopologyRecord>().get( caloTopoH_ );
   const CaloTopology *caloTopo = caloTopoH_.product();
   */
+  vDijet.SetPxPyPzE(0.,0.,0.,0.);
   bool genPassed = has_dijet( iEvent, iSetup );
   //bool genPassed = has_w2jet_z2invisible( iEvent, iSetup );
   if ( !genPassed ) return false; 
-  //if ( genPassed ) return true; 
+  //if ( genPassed  || !genPassed ) return true; 
 
   edm::Handle<reco::PFJetCollection> jets;
   iEvent.getByLabel(jetCollectionT_, jets);
@@ -257,6 +261,7 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
   jet_runId_ = iEvent.id().run();
   jet_lumiId_ = iEvent.id().luminosityBlock();
   if ( debug ) std::cout << " >> analyze: passed" << std::endl;
+  h_ptHat->Fill( vDijet.Pt() );
   return true;
 
 } // runEvtSel_jet()
@@ -293,6 +298,7 @@ bool RecHitAnalyzer::has_dijet( const edm::Event& iEvent, const edm::EventSetup&
     if ( iGen->status() != 3 ) continue;
     if ( debug ) std::cout << " >> id:" << iGen->pdgId() << " status:" << iGen->status() << " nDaught:" << iGen->numberOfDaughters() << " pt:"<< iGen->pt() << " eta:" <<iGen->eta() << " phi:" <<iGen->phi() << " nMoms:" <<iGen->numberOfMothers()<< std::endl;
 
+    vDijet += iGen->p4();
     // Loop over jets
     for ( unsigned iJ(0); iJ != jets->size(); ++iJ ) {
       //if ( debug ) std::cout << " >>>>>> jet[" << iJ << "]" << std::endl;
