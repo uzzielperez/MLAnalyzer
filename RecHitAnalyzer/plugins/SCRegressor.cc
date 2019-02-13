@@ -126,7 +126,8 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     float getEMJetMass( reco::GenJetRef, const GlobalPoint& );
     int nTotal, nPassed;
 
-    TProfile2D * hnPho;
+    //TProfile2D * hnPho;
+    TH2F * hnPho;
     TH2F * hnPhoGt2;
     TH1F * hdR_nPhoGt2;
     TH2F * hdPhidEta_nPhoGt2;
@@ -220,8 +221,10 @@ SCRegressor::SCRegressor(const edm::ParameterSet& iConfig)
     RHTree->Branch(hname,      &vPho_sieie_[iPho]);
   }
 
-  hnPho = fs->make<TProfile2D>("nPho", "N(m_{#pi},p_{T,#pi})_{reco};m_{#pi^{0}};p_{T,#pi^0}",
-      8, 0., 1.6, 8, 15., 100.);
+  //hnPho = fs->make<TProfile2D>("nPho", "N(m_{#pi},p_{T,#pi})_{reco};m_{#pi^{0}};p_{T,#pi^0}",
+      //8, 0., 1.6, 8, 15., 100.);
+  hnPho = fs->make<TH2F>("nPho", "N(m_{#pi},p_{T,#pi})_{reco};m_{#pi^{0}};p_{T,#pi^0}",
+      16, 0., 1.6, 17, 15., 100.);
   hnPhoGt2 = fs->make<TH2F>("nPhoGt2", "N_{#gamma #geq 2}(m_{#pi},p_{T,#pi})_{reco};m_{#pi^{0}};p_{T,#pi^0}",
       8, 0., 1.6, 8, 15., 100.);
   hdR_nPhoGt2 = fs->make<TH1F>("dR_nPho_gt_2", "#DeltaR(#gamma,#Gamma)_{reco};#DeltaR",
@@ -349,6 +352,8 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     if ( debug ) std::cout << " >> pdgId:111 nDaughters:" << iGen->numberOfDaughters() << std::endl;
     if ( iGen->numberOfDaughters() != 2 ) continue;
     //if ( iGen->mass() > 0.4 ) continue;
+    dR = reco::deltaR( iGen->daughter(0)->eta(),iGen->daughter(0)->phi(), iGen->daughter(1)->eta(),iGen->daughter(1)->phi() );
+    if ( dR > 5*.0174 ) continue;
 
     vGenPi0Idxs_.push_back( iG );
     //mGenPi0_GenPho.insert( std::pair<unsigned int, vector<int>>(iG, vector<int>()) );
@@ -403,6 +408,9 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if ( debug ) std::cout << "   >> !minDR_idx:" << minDR_idx << std::endl;
 
     } // gen photons 
+    dR = reco::deltaR( iGen->daughter(0)->eta(),iGen->daughter(0)->phi(), iGen->daughter(1)->eta(),iGen->daughter(1)->phi() );
+    if ( debug ) std::cout << "   >> gen dR:" << dR << std::endl;
+
   } // gen pi0s
 
   // Ensure only 1 reco photon associated to each gen pi0
@@ -444,6 +452,7 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if ( i == j ) continue;
       reco::PhotonRef jPho( photons, vRecoPhoIdxs_[j] ); 
       dR = reco::deltaR( iPho->eta(),iPho->phi(), jPho->eta(),jPho->phi() );
+      if ( debug ) std::cout << "   >> reco dR:" << dR << std::endl;
       if ( dR > 12*.0174 ) continue;
       isIso = false;
       break;
@@ -625,6 +634,7 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     vSC_mass_[i] = mPi0;
     hPt->Fill( iGen->pt() );
     hdPhidEta->Fill( dPhi, dEta, mPi0 );
+    hnPho->Fill( mPi0, iGen->pt() );
   }
   for ( int i = 0; i < nPhotons; i++ ) {
     //std::cout << "SC mass " << vSC_mass_[i] << std::endl;
