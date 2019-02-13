@@ -49,6 +49,7 @@ Implementation:
 #include "TTree.h"
 #include "TStyle.h"
 #include "TMath.h"
+#include "TProfile2D.h"
 
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/JetReco/interface/GenJetCollection.h"
@@ -124,6 +125,14 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
     float getEMJetMass( reco::GenJetRef, const GlobalPoint& );
     int nTotal, nPassed;
+
+    //TProfile2D * hnPho;
+    TH2F * hnPho;
+    TH2F * hnPhoGt2;
+    TH1F * hdR_nPhoGt2;
+    TH2F * hdPhidEta_nPhoGt2;
+    TProfile2D * hdPhidEta_jphoPt_o_iphoPt;
+    TH1F * hjphoPt_o_iphoPt;
 
 };
 
@@ -211,6 +220,21 @@ SCRegressor::SCRegressor(const edm::ParameterSet& iConfig)
     sprintf(hname, "pho_sieie%d",iPho);
     RHTree->Branch(hname,      &vPho_sieie_[iPho]);
   }
+
+  //hnPho = fs->make<TProfile2D>("nPho", "N(m_{#pi},p_{T,#pi})_{reco};m_{#pi^{0}};p_{T,#pi^0}",
+      //8, 0., 1.6, 8, 15., 100.);
+  hnPho = fs->make<TH2F>("nPho", "N(m_{#pi},p_{T,#pi})_{reco};m_{#pi^{0}};p_{T,#pi^0}",
+      16, 0., 1.6, 17, 15., 100.);
+  hnPhoGt2 = fs->make<TH2F>("nPhoGt2", "N_{#gamma #geq 2}(m_{#pi},p_{T,#pi})_{reco};m_{#pi^{0}};p_{T,#pi^0}",
+      8, 0., 1.6, 8, 15., 100.);
+  hdR_nPhoGt2 = fs->make<TH1F>("dR_nPho_gt_2", "#DeltaR(#gamma,#Gamma)_{reco};#DeltaR",
+      24, 0., 6.*0.0174);
+  hdPhidEta_nPhoGt2 = fs->make<TH2F>("dPhidEta_nPho_gt_2", "N_{#gamma,reco} #geq 2};#Delta#phi(#gamma,#Gamma);#Delta#eta(#gamma,#Gamma)",
+      6, 0., 6.*0.0174, 6, 0., 6.*0.0174);
+  hdPhidEta_jphoPt_o_iphoPt = fs->make<TProfile2D>("dPhidEta_jphoPt_o_iphoPt", "p_{T,#gamma} / p_{T,#Gamma};#Delta#phi(#gamma,#Gamma);#Delta#eta(#gamma,#Gamma)",
+      6, 0., 6.*0.0174, 6, 0., 6.*0.0174);
+  hjphoPt_o_iphoPt = fs->make<TH1F>("jphoPt_o_iphoPt", "p_{T,#gamma} / p_{T,#Gamma};f",
+      25, 0., 1.);
 }
 
 
@@ -312,28 +336,29 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   int iphi_, ieta_;
 
   std::vector<int> vGenPi0Idxs_;
-  std::vector<int> vGoodPhotonIdxs_;
-  std::vector<float> vIphi_Emax;
-  std::vector<float> vIeta_Emax;
   float dEta, dPhi, dR, mPi0;
 
   // ____________ Gen-level studies ________________ //
   int nPi0 = 0;
-  int idx = -1;
   //std::vector<math::PtEtaPhiELorentzVectorD> vPhoPairs[nPhotons];
   std::vector<math::XYZTLorentzVector> vPhoPairs[nPhotons];
-  for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
-       iGen != genParticles->end();
-       ++iGen) {
+  std::map<unsigned int, std::vector<unsigned int>> mGenPi0_RecoPho;
+  for ( unsigned int iG = 0; iG < genParticles->size(); iG++ ) {
 
-    idx++;
+    reco::GenParticleRef iGen( genParticles, iG );
     // ID cuts
     if ( debug ) std::cout << " >> pdgId:"<< iGen->pdgId() << " status:" << iGen->status() << " nDaughters:" << iGen->numberOfDaughters() << std::endl;
     if ( std::abs(iGen->pdgId()) != 111 ) continue;
     if ( debug ) std::cout << " >> pdgId:111 nDaughters:" << iGen->numberOfDaughters() << std::endl;
     if ( iGen->numberOfDaughters() != 2 ) continue;
     //if ( iGen->mass() > 0.4 ) continue;
-    vGenPi0Idxs_.push_back( idx );
+    dR = reco::deltaR( iGen->daughter(0)->eta(),iGen->daughter(0)->phi(), iGen->daughter(1)->eta(),iGen->daughter(1)->phi() );
+    if ( dR > 5*.0174 ) continue;
+
+    vGenPi0Idxs_.push_back( iG );
+    //mGenPi0_GenPho.insert( std::pair<unsigned int, vector<int>>(iG, vector<int>()) );
+    mGenPi0_RecoPho.insert( std::pair<unsigned int, std::vector<unsigned int>>(iG, std::vector<unsigned int>()) );
+
     for ( unsigned int iD = 0; iD < iGen->numberOfDaughters(); iD++ ) {
       const reco::Candidate* phoCand = iGen->daughter(iD);
       vPhoPairs[nPi0].push_back( getFinalP4(phoCand) );
@@ -344,23 +369,74 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   if ( nPi0 != nPhotons ) return;
 
   ////////// Apply selection and get coordinates of shower max //////////
-  float Emax;
-  int iphi_Emax, ieta_Emax;
-  int nPho = 0;
-  GlobalPoint pos_Emax;
-  float ptCut = 45., etaCut = 1.44;
-  std::vector<GlobalPoint> vPos_Emax;
-  bool isGenMatched;
-  // Loop over photons
-  idx = -1;
-  for(reco::PhotonCollection::const_iterator iPho = photons->begin();
-      iPho != photons->end();
-      ++iPho) {
+  //float ptCut = 45., etaCut = 1.44;
+  float ptCut = 15., etaCut = 1.44;
 
-    idx++;
+  // Get reco (pT>5GeV) photons associated to pi0
+  float minDR = 100.;
+  int minDR_idx = -1;
+  // Loop over pi0s
+  for ( auto& mG : mGenPi0_RecoPho ) {
 
-    // Apply reco selection
-    if ( debug ) std::cout << " >> pT: " << iPho->pt() << " eta: " << iPho->eta() << std::endl;
+    reco::GenParticleRef iGen( genParticles, mG.first );
+
+    if ( debug ) std::cout << " >> pi0[" << mG.first << "]"<< std::endl;
+    // Loop over photons from pi0
+    for ( unsigned int iD = 0; iD < iGen->numberOfDaughters(); iD++ ) {
+
+      const reco::Candidate* iGenPho = iGen->daughter(iD);
+
+      // Loop over reco photon collection
+      minDR = 100.;
+      minDR_idx = -1;
+      if ( debug ) std::cout << "  >> iD[" << iD << "]" << std::endl;
+      for ( unsigned int iP = 0; iP < photons->size(); iP++ ) {
+
+        reco::PhotonRef iPho( photons, iP );
+        if ( iPho->pt() < 5. ) continue;
+        dR = reco::deltaR( iPho->eta(),iPho->phi(), iGenPho->eta(),iGenPho->phi() );
+        if ( dR > minDR ) continue;
+
+        minDR = dR;
+        minDR_idx = iP;
+        if ( debug ) std::cout << "   >> minDR_idx:" << minDR_idx << " " << minDR << std::endl;
+
+      } // reco photons
+      if ( minDR > 0.04 ) continue;
+      //mG[mG.first].push_back( minDR_idx );
+      mG.second.push_back( minDR_idx );
+      if ( debug ) std::cout << "   >> !minDR_idx:" << minDR_idx << std::endl;
+
+    } // gen photons 
+    dR = reco::deltaR( iGen->daughter(0)->eta(),iGen->daughter(0)->phi(), iGen->daughter(1)->eta(),iGen->daughter(1)->phi() );
+    if ( debug ) std::cout << "   >> gen dR:" << dR << std::endl;
+
+  } // gen pi0s
+
+  // Ensure only 1 reco photon associated to each gen pi0
+  std::vector<int> vRecoPhoIdxs_;
+  for ( auto const& mG : mGenPi0_RecoPho ) {
+    if ( debug ) std::cout << " >> pi0[" << mG.first << "] size:" << mG.second.size() << std::endl; 
+    // Possibilities:
+    // 1) pho_gen1: unmatched, pho_gen2: unmatched => both reco pho failed pT cut or dR matching, reject
+    // 2) pho_gen1: reco-matched1, pho_gen1: unmatched => one reco pho failed pT cut or dR matching, can accept
+    // 3) pho_gen1: reco-matched1, pho_gen2: reco-matched2
+    //    3a) reco-matched1 == reco-matched2 => merged, accept
+    //    3b) reco-matched1 != reco-matched2 => resolved, reject
+    if ( mG.second.size() == 0 ) continue;
+    if ( mG.second.size() == 2 && mG.second[0] != mG.second[1] ) continue; // 2 resolved reco photons 
+    vRecoPhoIdxs_.push_back( mG.second[0] );
+  } 
+
+  // Ensure each of pi0-matched reco photons passes pre-selection
+  // NOTE: at this point there is 1-1 correspondence between pi0 and reco pho,
+  // so suffices to check there are as many pre-selected phos as pi0s
+  bool isIso;
+  std::vector<int> vPreselPhoIdxs_;
+  for ( unsigned int i = 0; i < vRecoPhoIdxs_.size(); i++ ) {
+
+    reco::PhotonRef iPho( photons, vRecoPhoIdxs_[i] );
+
     if ( iPho->pt() < ptCut ) continue;
     if ( std::abs(iPho->eta()) > etaCut ) continue;
     if ( debug ) std::cout << " >> pT: " << iPho->pt() << " eta: " << iPho->eta() << std::endl;
@@ -369,36 +445,116 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     if ( iPho->full5x5_sigmaIetaIeta() > 0.0105 ) continue;
     if ( iPho->hasPixelSeed() == true ) continue;
 
-    isGenMatched = false;
-    for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
-         iGen != genParticles->end();
-         ++iGen) {
+    // Ensure pre-sel photons are isolated 
+    isIso = true;
+    for ( unsigned int j = 0; j < vRecoPhoIdxs_.size(); j++ ) {
 
-      // ID cuts
+      if ( i == j ) continue;
+      reco::PhotonRef jPho( photons, vRecoPhoIdxs_[j] ); 
+      dR = reco::deltaR( iPho->eta(),iPho->phi(), jPho->eta(),jPho->phi() );
+      if ( debug ) std::cout << "   >> reco dR:" << dR << std::endl;
+      if ( dR > 12*.0174 ) continue;
+      isIso = false;
+      break;
+
+    } // reco photon j
+    if ( !isIso ) continue;
+
+    vPreselPhoIdxs_.push_back( vRecoPhoIdxs_[i] );
+
+  } // reco photon i
+
+  if ( vPreselPhoIdxs_.size() != nPhotons ) return;
+  //TODO: allow variable number of pre-selected photons to be saved per event
+
+  /*
+  // Loop over pre-selected photons
+  std::map<const reco::Candidate*, unsigned int> genRecoPhoMap;
+  for ( unsigned int i = 0; i < vPreselPhoIdxs_.size(); i++ ) {
+
+    reco::PhotonRef iPho( photons, vPreselPhoIdxs_[i] );
+
+    // Ensure only 1 pre-sel photon exists per gen pi0
+    for ( unsigned int iG = 0; iG < genParticles->size(); iG++ ) {
+
+      // Loop over gen photons from pi0
+      reco::GenParticleRef iGen( genParticles, iG );
       if ( std::abs(iGen->pdgId()) != 22 ) continue;
       if ( iGen->status() != 1 ) continue; // NOT the same as Pythia status
-      if ( !iGen->mother() ) continue;
-      //if ( iGen->mother()->pdgId() != 35 && iGen->mother()->pdgId() != 22 ) continue;
-      //if ( iGen->mother()->pdgId() != 35 ) continue;
       if ( iGen->mother()->pdgId() != 111 ) continue;
-      // Kinematic cuts
-      if ( std::abs(iGen->eta()) > etaCut ) continue;
-      if ( std::abs(iGen->pt()) < ptCut ) continue;
-      /*
-      std::cout << " >> pdgId:" << iGen->pdgId() << " status:" << iGen->status()
-        << " pT:" << iGen->pt() << " eta:" << iGen->eta() << " phi: " << iGen->phi() << " E:" << iGen->energy();
-        std::cout << " moth:" << iGen->mother()->pdgId();
-        std::cout << std::endl;
-      */
+
+      // Declare match to the pre-sel photon if within dR cone 
       dR = reco::deltaR( iPho->eta(),iPho->phi(), iGen->eta(),iGen->phi() );
       if ( dR > 0.04 ) continue;
-      isGenMatched = true;
+      //std::cout << " >> gen pho: " << iGen->eta() << ", " << iGen->phi() << ": " << iP <<std::endl;
+
+      // If no pre-sel photon matched to mother pi0, save pairing to dict
+      // If another pre-sel photon is matched to same pi0, declare as double-matched and completely remove pairing 
+      auto pi0It = genRecoPhoMap.find( iGen->mother() );
+
+      if ( pi0It == genRecoPhoMap.end() ) {
+        genRecoPhoMap.insert( std::pair<const reco::Candidate*, unsigned int>(iGen->mother(), vPreselPhoIdxs_[i]) );
+        //std::cout << " >> Adding: " << iGen->mother()->eta() << ", " << iGen->mother()->phi() << ": " << iP <<std::endl;
+      } else {
+        //std::cout << " >> Removing: " << iGen->mother()->eta() << ", " << iGen->mother()->phi() << ": " << iP <<std::endl;
+        genRecoPhoMap.erase( pi0It );
+      } 
+
       if ( debug ) std::cout << " >> GenPhoMatch | " << " pt:" << iGen->pt() << " dR: " << dR << std::endl;
+      break;
 
-    } // genParticle loop: count good photons
+    } // genParticles
+  } // good photons
 
-    //if ( !isGenMatched ) continue;
-    if ( isGenMatched || !isGenMatched ) ;
+  // dR studies
+  for ( auto const& iPhoMap : genRecoPhoMap ) {
+
+    reco::PhotonRef iPho( photons, iPhoMap.second );
+    //std::cout << " >> sel pho: " << iPhoMap.second << std::endl;
+
+    int nPhoInDR = 1;
+    for ( unsigned int j = 0; j < photons->size(); j++ ) {
+      if ( iPhoMap.second == j ) continue;
+      reco::PhotonRef iPhoCone( photons, j );
+      dR = reco::deltaR( iPho->eta(),iPho->phi(), iPhoCone->eta(),iPhoCone->phi() );
+      dEta = std::abs( iPho->eta() - iPhoCone->eta() );
+      dPhi = reco::deltaPhi( iPho->phi(), iPhoCone->phi() );
+      if ( dR > 0.0174*5 ) continue;
+      nPhoInDR++;
+      hdPhidEta_nPhoGt2->Fill( dPhi, dEta );
+      hdPhidEta_jphoPt_o_iphoPt->Fill( dPhi, dEta, iPhoCone->pt() / iPho->pt() ); 
+      hdR_nPhoGt2->Fill( dR );
+      hjphoPt_o_iphoPt->Fill( iPhoCone->pt() / iPho->pt() );
+      //std::cout << " >> DR:" << dR << " pT:" << iPho->pt() << std::endl;
+    }
+    //std::cout << " >> nPhoInDR:" << nPhoInDR << std::endl;
+    float mPi0gen_ = (vPhoPairs[0][0] + vPhoPairs[0][1]).mass();
+    reco::GenParticleRef iGen( genParticles, vGenPi0Idxs_[0] );
+    float ptPi0gen_ = iGen->pt(); 
+    //std::cout << " >> nPhoInDR:" << nPhoInDR << " m:" << mPi0gen_ << " pt:" << ptPi0gen_ << std::endl;
+
+    hnPho->Fill( mPi0gen_, ptPi0gen_, 1.*nPhoInDR );
+    if ( nPhoInDR > 1 ) hnPhoGt2->Fill( mPi0gen_, ptPi0gen_);
+    if ( nPhoInDR < 2 ) {
+      hdR_nPhoGt2->Fill( 0. );
+      hjphoPt_o_iphoPt->Fill( 0. );
+    }
+
+  } // dR studies
+  */
+
+  // Get coordinates of photon supercluster seed 
+  int nPho = 0;
+  int iphi_Emax, ieta_Emax;
+  float Emax;
+  GlobalPoint pos_Emax;
+  std::vector<GlobalPoint> vPos_Emax;
+  std::vector<int> vRegressPhoIdxs_;
+  std::vector<float> vIphi_Emax;
+  std::vector<float> vIeta_Emax;
+  for ( unsigned int i = 0; i < vPreselPhoIdxs_.size(); i++ ) {
+
+    reco::PhotonRef iPho( photons, vPreselPhoIdxs_[i] );
 
     // Get underlying super cluster
     reco::SuperClusterRef const& iSC = iPho->superCluster();
@@ -440,7 +596,7 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //std::cout << " >> Found: iphi_Emax,ieta_Emax: " << iphi_Emax << ", " << ieta_Emax << std::endl;
     if ( Emax <= zs ) continue;
     if ( ieta_Emax > 169 - 15 || ieta_Emax < 15 ) continue;
-    vGoodPhotonIdxs_.push_back( idx );
+    vRegressPhoIdxs_.push_back( vPreselPhoIdxs_[i] );
     vIphi_Emax.push_back( iphi_Emax );
     vIeta_Emax.push_back( ieta_Emax );
     vPos_Emax.push_back( pos_Emax );
@@ -452,52 +608,11 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // Enforce selection
   //std::cout << " >> nPho: " << nPho << std::endl;
   if ( nPho != nPhotons ) return;
-  std::cout << " >> Passed selection. " << std::endl;
-
-  /*
-  // Get inv mass of SC
-  // photons: massless
-  // jet: sum all genJet constituents
-  // Check if genJet
-  edm::Handle<reco::GenJetCollection> genJets;
-  iEvent.getByToken(genJetCollectionT_, genJets);
-  std::vector<float> vJetFakePhoIdxs;
-  //std::vector<float> vSC_mass_;
-  //vSC_mass_.assign( nPhotons, 0. );
-  float minDR;
-  int minDR_idx;
-  for ( unsigned int i = 0; i < nPhotons; i++ ) {
-    reco::PhotonRef iPho( photons, vGoodPhotonIdxs_[i] );
-    minDR = 100.;
-    minDR_idx = -1;
-    for ( unsigned int j = 0; j < genJets->size(); j++ ) {
-      if ( std::find(vJetFakePhoIdxs.begin(),vJetFakePhoIdxs.end(),j) != vJetFakePhoIdxs.end() ) continue;
-      reco::GenJetRef iJet( genJets, j );
-      dR = reco::deltaR( iPho->eta(),iPho->phi(), iJet->eta(),iJet->phi() );
-      if ( dR < minDR ) {
-        minDR = dR;
-        minDR_idx = j;
-      }
-    } // genJets
-    if ( debug ) std::cout << " >> JetDR:" << minDR << std::endl;
-    if ( minDR > 0.04 ) continue;
-
-    reco::GenJetRef iJet_( genJets, minDR_idx );
-    if ( debug ) std::cout << " >> JetDRmatched:" << minDR << " | iJet:" << minDR_idx << " pt:" << iJet_->pt() << std::endl;
-    if ( debug ) std::cout << " >> EMjet mass:" << getEMJetMass( iJet_, vPos_Emax[i] ) << std::endl;
-    //vSC_mass_[i] = getEMJetMass( iJet_, vPos_Emax[i] );
-    //if ( vSC_mass_[i] < 0.1 ) std::cout << "zero mass " << vSC_mass_[i] << std::endl;
-    //vSC_mass_[i] = 0.1;
-    vJetFakePhoIdxs.push_back( minDR_idx );
-  } // good photons
-  if ( debug ) std::cout << "nDRmatchedJets: " << vJetFakePhoIdxs.size() << std::endl;
-  if ( vJetFakePhoIdxs.size() != nPhotons ) return;
-  //if ( vJetFakePhoIdxs.size() != 1 ) return;
-  */
+  if ( debug ) std::cout << " >> Passed selection. " << std::endl;
 
   ////////// Store each shower crop //////////
   for ( unsigned int i = 0; i < nPhotons; i++ ) {
-    reco::PhotonRef iPho( photons, vGoodPhotonIdxs_[i] );
+    reco::PhotonRef iPho( photons, vRegressPhoIdxs_[i] );
     // Fill branch arrays
     vPho_pT_[i] = iPho->pt();
     vPho_E_[i] = iPho->energy();
@@ -519,13 +634,14 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     vSC_mass_[i] = mPi0;
     hPt->Fill( iGen->pt() );
     hdPhidEta->Fill( dPhi, dEta, mPi0 );
+    hnPho->Fill( mPi0, iGen->pt() );
   }
   for ( int i = 0; i < nPhotons; i++ ) {
     //std::cout << "SC mass " << vSC_mass_[i] << std::endl;
     hSC_mass->Fill( vSC_mass_[i] );
   }
 
-  //int idx;
+  int idx;
   int iphi_shift, ieta_shift;
   int iphi_crop, ieta_crop;
   for(EcalRecHitCollection::const_iterator iRHit = EBRecHitsH->begin();
