@@ -82,7 +82,6 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<reco::GenParticleCollection> genParticleCollectionT_;
     edm::EDGetTokenT<reco::GenJetCollection> genJetCollectionT_;
 
-
     static const int nPhotons = 2;
     //static const int nPhotons = 1;
 
@@ -92,8 +91,8 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<float> vEB_time_;
 
     //TH1D * histo;
-    TH2D * hSC_energy[nPhotons];
-    TH2D * hSC_time[nPhotons];
+    TProfile2D * hSC_energy;
+    TProfile2D * hSC_time;
     TH1F * hSC_mass;
     TH1F * hDR;
     TH1F * hdEta;
@@ -103,7 +102,10 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
     TTree* RHTree;
 
-    float eventId_;
+    unsigned int nPho;
+    unsigned long long eventId_;
+    unsigned int runId_;
+    unsigned int lumiId_;
 
     void branchesSC ( TTree*, edm::Service<TFileService>& );
     void branchesEB ( TTree*, edm::Service<TFileService>& );
@@ -115,26 +117,28 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     bool runPhoSel ( const edm::Event&, const edm::EventSetup& );
     void fillPhoSel     ( const edm::Event&, const edm::EventSetup& );
 
-    std::vector<int> vGenPi0Idxs_;
+    std::map<unsigned int, std::vector<unsigned int>> mGenPi0_RecoPho;
     std::vector<int> vPreselPhoIdxs_;
     std::vector<int> vRegressPhoIdxs_;
     std::vector<float> vIphi_Emax;
     std::vector<float> vIeta_Emax;
 
-    std::vector<float> vEB_SCenergy_;
-    std::vector<float> vSC_energy_[nPhotons];
-    std::vector<float> vSC_energyT_[nPhotons];
-    std::vector<float> vSC_energyZ_[nPhotons];
-    std::vector<float> vSC_time_[nPhotons];
-    float vPho_pT_[nPhotons];
-    float vPho_E_[nPhotons];
-    float vPho_eta_[nPhotons];
-    float vPho_phi_[nPhotons];
-    float vPho_r9_[nPhotons];
-    float vPho_sieie_[nPhotons];
-    float vSC_mass_[nPhotons];
-    float vSC_DR_[nPhotons];
-    float vSC_pT_[nPhotons];
+    //std::vector<std::vector<float>> vEB_SCenergy_;
+    std::vector<std::vector<float>> vSC_energy_;
+    std::vector<std::vector<float>> vSC_energyT_;
+    std::vector<std::vector<float>> vSC_energyZ_;
+    std::vector<std::vector<float>> vSC_time_;
+
+    std::vector<float> vPho_pT_;
+    std::vector<float> vPho_E_;
+    std::vector<float> vPho_eta_;
+    std::vector<float> vPho_phi_;
+    std::vector<float> vPho_r9_;
+    std::vector<float> vPho_sieie_;
+
+    std::vector<float> vSC_mass_;
+    std::vector<float> vSC_DR_;
+    std::vector<float> vSC_pT_;
 
     int nTotal, nPassed;
 
@@ -154,8 +158,8 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 static const float zs = 0.;
 
 static const int crop_size = 32;
-static const bool debug = true;
-//static const bool debug = false;
+//static const bool debug = true;
+static const bool debug = false;
 
 static const int EB_IPHI_MIN = EBDetId::MIN_IPHI;//1;
 static const int EB_IPHI_MAX = EBDetId::MAX_IPHI;//360;

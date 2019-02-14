@@ -1,50 +1,29 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/SCRegressor.h"
 
-const math::XYZTLorentzVector getFinalP4( const reco::Candidate* phoCand ) {
-  if ( phoCand->status() == 1 ) {
-    return phoCand->p4();
-  } else {
-    if ( phoCand->numberOfDaughters() == 1 )
-      return getFinalP4( phoCand->daughter(0) );
-    else
-      return phoCand->p4();
-  }
-}
-
 // Initialize branches _____________________________________________________//
 void SCRegressor::branchesPhoSel ( TTree* tree, edm::Service<TFileService> &fs )
 {
-  hSC_mass = fs->make<TH1F>("SC_mass", "m_{SC};m_{SC}",50, 0., 0.5);
-  hDR = fs->make<TH1F>("DR_seed_subJet", "#DeltaR(seed,subJet);#DeltaR",50, 0., 50.*0.0174);
-  hdEta = fs->make<TH1F>("dEta_seed_subJet", "#Delta#eta(seed,subJet);#Delta#eta",50, 0., 50.*0.0174);
-  hdPhi = fs->make<TH1F>("dPhi_seed_subJet", "#Delta#phi(seed,subJet);#Delta#phi",50, 0., 50.*0.0174);
-  hdPhidEta = fs->make<TH3F>("dPhidEta_GG", "#Delta(#phi,#eta,m);#Delta#phi(#gamma,#gamma);#Delta#eta(#gamma,#gamma);m",6, 0., 6.*0.0174, 6, 0., 6.*0.0174, 16., 0.,1.6);
-  hPt = fs->make<TH1F>("Pt", "Pt", 65, 30., 160.);
-
-  char hname[50];
-  for(int iPho (0); iPho < nPhotons; iPho++) {
-    sprintf(hname, "SC_mass%d",iPho);
-    RHTree->Branch(hname,          &vSC_mass_[iPho]);
-    sprintf(hname, "SC_DR%d",iPho);
-    RHTree->Branch(hname,          &vSC_DR_[iPho]);
-    sprintf(hname, "SC_pT%d",iPho);
-    RHTree->Branch(hname,          &vSC_pT_[iPho]);
-    sprintf(hname, "pho_pT%d",iPho);
-    RHTree->Branch(hname,      &vPho_pT_[iPho]);
-    sprintf(hname, "pho_E%d",iPho);
-    RHTree->Branch(hname,      &vPho_E_[iPho]);
-    sprintf(hname, "pho_eta%d",iPho);
-    RHTree->Branch(hname,      &vPho_eta_[iPho]);
-    sprintf(hname, "pho_phi%d",iPho);
-    RHTree->Branch(hname,      &vPho_phi_[iPho]);
-    sprintf(hname, "pho_r9%d",iPho);
-    RHTree->Branch(hname,      &vPho_r9_[iPho]);
-    sprintf(hname, "pho_sieie%d",iPho);
-    RHTree->Branch(hname,      &vPho_sieie_[iPho]);
-  }
-
+  //hSC_pT = fs->make<TH1F>("SC_pT", "Pt", 65, 30., 160.);
+  //hSC_mass = fs->make<TH1F>("SC_mass", "m_{SC};m_{SC}",50, 0., 0.5);
+  //hdR = fs->make<TH1F>("dR_seed_subJet", "#DeltaR(seed,subJet);#DeltaR",50, 0., 50.*0.0174);
+  //hdEta = fs->make<TH1F>("dEta_seed_subJet", "#Delta#eta(seed,subJet);#Delta#eta",50, 0., 50.*0.0174);
+  //hdPhi = fs->make<TH1F>("dPhi_seed_subJet", "#Delta#phi(seed,subJet);#Delta#phi",50, 0., 50.*0.0174);
+  hdPhidEta = fs->make<TH3F>("dPhidEta_GG", "#Delta(#phi,#eta,m);#Delta#phi(#gamma,#gamma);#Delta#eta(#gamma,#gamma);m",
+      6, 0., 6.*0.0174, 6, 0., 6.*0.0174, 16., 0.,1.6);
   hnPho = fs->make<TH2F>("nPho", "N(m_{#pi},p_{T,#pi})_{reco};m_{#pi^{0}};p_{T,#pi^0}",
       16, 0., 1.6, 17, 15., 100.);
+
+  RHTree->Branch("SC_mass",   &vSC_mass_);
+  RHTree->Branch("SC_DR",     &vSC_DR_);
+  RHTree->Branch("SC_pT",     &vSC_pT_);
+
+  RHTree->Branch("pho_pT",    &vPho_pT_);
+  RHTree->Branch("pho_E",     &vPho_E_);
+  RHTree->Branch("pho_eta",   &vPho_eta_);
+  RHTree->Branch("pho_phi",   &vPho_phi_);
+  RHTree->Branch("pho_r9",    &vPho_r9_);
+  RHTree->Branch("pho_sieie", &vPho_sieie_);
+
 }
 
 // Run event selection ___________________________________________________________________//
@@ -56,15 +35,9 @@ bool SCRegressor::runPhoSel ( const edm::Event& iEvent, const edm::EventSetup& i
   edm::Handle<reco::GenParticleCollection> genParticles;
   iEvent.getByToken(genParticleCollectionT_, genParticles);
 
-  //std::vector<int> vGenPi0Idxs_;
-  vGenPi0Idxs_.clear();
-
   // ____________ Gen-level studies ________________ //
-  int nPi0 = 0;
   float dR;
-  //std::vector<math::PtEtaPhiELorentzVectorD> vPhoPairs[nPhotons];
-  //std::vector<math::XYZTLorentzVector> vPhoPairs[nPhotons];
-  std::map<unsigned int, std::vector<unsigned int>> mGenPi0_RecoPho;
+  mGenPi0_RecoPho.clear();
   for ( unsigned int iG = 0; iG < genParticles->size(); iG++ ) {
 
     reco::GenParticleRef iGen( genParticles, iG );
@@ -77,14 +50,11 @@ bool SCRegressor::runPhoSel ( const edm::Event& iEvent, const edm::EventSetup& i
     dR = reco::deltaR( iGen->daughter(0)->eta(),iGen->daughter(0)->phi(), iGen->daughter(1)->eta(),iGen->daughter(1)->phi() );
     if ( dR > 5*.0174 ) continue;
 
-    vGenPi0Idxs_.push_back( iG );
     mGenPi0_RecoPho.insert( std::pair<unsigned int, std::vector<unsigned int>>(iG, std::vector<unsigned int>()) );
-    nPi0++;
 
   } // genParticle loop: count good photons
   if ( debug ) std::cout << " >> mGenPi0.size: " << mGenPi0_RecoPho.size() << std::endl;
-
-  if ( nPi0 != nPhotons ) return false;
+  if ( mGenPi0_RecoPho.empty() ) return false;
 
   ////////// Apply selection //////////
 
@@ -122,13 +92,12 @@ bool SCRegressor::runPhoSel ( const edm::Event& iEvent, const edm::EventSetup& i
 
       } // reco photons
       if ( minDR > 0.04 ) continue;
-      //mG[mG.first].push_back( minDR_idx );
       mG.second.push_back( minDR_idx );
       if ( debug ) std::cout << "   >> !minDR_idx:" << minDR_idx << std::endl;
 
     } // gen photons 
     dR = reco::deltaR( iGen->daughter(0)->eta(),iGen->daughter(0)->phi(), iGen->daughter(1)->eta(),iGen->daughter(1)->phi() );
-    if ( debug ) std::cout << "   >> gen dR:" << dR << std::endl;
+    if ( debug ) std::cout << " >> gen dR:" << dR << std::endl;
 
   } // gen pi0s
 
@@ -142,18 +111,12 @@ bool SCRegressor::runPhoSel ( const edm::Event& iEvent, const edm::EventSetup& i
     // 3) pho_gen1: reco-matched1, pho_gen2: reco-matched2
     //    3a) reco-matched1 == reco-matched2 => merged, accept
     //    3b) reco-matched1 != reco-matched2 => resolved, reject
-    if ( mG.second.size() == 0 ) {
-      //mGenPi0_RecoPho.erase( mG.first );
-      continue;
-    }
-    if ( mG.second.size() == 2 && mG.second[0] != mG.second[1] ) {
-      //mGenPi0_RecoPho.erase( mG.first );
-      continue; // 2 resolved reco photons 
-    }
+    if ( mG.second.empty() ) continue;
+    if ( mG.second.size() == 2 && mG.second[0] != mG.second[1] ) continue; // 2 resolved reco photons 
     vRecoPhoIdxs_.push_back( mG.second[0] );
   } 
   if ( debug ) std::cout << " >> RecoPhos.size: " << vRecoPhoIdxs_.size() << std::endl;
-  if ( debug ) std::cout << " >> mGenPi0.size: " << mGenPi0_RecoPho.size() << std::endl;
+  if ( vRecoPhoIdxs_.empty() ) return false;
 
   // Ensure each of pi0-matched reco photons passes pre-selection
   // NOTE: at this point there is 1-1 correspondence between pi0 and reco pho,
@@ -191,11 +154,8 @@ bool SCRegressor::runPhoSel ( const edm::Event& iEvent, const edm::EventSetup& i
     vPreselPhoIdxs_.push_back( vRecoPhoIdxs_[i] );
 
   } // reco photon i
-  if ( debug ) std::cout << " >> PreSelPhos.size: " << vRecoPhoIdxs_.size() << std::endl;
-
-  if ( vPreselPhoIdxs_.size() != nPhotons ) return false;
-  //TODO: allow variable number of pre-selected photons to be saved per event
-  //TODO: get rid of gen pi0s which are not regressed
+  if ( debug ) std::cout << " >> PreselPhos.size: " << vPreselPhoIdxs_.size() << std::endl;
+  if ( vPreselPhoIdxs_.empty() ) return false;
 
   if ( debug ) std::cout << " >> Passed selection. " << std::endl;
   return true;
@@ -207,47 +167,68 @@ void SCRegressor::fillPhoSel ( const edm::Event& iEvent, const edm::EventSetup& 
   edm::Handle<reco::PhotonCollection> photons;
   iEvent.getByToken(photonCollectionT_, photons);
 
-  ////////// Store each shower crop //////////
-  for ( unsigned int i = 0; i < vRegressPhoIdxs_.size(); i++ ) {
-    reco::PhotonRef iPho( photons, vRegressPhoIdxs_[i] );
-    // Fill branch arrays
-    vPho_pT_[i] = iPho->pt();
-    vPho_E_[i] = iPho->energy();
-    vPho_eta_[i] = iPho->eta();
-    vPho_phi_[i] = iPho->phi();
-    //std::cout << "r9: " << iPho->r9() << std::endl;
-    vPho_r9_[i] = iPho->r9();
-    vPho_sieie_[i] = iPho->full5x5_sigmaIetaIeta(); 
-  } // photons
-
   edm::Handle<reco::GenParticleCollection> genParticles;
   iEvent.getByToken(genParticleCollectionT_, genParticles);
 
+  // Eliminate gen pi0s which are unmatched
+  for ( auto const& mG : mGenPi0_RecoPho ) {
+    if ( mG.second.empty() ) {
+      mGenPi0_RecoPho.erase( mG.first );
+      continue;
+    }
+    if ( std::find(vRegressPhoIdxs_.begin(), vRegressPhoIdxs_.end(), mG.second[0]) == vRegressPhoIdxs_.end() )
+      mGenPi0_RecoPho.erase( mG.first );
+  }
+  if ( debug ) std::cout << " >> mGenPi0.size: " << mGenPi0_RecoPho.size() << std::endl;
+
+  if ( debug ) {
+    int iter_idx = 0;
+    for ( auto const& mG : mGenPi0_RecoPho ) {
+      std::cout << " >> mGenPi0_RecoPho[" << mG.first << "]: " << mG.second[0] << " vs. " << vRegressPhoIdxs_[iter_idx] << std::endl;
+      iter_idx++;
+    }
+  }
+
+  ////////// Store kinematics //////////
+  vPho_pT_.clear();
+  vPho_E_.clear();
+  vPho_eta_.clear();
+  vPho_phi_.clear();
+  vPho_r9_.clear();
+  vPho_sieie_.clear();
+  for ( auto const& mG : mGenPi0_RecoPho ) {
+    reco::PhotonRef iPho( photons, mG.second[0] );
+    // Fill branch arrays
+    vPho_pT_.push_back( iPho->pt() );
+    vPho_E_.push_back( iPho->energy() );
+    vPho_eta_.push_back( iPho->eta() );
+    vPho_phi_.push_back( iPho->phi() );
+    vPho_r9_.push_back( iPho->r9() );
+    vPho_sieie_.push_back( iPho->full5x5_sigmaIetaIeta() );
+  } // photons
+
+  vSC_DR_.clear();
+  vSC_pT_.clear();
+  vSC_mass_.clear();
   float dEta, dPhi, dR, mPi0, ptPi0;
-  //for ( int i = 0; i < nPi0; i++ ) {
-  for ( unsigned int i = 0; i < vGenPi0Idxs_.size(); i++ ) {
-    reco::GenParticleRef iGen( genParticles, vGenPi0Idxs_[i] );
-    //mPi0 = (vPhoPairs[i][0] + vPhoPairs[i][1]).mass();
-    //dR = reco::deltaR( vPhoPairs[i][0].eta(),vPhoPairs[i][0].phi(), vPhoPairs[i][1].eta(),vPhoPairs[i][1].phi() );
-    //dEta = std::abs( vPhoPairs[i][0].eta() - vPhoPairs[i][1].eta() );
-    //dPhi = reco::deltaPhi( vPhoPairs[i][0].phi(), vPhoPairs[i][1].phi() );
+  for ( auto const& mG : mGenPi0_RecoPho ) {
+    reco::GenParticleRef iGen( genParticles, mG.first );
     mPi0 = iGen->mass();
     ptPi0 = iGen->pt();
-
     dR = reco::deltaR( iGen->daughter(0)->eta(),iGen->daughter(0)->phi(), iGen->daughter(1)->eta(),iGen->daughter(1)->phi() );
     dEta = std::abs( iGen->daughter(0)->eta() - iGen->daughter(1)->eta() );
     dPhi = reco::deltaPhi( iGen->daughter(0)->phi(), iGen->daughter(1)->phi() );
-
     if ( debug ) std::cout << " >> m0:" << mPi0 << " dR:" << dR << " dPhi:" << dPhi << std::endl;
-    vSC_DR_[i] = dR;
-    vSC_pT_[i] = iGen->pt(); 
-    vSC_mass_[i] = mPi0;
 
-    hPt->Fill( ptPi0 );
+    vSC_DR_.push_back( dR );
+    vSC_pT_.push_back( iGen->pt() ); 
+    vSC_mass_.push_back( mPi0 );
+
+    //hPt->Fill( ptPi0 );
     hdPhidEta->Fill( dPhi, dEta, mPi0 );
     //hnPho->Fill( mPi0, iGen->pt() );
     hnPho->Fill( mPi0, ptPi0 );
-    hSC_mass->Fill( mPi0 );
+    //hSC_mass->Fill( mPi0 );
   }
 
 }

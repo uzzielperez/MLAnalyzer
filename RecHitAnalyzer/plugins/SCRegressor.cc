@@ -31,13 +31,15 @@ SCRegressor::SCRegressor(const edm::ParameterSet& iConfig)
 
   // Output Tree
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
+  RHTree->Branch("eventId", &eventId_);
+  RHTree->Branch("runId",   &runId_);
+  RHTree->Branch("lumiId",  &lumiId_);
+
   branchesPhoSel ( RHTree, fs );
-  branchesSC ( RHTree, fs );
-  branchesEB ( RHTree, fs );
-  RHTree->Branch("eventId",      &eventId_);
+  branchesSC     ( RHTree, fs );
+  branchesEB     ( RHTree, fs );
 
 }
-
 
 SCRegressor::~SCRegressor()
 {
@@ -47,7 +49,6 @@ SCRegressor::~SCRegressor()
 
 }
 
-
 //
 // member functions
 //
@@ -56,7 +57,6 @@ SCRegressor::~SCRegressor()
 void
 SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-  nTotal++;
   using namespace edm;
 
   edm::Handle<EcalRecHitCollection> EBRecHitsH;
@@ -72,15 +72,14 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // Run explicit jet selection
   bool hasPassed;
-  vGenPi0Idxs_.clear();
   vPreselPhoIdxs_.clear();
-  std::vector<math::XYZTLorentzVector> vPhoPairs[nPhotons];
-
+  nTotal += nPhotons;
   hasPassed = runPhoSel ( iEvent, iSetup );
   if ( !hasPassed ) return; 
 
   // Get coordinates of photon supercluster seed 
-  int nPho = 0;
+  //int nPho = 0;
+  nPho = 0;
   int iphi_Emax, ieta_Emax;
   float Emax;
   GlobalPoint pos_Emax;
@@ -143,16 +142,19 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   } // Photons
 
   // Enforce selection
-  //std::cout << " >> nPho: " << nPho << std::endl;
-  if ( nPho != nPhotons ) return;
+  if ( debug ) std::cout << " >> nPho: " << nPho << std::endl;
+  if ( nPho == 0 ) return;
   if ( debug ) std::cout << " >> Passed cropping. " << std::endl;
 
-  fillPhoSel( iEvent, iSetup );
-  fillSC( iEvent, iSetup );
-  fillEB( iEvent, iSetup );
+  fillPhoSel ( iEvent, iSetup );
+  fillSC     ( iEvent, iSetup );
+  fillEB     ( iEvent, iSetup );
 
   eventId_ = iEvent.id().event();
-  nPassed++;
+  runId_ = iEvent.id().run();
+  lumiId_ = iEvent.id().luminosityBlock();
+  //nPassed++;
+  nPassed += nPho;
 
   RHTree->Fill();
 
