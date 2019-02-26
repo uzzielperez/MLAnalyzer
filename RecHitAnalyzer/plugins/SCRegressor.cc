@@ -35,7 +35,11 @@ SCRegressor::SCRegressor(const edm::ParameterSet& iConfig)
   RHTree->Branch("runId",   &runId_);
   RHTree->Branch("lumiId",  &lumiId_);
 
+  RHTree->Branch("SC_iphi", &vIphi_Emax_);
+  RHTree->Branch("SC_ieta", &vIeta_Emax_);
+
   branchesPhoSel ( RHTree, fs );
+  //branchesPhoSel_gamma ( RHTree, fs );
   branchesSC     ( RHTree, fs );
   branchesEB     ( RHTree, fs );
 
@@ -75,6 +79,7 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   vPreselPhoIdxs_.clear();
   nTotal += nPhotons;
   hasPassed = runPhoSel ( iEvent, iSetup );
+  //hasPassed = runPhoSel_gamma ( iEvent, iSetup );
   if ( !hasPassed ) return; 
 
   // Get coordinates of photon supercluster seed 
@@ -84,8 +89,8 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   float Emax;
   GlobalPoint pos_Emax;
   std::vector<GlobalPoint> vPos_Emax;
-  vIphi_Emax.clear();
-  vIeta_Emax.clear();
+  vIphi_Emax_.clear();
+  vIeta_Emax_.clear();
   vRegressPhoIdxs_.clear();
   int iphi_, ieta_; // rows:ieta, cols:iphi
   for ( unsigned int i = 0; i < vPreselPhoIdxs_.size(); i++ ) {
@@ -133,8 +138,8 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     if ( Emax <= zs ) continue;
     if ( ieta_Emax > 169 - 15 || ieta_Emax < 15 ) continue;
     vRegressPhoIdxs_.push_back( vPreselPhoIdxs_[i] );
-    vIphi_Emax.push_back( iphi_Emax );
-    vIeta_Emax.push_back( ieta_Emax );
+    vIphi_Emax_.push_back( iphi_Emax );
+    vIeta_Emax_.push_back( ieta_Emax );
     vPos_Emax.push_back( pos_Emax );
     //std::cout << " >> Found: iphi_Emax,ieta_Emax: " << iphi_Emax << ", " << ieta_Emax << std::endl;
     nPho++;
@@ -147,6 +152,7 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   if ( debug ) std::cout << " >> Passed cropping. " << std::endl;
 
   fillPhoSel ( iEvent, iSetup );
+  //fillPhoSel_gamma ( iEvent, iSetup );
   fillSC     ( iEvent, iSetup );
   fillEB     ( iEvent, iSetup );
 

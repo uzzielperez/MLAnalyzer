@@ -46,9 +46,10 @@ bool SCRegressor::runPhoSel ( const edm::Event& iEvent, const edm::EventSetup& i
     if ( std::abs(iGen->pdgId()) != 111 ) continue;
     if ( debug ) std::cout << " >> pdgId:111 nDaughters:" << iGen->numberOfDaughters() << std::endl;
     if ( iGen->numberOfDaughters() != 2 ) continue;
-    //if ( iGen->mass() > 0.4 ) continue;
+    ///*
     dR = reco::deltaR( iGen->daughter(0)->eta(),iGen->daughter(0)->phi(), iGen->daughter(1)->eta(),iGen->daughter(1)->phi() );
-    if ( dR > 5*.0174 ) continue;
+    if ( dR > 10*.0174 ) continue;
+    //*/
 
     mGenPi0_RecoPho.insert( std::pair<unsigned int, std::vector<unsigned int>>(iG, std::vector<unsigned int>()) );
 
@@ -136,6 +137,7 @@ bool SCRegressor::runPhoSel ( const edm::Event& iEvent, const edm::EventSetup& i
     if ( iPho->full5x5_sigmaIetaIeta() > 0.0105 ) continue;
     if ( iPho->hasPixelSeed() == true ) continue;
 
+    ///*
     // Ensure pre-sel photons are isolated 
     isIso = true;
     for ( unsigned int j = 0; j < vRecoPhoIdxs_.size(); j++ ) {
@@ -144,12 +146,13 @@ bool SCRegressor::runPhoSel ( const edm::Event& iEvent, const edm::EventSetup& i
       reco::PhotonRef jPho( photons, vRecoPhoIdxs_[j] ); 
       dR = reco::deltaR( iPho->eta(),iPho->phi(), jPho->eta(),jPho->phi() );
       if ( debug ) std::cout << "   >> reco dR:" << dR << std::endl;
-      if ( dR > 12*.0174 ) continue;
+      if ( dR > 16*.0174 ) continue;
       isIso = false;
       break;
 
     } // reco photon j
     if ( !isIso ) continue;
+    //*/
 
     vPreselPhoIdxs_.push_back( vRecoPhoIdxs_[i] );
 

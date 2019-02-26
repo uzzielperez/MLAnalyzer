@@ -98,7 +98,7 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     TH1F * hdEta;
     TH1F * hdPhi;
     TH3F * hdPhidEta;
-    TH1F * hPt;
+    TH1F * hSC_pT;
 
     TTree* RHTree;
 
@@ -116,12 +116,15 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     void branchesPhoSel ( TTree*, edm::Service<TFileService>& );
     bool runPhoSel ( const edm::Event&, const edm::EventSetup& );
     void fillPhoSel     ( const edm::Event&, const edm::EventSetup& );
+    void branchesPhoSel_gamma ( TTree*, edm::Service<TFileService>& );
+    bool runPhoSel_gamma ( const edm::Event&, const edm::EventSetup& );
+    void fillPhoSel_gamma     ( const edm::Event&, const edm::EventSetup& );
 
     std::map<unsigned int, std::vector<unsigned int>> mGenPi0_RecoPho;
     std::vector<int> vPreselPhoIdxs_;
     std::vector<int> vRegressPhoIdxs_;
-    std::vector<float> vIphi_Emax;
-    std::vector<float> vIeta_Emax;
+    std::vector<float> vIphi_Emax_;
+    std::vector<float> vIeta_Emax_;
 
     //std::vector<std::vector<float>> vEB_SCenergy_;
     std::vector<std::vector<float>> vSC_energy_;
