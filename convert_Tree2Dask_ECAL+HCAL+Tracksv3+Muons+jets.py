@@ -11,8 +11,8 @@ eosDir='/eos/cms/store/user/mandrews/OPENDATA/IMGs/MGG90_Eta23'
 decays = ['DiPhotonBorn_MGG90_Eta23', 'GluGluHToGG_MGG90_Eta23', 'GJet_MGG90_Eta23']
 decays = ['dummy']
 
-#chunk_size_ = 250
-chunk_size_ = 200
+chunk_size_ = 250
+#chunk_size_ = 1000
 #scale = [100., 150.]
 scale = [1., 1.]
 jet_shape = 125
@@ -163,7 +163,8 @@ for j,decay in enumerate(decays):
         pass
         #continue
 
-    tfile_str = 'output.root'
+    #tfile_str = 'output_B.root'
+    tfile_str = '/eos/uscms/store/user/jda102/IMGs/NonBJetNew_IMG.root'
     #tfile_str = 'output_numEvent20.root'
     #tfile_str = '%s/%s_IMG.root'%(eosDir,decay)
     #tfile_str = '%s/ggtree_mc_single.root'%(eosDir)
@@ -178,8 +179,10 @@ for j,decay in enumerate(decays):
     #neff = 175000
     #neff = 135600
     #neff = 200
-    neff = int(nevts)
+
+    #neff = int(nevts)
     chunk_size = chunk_size_
+    neff = (nevts//chunk_size)*chunk_size
     if neff < chunk_size:
       chunk_size = neff
     if neff > nevts:
@@ -374,6 +377,50 @@ for j,decay in enumerate(decays):
                 for i in range(0,neff,chunk_size)])
     print " >> Expected shape m0:", m0.shape
 
+    # jet_pT
+    branches = ["jet_pT"]
+    jet_pT = da.concatenate([\
+                da.from_delayed(\
+                    load_vector(tree,i,i+chunk_size, branches),\
+                    shape=(chunk_size,),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> Expected shape jet_pT:", jet_pT.shape
+
+    # jet_eta
+    branches = ["jet_eta"]
+    jet_eta = da.concatenate([\
+                da.from_delayed(\
+                    load_vector(tree,i,i+chunk_size, branches),\
+                    shape=(chunk_size,),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> Expected shape jet_eta:", jet_eta.shape
+
+    # jet_phi
+    branches = ["jet_phi"]
+    jet_phi = da.concatenate([\
+                da.from_delayed(\
+                    load_vector(tree,i,i+chunk_size, branches),\
+                    shape=(chunk_size,),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> Expected shape jet_phi:", jet_phi.shape
+
+
+
+    # jet_truthLabel
+    branches = ["jet_truthLabel"]
+    jet_truthLabel = da.concatenate([\
+            da.from_delayed(\
+                load_vector(tree,i,i+chunk_size, branches),\
+                    shape=(chunk_size,),\
+                    dtype=np.float32)\
+                for i in range(0,neff,chunk_size)])
+    print " >> Expected shape jet_truthLabel:", jet_truthLabel.shape
+
+
+
     # jet seed iphi
     branches = ["jetSeed_iphi"]
     jetSeed_iphi = da.concatenate([\
@@ -435,6 +482,10 @@ for j,decay in enumerate(decays):
                               'jetSeed_ieta': jetSeed_ieta,
                               'X_jets': X_jets,
                               'm0': m0,
+                              'jet_pT': jet_pT,
+                              'jet_eta': jet_eta,
+                              'jet_phi': jet_phi,
+                              'jet_truthLabel': jet_truthLabel,
                               '/y': y
                               }, compression='lzf')
 

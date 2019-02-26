@@ -12,7 +12,7 @@ decays = ['DiPhotonBorn_MGG90_Eta23', 'GluGluHToGG_MGG90_Eta23', 'GJet_MGG90_Eta
 decays = ['dummy']
 
 #chunk_size_ = 250
-chunk_size_ = 200
+chunk_size_ = 1000
 #scale = [100., 150.]
 scale = [1., 1.]
 jet_shape = 125
@@ -153,7 +153,7 @@ for j,decay in enumerate(decays):
         pass
         #continue
 
-    tfile_str = 'output.root'
+    tfile_str = 'output_B.root'
     #tfile_str = 'output_numEvent20.root'
     #tfile_str = '%s/%s_IMG.root'%(eosDir,decay)
     #tfile_str = '%s/ggtree_mc_single.root'%(eosDir)
@@ -179,6 +179,7 @@ for j,decay in enumerate(decays):
     print " >> Input file:", tfile_str
     print " >> Total events:", nevts
     print " >> Effective events:", neff
+    print " >> Chunk_size:", chunk_size
 
 
 
@@ -374,7 +375,7 @@ for j,decay in enumerate(decays):
             np.full(len(m0), label, dtype=np.float32),\
             chunks=(chunk_size,))
     print " >> y shape:",y.shape
-    file_out_str = "test_jets.hdf5"
+    file_out_str = "test_jetsNew.hdf5"
     #file_out_str = "test%d_numEvent1.hdf5"%label
     #file_out_str = "%s/%s_IMGall_RH%d_n%d_label%d.hdf5"%(eosDir,decay,int(scale[0]),neff,label)
     #file_out_str = "%s/%s_IMG_RH%d_n%dk.hdf5"%(eosDir,decay,int(scale[0]),neff//1000.)

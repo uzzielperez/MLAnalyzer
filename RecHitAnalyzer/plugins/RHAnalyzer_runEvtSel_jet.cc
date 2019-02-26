@@ -21,6 +21,11 @@ const int search_window = 7;
 const int image_padding = 12;
 vector<float> vJetSeed_iphi_;
 vector<float> vJetSeed_ieta_;
+vector<float> vJet_pT_;
+vector<float> vJet_truthLabel_;
+
+vector<float> vJet_eta_;
+vector<float> vJet_phi_;
 
 // Initialize branches _____________________________________________________//
 void RecHitAnalyzer::branchesEvtSel_jet ( TTree* tree, edm::Service<TFileService> &fs ) {
@@ -33,8 +38,16 @@ void RecHitAnalyzer::branchesEvtSel_jet ( TTree* tree, edm::Service<TFileService
 
   RHTree->Branch("eventId",        &jet_eventId_);
   RHTree->Branch("m0",             &jet_m0_);
+  RHTree->Branch("jet_pT",         &vJet_pT_);
+  RHTree->Branch("jet_truthLabel", &vJet_truthLabel_);
   RHTree->Branch("jetSeed_iphi",   &vJetSeed_iphi_);
   RHTree->Branch("jetSeed_ieta",   &vJetSeed_ieta_);
+
+  // Debugging 
+  RHTree->Branch("jet_eta",        &vJet_eta_);
+  RHTree->Branch("jet_phi",        &vJet_phi_);
+
+
 
 } // branchesEvtSel_jet()
 
@@ -58,11 +71,19 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
   iEvent.getByToken(jetCollectionT_, jets);
   if ( debug ) std::cout << " >> PFJetCol.size: " << jets->size() << std::endl;
 
+  edm::Handle<reco::GenParticleCollection> genParticles;
+  iEvent.getByToken( genParticleCollectionT_, genParticles );
+
 
   int nJet = 0;
   vector<int>       jetIdx;
   vJetSeed_iphi_.clear();
   vJetSeed_ieta_.clear();
+  vJet_pT_.clear();
+  vJet_truthLabel_.clear();
+
+  vJet_eta_.clear();
+  vJet_phi_.clear();
 
   // Loop over jets
   for ( unsigned iJ(0); iJ != jets->size(); ++iJ ) {
@@ -70,9 +91,11 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
     reco::PFJetRef iJet( jets, iJ );
     if ( std::abs(iJet->pt()) < minJetPt_ ) continue;
     if ( std::abs(iJet->eta()) > maxJetEta_) continue;
-    //if ( iJet->mass() < 50. || iJet->mass() > 110. ) continue;
-    if ( debug ) std::cout << " >> jet[" << iJ << "]Pt:" << iJet->pt() << " jetE:" << iJet->energy() << " jetM:" << iJet->mass() << std::endl;
 
+    //if ( iJet->mass() < 50. || iJet->mass() > 110. ) continue;
+    if ( debug ) std::cout << " >> jet[" << iJ << "]Pt:" << iJet->pt()  << " Eta:" << iJet->eta()  << " Phi:" << iJet->phi() 
+			   << " jetE:" << iJet->energy() << " jetM:" << iJet->mass() << std::endl;
+    
     // Get closest HBHE tower to jet position
     // This will not always be the most energetic deposit
     HcalDetId hId( spr::findDetIdHCAL( caloGeom, iJet->eta(), iJet->phi(), false ) );
@@ -130,16 +153,42 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
     // If the seed is too close to the edge of HE, discard event
     // Required to keep the seed at the image center
     if ( HBHE_IETA_MAX_HE-1 - ietaAbs_ < image_padding ) {
-      if ( debug ) std::cout << " Fail HE edge cut " << std::endl;
+      if ( debug ) std::cout << " Fail HE edge cut. jet eta = " << std::abs(iJet->eta()) <<std::endl;
       continue;
     }
-
+    if ( debug ) std::cout << " Pass HE edge cut. jet eta = " << std::abs(iJet->eta()) <<std::endl;
 
     if ( debug ) std::cout << " !! ieta_:" << ieta_ << " iphi_:" << iphi_ << " ietaAbs_:" << ietaAbs_ << " E:" << seedE << std::endl;
     
     jetIdx        .push_back(iJ);
     vJetSeed_iphi_.push_back(iphi_);
     vJetSeed_ieta_.push_back(ieta_);
+    vJet_pT_      .push_back(iJet->pt());
+    vJet_eta_      .push_back(iJet->eta());
+    vJet_phi_      .push_back(iJet->phi());
+    
+    if (debug) std::cout << " Passed Jet " << " Pt:" << iJet->pt()  << " Eta:" << iJet->eta()  << " Phi:" << iJet->phi() 
+			 << " jetE:" << iJet->energy() << " jetM:" << iJet->mass() 
+			 << " photonE:" << iJet->photonEnergy()  
+			 << " chargedHadronEnergy:" << iJet->chargedHadronEnergy()  
+			 << " neutralHadronEnergy :" << iJet->neutralHadronEnergy()
+			 << " electronEnergy	 :" << iJet->electronEnergy	()
+			 << " muonEnergy		 :" << iJet->muonEnergy		()
+			 << " HFHadronEnergy	 :" << iJet->HFHadronEnergy	()
+			 << " HFEMEnergy		 :" << iJet->HFEMEnergy		()
+			 << " chargedEmEnergy	 :" << iJet->chargedEmEnergy	()
+			 << " chargedMuEnergy	 :" << iJet->chargedMuEnergy	()
+			 << " neutralEmEnergy	 :" << iJet->neutralEmEnergy	()
+			 << std::endl;
+
+
+
+    int truthLabel = getTruthLabel(iJet,genParticles,0.4, false);
+    if(truthLabel < 0){
+      std::cout << "ERROR truth -1" << std::endl;
+      getTruthLabel(iJet,genParticles,0.4, true);
+    }
+    vJet_truthLabel_      .push_back(truthLabel);
 
     nJet++;
     if ( (nJets_ > 0) && (nJet >= nJets_) ) break;

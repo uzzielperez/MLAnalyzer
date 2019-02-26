@@ -63,8 +63,8 @@ process.fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , trackCollection = cms.InputTag("generalTracks")
     , pfCollection = cms.InputTag("particleFlow")
     , mode = cms.string("JetLevel") 
-    , nJets = cms.int32(2) 
-    , minJetPt = cms.double(20.) 
+    , nJets = cms.int32(1) 
+    , minJetPt = cms.double(35.) 
     , maxJetEta = cms.double(2.4) 
     )
 

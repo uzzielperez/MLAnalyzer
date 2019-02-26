@@ -48,6 +48,8 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
     doJets_ = false;
   }
 
+
+
   // Initialize file writer
   // NOTE: initializing dynamic-memory histograms outside of TFileService
   // will cause memory leaks
@@ -218,6 +220,33 @@ RecHitAnalyzer::getTrackCand(edm::Handle<reco::TrackCollection> trackCands, floa
   }
 
   return minDRCand;  
+}
+
+
+int RecHitAnalyzer::getTruthLabel(const reco::PFJetRef& recJet, edm::Handle<reco::GenParticleCollection> genParticles, float dRMatch , bool debug ){
+  if ( debug ) {
+    std::cout << " Mathcing reco jetPt:" << recJet->pt() << " jetEta:" << recJet->eta() << " jetPhi:" << recJet->phi() << std::endl;
+  }
+
+
+  for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
+       iGen != genParticles->end();
+       ++iGen) {
+
+    //if ( iGen->numberOfMothers() != 2 ) continue;
+    //if ( iGen->status() != 3 ) continue;
+    //if ( iGen->status() != 23 ) continue;
+
+    float dR = reco::deltaR( recJet->eta(),recJet->phi(), iGen->eta(),iGen->phi() );
+    if ( debug ) std::cout << " \t >> dR " << dR << " id:" << iGen->pdgId() << " status:" << iGen->status() << " nDaught:" << iGen->numberOfDaughters() << " pt:"<< iGen->pt() << " eta:" <<iGen->eta() << " phi:" <<iGen->phi() << " nMoms:" <<iGen->numberOfMothers()<< std::endl;
+    if ( dR > dRMatch ) continue; 
+    if ( debug ) std::cout << " Matched pdgID " << std::abs(iGen->pdgId()) << std::endl;
+    return std::abs(iGen->pdgId());
+
+  } // gen particles 
+
+
+  return -1;
 }
 
 

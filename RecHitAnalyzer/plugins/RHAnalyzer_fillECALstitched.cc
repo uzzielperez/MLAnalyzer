@@ -103,7 +103,7 @@ void RecHitAnalyzer::fillECALstitched ( const edm::Event& iEvent, const edm::Eve
     phi = pos.phi();
     // Fill intermediate helper histogram by eta,phi
     hEvt_EE_energy[iz_]->Fill( phi, eta, iRHit->energy() );
-
+    
   } // EE+/-
 
   // Map EE-(phi,eta) to bottom part of ECAL(iphi,ieta)
@@ -129,6 +129,10 @@ void RecHitAnalyzer::fillECALstitched ( const edm::Event& iEvent, const edm::Eve
     vECAL_energy_[idx_] = energy_;
     // Fill histogram for monitoring
     hECAL_energy->Fill( iphi_, ieta_signed, energy_ );
+
+    pos  = caloGeom->getPosition( ebId );
+    eta = pos.eta();
+    phi = pos.phi();
 
   } // EB
 
