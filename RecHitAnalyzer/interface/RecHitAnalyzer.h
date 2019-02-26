@@ -253,14 +253,4 @@ static const double eta_bins_HBHE[2*(hcaldqm::constants::IETA_MAX_HE-1)+1] =
 // static data member definitions
 //
 
-//
-// constructors and destructor
-//
-//RecHitAnalyzer::~RecHitAnalyzer()
-//{
-//
-//  // do anything here that needs to be done at desctruction time
-//  // (e.g. close files, deallocate resources etc.)
-//
-//}
 #endif
