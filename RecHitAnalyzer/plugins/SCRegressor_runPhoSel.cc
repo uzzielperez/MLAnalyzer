@@ -21,8 +21,8 @@ void SCRegressor::branchesPhoSel ( TTree* tree, edm::Service<TFileService> &fs )
   RHTree->Branch("pho_E",     &vPho_E_);
   RHTree->Branch("pho_eta",   &vPho_eta_);
   RHTree->Branch("pho_phi",   &vPho_phi_);
-  RHTree->Branch("pho_r9",    &vPho_r9_);
-  RHTree->Branch("pho_sieie", &vPho_sieie_);
+  //RHTree->Branch("pho_r9",    &vPho_r9_);
+  //RHTree->Branch("pho_sieie", &vPho_sieie_);
 
 }
 
@@ -197,8 +197,8 @@ void SCRegressor::fillPhoSel ( const edm::Event& iEvent, const edm::EventSetup& 
   vPho_E_.clear();
   vPho_eta_.clear();
   vPho_phi_.clear();
-  vPho_r9_.clear();
-  vPho_sieie_.clear();
+  //vPho_r9_.clear();
+  //vPho_sieie_.clear();
   for ( auto const& mG : mGenPi0_RecoPho ) {
     reco::PhotonRef iPho( photons, mG.second[0] );
     // Fill branch arrays
@@ -206,8 +206,8 @@ void SCRegressor::fillPhoSel ( const edm::Event& iEvent, const edm::EventSetup& 
     vPho_E_.push_back( iPho->energy() );
     vPho_eta_.push_back( iPho->eta() );
     vPho_phi_.push_back( iPho->phi() );
-    vPho_r9_.push_back( iPho->r9() );
-    vPho_sieie_.push_back( iPho->full5x5_sigmaIetaIeta() );
+    //vPho_r9_.push_back( iPho->full5x5_r9() );
+    //vPho_sieie_.push_back( iPho->full5x5_sigmaIetaIeta() );
   } // photons
 
   vSC_DR_.clear();

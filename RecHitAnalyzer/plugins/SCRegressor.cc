@@ -22,8 +22,12 @@ SCRegressor::SCRegressor(const edm::ParameterSet& iConfig)
   electronCollectionT_ = consumes<reco::GsfElectronCollection>(iConfig.getParameter<edm::InputTag>("gsfElectronCollection"));
   photonCollectionT_ = consumes<reco::PhotonCollection>(iConfig.getParameter<edm::InputTag>("gedPhotonCollection"));
   EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
+  EERecHitCollectionT_    = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEERecHitCollection"));
+  ESRecHitCollectionT_    = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedESRecHitCollection"));
   genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
   genJetCollectionT_ = consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genJetCollection"));
+  trackCollectionT_ = consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("trackCollection"));
+  rhoLabel_ = consumes<double>(iConfig.getParameter<edm::InputTag>("rhoLabel")); 
 
   //now do what ever initialization is needed
   usesResource("TFileService");
@@ -42,6 +46,8 @@ SCRegressor::SCRegressor(const edm::ParameterSet& iConfig)
   //branchesPhoSel_gamma ( RHTree, fs );
   branchesSC     ( RHTree, fs );
   branchesEB     ( RHTree, fs );
+  branchesTracksAtEBEE     ( RHTree, fs );
+  branchesPhoVars     ( RHTree, fs );
 
 }
 
@@ -78,7 +84,7 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   bool hasPassed;
   vPreselPhoIdxs_.clear();
   nTotal += nPhotons;
-  hasPassed = runPhoSel ( iEvent, iSetup );
+  hasPassed = runPhoSel ( iEvent, iSetup ); //TODO: add config-level switch
   //hasPassed = runPhoSel_gamma ( iEvent, iSetup );
   if ( !hasPassed ) return; 
 
@@ -119,6 +125,7 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
       // Convert coordinates to ordinals
       EBDetId ebId( iRHit->id() );
+      //EBDetId ebId( iSC->seed()->seed() );
       ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta(); // [-85,...,-1,1,...,85]
       ieta_ += EBDetId::MAX_IETA; // [0,...,169]
       iphi_ = ebId.iphi()-1; // [0,...,359]
@@ -155,6 +162,8 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //fillPhoSel_gamma ( iEvent, iSetup );
   fillSC     ( iEvent, iSetup );
   fillEB     ( iEvent, iSetup );
+  fillTracksAtEBEE     ( iEvent, iSetup );
+  fillPhoVars     ( iEvent, iSetup );
 
   eventId_ = iEvent.id().event();
   runId_ = iEvent.id().run();

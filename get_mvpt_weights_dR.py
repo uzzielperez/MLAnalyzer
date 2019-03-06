@@ -9,36 +9,32 @@ parser.add_argument('-d', '--genDR', default=10, type=int, help='gen-level dR.')
 parser.add_argument('-p', '--p_drop', default=0.95, type=float, help='p(drop) scale.')
 args = parser.parse_args()
 
-eosDir='/eos/uscms/store/user/lpcml/mandrews/IMG'
-#eosDir='/store/user/lpcml/mandrews/IMG'
-#outDir='~lpcml/nobackup/mandrews' # NOTE: Space here is limited, transfer files to EOS after processing
-xrootd='root://cmsxrootd.fnal.gov' # FNAL
-#xrootd='root://eoscms.cern.ch' # CERN
-
 genDR = args.genDR
 p_drop_scale = args.p_drop
-decay = 'DoublePi0Pt15To100_m0To1600_pythia8_noPU_mlog_ptexp'
-#decay = '%s_genDR%d_recoDR16_IMG'%(decay, genDR)
-decay = '%s_genDR%d_recoDR16_seedPos_IMG'%(decay, genDR)
-if genDR == 5:
-    date_str = '190219_012120' # DR5
-else:
-    #date_str = '190221_195631'
-    date_str = '190221_191131' # DR10
-    #date_str = '190219_012301' # DR10
 
-# Load input TTrees into TChain
-rhTreeStrs = '%s/%s/%s/*/output_*.root'%(eosDir, decay, date_str)
-print(" >> Input string: %s"%rhTreeStrs)
-rhTreeStrs = glob.glob(rhTreeStrs)
-assert len(rhTreeStrs) > 0 
-print(" >> %d files found"%len(rhTreeStrs))
-rhTreeStrs = [('%s/%s'%(xrootd, rhtree)).replace('/eos/uscms','') for rhtree in rhTreeStrs]
-print(' >> infile[0]: %s'%rhTreeStrs[0])
+xrootd='root://cmsxrootd.fnal.gov' # FNAL
+#xrootd='root://eoscms.cern.ch' # CERN
+eosDir='/eos/uscms/store/user/lpcml/mandrews/IMG'
+
+#pu = 'noPU'
+pu = '2016_25ns_Moriond17MC_PoissonOOTPU'
+decay = 'DoublePi0Pt15To100_m0To1600_pythia8_%s_mlog_ptexp'%pu
+decay = '%s_genDR%d_recoDR16_seedPos_phoVars_IMG'%(decay, genDR)
+date_str = '190301_012801' # DR10
+
+# Paths to input files
+rhFileLists = '%s/%s/%s/*/output_*.root'%(eosDir, decay, date_str)
+print(" >> Input file list: %s"%rhFileList)
+rhFileLists = glob.glob(rhFileLists)
+assert len(rhFileLists) > 0
+print(" >> %d files found"%len(rhFileLists))
+rhFileLists = [('%s/%s'%(xrootd, rhFile)).replace('/eos/uscms','') for rhFile in rhFileLists]
+print(' >> Input File[0]: %s'%rhFileList[0])
+sort_nicely(rhFileLists)
 
 rhTree = ROOT.TChain("fevt/RHTree")
-for t in rhTreeStrs:
-    rhTree.Add(t)
+for f in rhFileLists:
+    rhTree.Add(f)
 nEvts = rhTree.GetEntries()
 assert nEvts > 0
 print " >> nEvts:",nEvts
@@ -47,7 +43,7 @@ print " >> nEvts:",nEvts
 
 # Event range to process
 iEvtStart = 0
-iEvtEnd   = 10000
+#iEvtEnd   = 10000
 iEvtEnd   = nEvts 
 assert iEvtEnd <= nEvts
 print " >> Processing entries: [",iEvtStart,"->",iEvtEnd,")"
@@ -150,7 +146,7 @@ for iEvt in range(iEvtStart,iEvtEnd):
         nAcc += 1
 
 print " >> nPi0s: ", nAcc
-hnPhow.Draw("COL Z")
+#hnPhow.Draw("COL Z")
 
 hFile = ROOT.TFile("%s_hnPho_pdrop%.2f.root"%(decay, p_drop_scale),"RECREATE")
 
