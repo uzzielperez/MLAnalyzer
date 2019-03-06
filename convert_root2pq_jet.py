@@ -8,7 +8,7 @@ from numpy.lib.stride_tricks import as_strided
 
 import argparse
 parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('-i', '--infile', default='output.root', type=str, help='Input root file.')
+parser.add_argument('-i', '--infile', default='output_qqgg.root', type=str, help='Input root file.')
 parser.add_argument('-o', '--outdir', default='.', type=str, help='Output pq file dir.')
 parser.add_argument('-d', '--decay', default='test', type=str, help='Decay name.')
 parser.add_argument('-n', '--idx', default=0, type=int, help='Input root file index.')
@@ -70,20 +70,8 @@ nEvts = rhTree.GetEntries()
 assert nEvts > 0
 print " >> Input file:",rhTreeStr
 print " >> nEvts:",nEvts
-
-# Define parquet file schema and keys
-data = [
-        pa.array([np.zeros((3,125,125)).tolist()])
-        ,pa.array([1.])
-        ,pa.array([100.])
-        ,pa.array([72.])
-        ,pa.array([17.])
-        ,pa.array([17.])
-        ]
-keys = ['X_jet', 'y', 'pt', 'iphi', 'ieta', 'pdgId']
-table = pa.Table.from_arrays(data, keys)
 outStr = '%s/%s.parquet.%d'%(args.outdir, args.decay, args.idx) 
-writer = pq.ParquetWriter(outStr, table.schema, compression='snappy')
+print " >> Output file:",outStr
 
 ##### MAIN #####
 
@@ -94,7 +82,8 @@ iEvtEnd   = nEvts
 assert iEvtEnd <= nEvts
 print " >> Processing entries: [",iEvtStart,"->",iEvtEnd,")"
 
-nAcc = 0
+nJets = 0
+data = {} # Arrays to be written to parquet should be saved to data dict
 sw = ROOT.TStopwatch()
 sw.Start()
 for iEvt in range(iEvtStart,iEvtEnd):
@@ -110,7 +99,7 @@ for iEvt in range(iEvtStart,iEvtEnd):
     HBHE_energy = np.array(rhTree.HBHE_energy).reshape(56,72)
     HBHE_energy = upsample_array(HBHE_energy, 5, 5) # (280, 360)
     TracksAtECAL_pt = np.array(rhTree.ECAL_tracksPt).reshape(280,360)
-    X_CMSII = np.stack([TracksAtECAL_pt, ECAL_energy, HBHE_energy], axis=0) # (3, 280, 360)
+    data['X_CMSII'] = np.stack([TracksAtECAL_pt, ECAL_energy, HBHE_energy], axis=0) # (3, 280, 360)
 
     # Jet attributes 
     ys = rhTree.jetIsQuark
@@ -122,37 +111,36 @@ for iEvt in range(iEvtStart,iEvtEnd):
 
     for i in range(njets):
 
-        y = ys[i]
-        pt = pts[i]
-        iphi = iphis[i]
-        ieta = ietas[i]
-        pdgId = pdgIds[i]
-        X_jet = crop_jet(X_CMSII, iphi, ieta) # (3, 125, 125)
+        data['y'] = ys[i]
+        data['pt'] = pts[i]
+        data['iphi'] = iphis[i]
+        data['ieta'] = ietas[i]
+        data['pdgId'] = pdgIds[i]
+        data['X_jet'] = crop_jet(data['X_CMSII'], data['iphi'], data['ieta']) # (3, 125, 125)
 
         # Create pyarrow.Table
-        pqdata = [
-                pa.array([X_jet.tolist()]) # arrays must be converted to lists
-                ,pa.array([y])
-                ,pa.array([pt])
-                ,pa.array([iphi])
-                ,pa.array([ieta])
-                ,pa.array([pdgId])
-                ]
-        table = pa.Table.from_arrays(pqdata, keys)
+        pqdata = [pa.array([d]) if np.isscalar(d) or if type(d) == list else pa.array([d.tolist()]) for d in data.values()]
+        table = pa.Table.from_arrays(pqdata, data.keys())
+
+        if nJets == 0:
+            writer = pq.ParquetWriter(outStr, table.schema, compression='snappy')
+
         writer.write_table(table)
 
-        nAcc += 1
+        nJets += 1
 
 writer.close()
-sw.Stop()
-print " >> nJets:",nAcc
+print " >> nJets:",nJets
 print " >> Real time:",sw.RealTime()/60.,"minutes"
 print " >> CPU time: ",sw.CpuTime() /60.,"minutes"
 print "========================================================"
 
+# Verify output file
 pqIn = pq.ParquetFile(outStr)
 print(pqIn.metadata)
 print(pqIn.schema)
-#X = pqIn.read_row_group(0, columns=['X_jet.list.item.list.item.list.item', 'y'], nthreads=len(keys)).to_pydict()['X_jet'] # read row-by-row 
+X = pqIn.read_row_group(0, columns=['y','pt','iphi','ieta','pdgId']).to_pydict()
+print(X)
+#X = pqIn.read_row_group(0, columns=['X_jet.list.item.list.item.list.item']).to_pydict()['X_jet'] # read row-by-row 
 #X = pqIn.read(['X_jet.list.item.list.item.list.item', 'y']).to_pydict()['X_jet'] # read entire column(s)
 #X = np.float32(X)
