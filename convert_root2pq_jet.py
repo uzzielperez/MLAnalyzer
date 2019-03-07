@@ -67,10 +67,6 @@ rhTreeStr = args.infile
 rhTree = ROOT.TChain("fevt/RHTree")
 rhTree.Add(rhTreeStr)
 nEvts = rhTree.GetEntries()
-
-rhTree.Print()
-import sys
-sys.exit(-1)
 assert nEvts > 0
 print " >> Input file:",rhTreeStr
 print " >> nEvts:",nEvts
@@ -123,7 +119,9 @@ for iEvt in range(iEvtStart,iEvtEnd):
         data['X_jet'] = crop_jet(data['X_CMSII'], data['iphi'], data['ieta']) # (3, 125, 125)
 
         # Create pyarrow.Table
+
         pqdata = [pa.array([d]) if (np.isscalar(d) or  type(d) == list) else pa.array([d.tolist()]) for d in data.values()]
+
         table = pa.Table.from_arrays(pqdata, data.keys())
 
         if nJets == 0:

@@ -2,12 +2,13 @@
 //
 // Package:    MLAnalyzer/RecHitAnalyzer
 // Class:      RecHitAnalyzer
-// 
+//
 //
 // Original Author:  Michael Andrews
 //         Created:  Sat, 14 Jan 2017 17:45:54 GMT
 //
 //
+
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
 
 //
@@ -15,36 +16,35 @@
 //
 RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 {
-  //EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EBRecHitCollection"));
-  EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
-  //EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("selectedEBDigiCollection"));
-  //EBDigiCollectionT_ = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("EBDigiCollection"));
-  EERecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEERecHitCollection"));
-  //EERecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EERecHitCollection"));
-  HBHERecHitCollectionT_ = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
-  TRKRecHitCollectionT_  = consumes<TrackingRecHitCollection>(iConfig.getParameter<edm::InputTag>("trackRecHitCollection"));
+  //EBRecHitCollectionT_    = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EBRecHitCollection"));
+  EBRecHitCollectionT_    = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
+  //EBDigiCollectionT_      = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("selectedEBDigiCollection"));
+  //EBDigiCollectionT_      = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("EBDigiCollection"));
+  EERecHitCollectionT_    = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEERecHitCollection"));
+  //EERecHitCollectionT_    = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EERecHitCollection"));
+  HBHERecHitCollectionT_  = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
+  TRKRecHitCollectionT_   = consumes<TrackingRecHitCollection>(iConfig.getParameter<edm::InputTag>("trackRecHitCollection"));
 
   genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
-  photonCollectionT_ = consumes<reco::PhotonCollection>(iConfig.getParameter<edm::InputTag>("gedPhotonCollection"));
-  jetCollectionT_ = consumes<reco::PFJetCollection>(iConfig.getParameter<edm::InputTag>("ak4PFJetCollection"));
-  genJetCollectionT_ = consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genJetCollection"));
-  trackCollectionT_ = consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("trackCollection"));
-  pfCollectionT_ = consumes<PFCollection>(iConfig.getParameter<edm::InputTag>("pfCollection"));
-
+  photonCollectionT_      = consumes<reco::PhotonCollection>(iConfig.getParameter<edm::InputTag>("gedPhotonCollection"));
+  jetCollectionT_         = consumes<reco::PFJetCollection>(iConfig.getParameter<edm::InputTag>("ak4PFJetCollection"));
+  genJetCollectionT_      = consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genJetCollection"));
+  trackCollectionT_       = consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("trackCollection"));
+  pfCollectionT_          = consumes<PFCollection>(iConfig.getParameter<edm::InputTag>("pfCollection"));
 
   //johnda add configuration
-  minJetPt_ = iConfig.getParameter<double>("minJetPt");
+  mode_      = iConfig.getParameter<std::string>("mode");
+  minJetPt_  = iConfig.getParameter<double>("minJetPt");
   maxJetEta_ = iConfig.getParameter<double>("maxJetEta");
-  mode_ = iConfig.getParameter<std::string>("mode");
-  std::cout << " Mode set to " << mode_ << std::endl;
-  if( mode_ == "JetLevel"){
-    doJets_    = true;
+  std::cout << " >> Mode set to " << mode_ << std::endl;
+  if ( mode_ == "JetLevel" ) {
+    doJets_ = true;
     nJets_ = iConfig.getParameter<int>("nJets");
-    std::cout << " \t nJets set to " << nJets_ << std::endl;
-  }else if (mode_ == "EventLevel"){
+    std::cout << "\t>> nJets set to " << nJets_ << std::endl;
+  } else if ( mode_ == "EventLevel" ) {
     doJets_ = false;
   } else {
-    std::cout << " Assuming EventLevel Config. " << std::endl;
+    std::cout << " >> Assuming EventLevel Config. " << std::endl;
     doJets_ = false;
   }
 
@@ -61,12 +61,11 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 
   // These will be use to create the actual images
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
-  if(doJets_){
+  if ( doJets_ ) {
     branchesEvtSel_jet( RHTree, fs );
-  }else{
+  } else {
     branchesEvtSel( RHTree, fs );
   }
-
   branchesEB           ( RHTree, fs );
   branchesEE           ( RHTree, fs );
   branchesHBHE         ( RHTree, fs );
@@ -77,7 +76,6 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   branchesTracksAtECALstitched( RHTree, fs);
   branchesPFCandsAtEBEE(RHTree, fs);
   branchesPFCandsAtECALstitched( RHTree, fs);
-
   //branchesTRKlayersAtEBEE(RHTree, fs);
   //branchesTRKlayersAtECAL(RHTree, fs);
   //branchesTRKvolumeAtEBEE(RHTree, fs);
@@ -103,19 +101,22 @@ void
 RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 
+  nTotal++;
   using namespace edm;
 
   // ----- Apply event selection cuts ----- //
 
   bool passedSelection = false;
-  if(doJets_){
+  if ( doJets_ ) {
     passedSelection = runEvtSel_jet( iEvent, iSetup );
-  }else{
+  } else {
     passedSelection = runEvtSel( iEvent, iSetup );
   }
 
-
-  if ( !passedSelection ) return;
+  if ( !passedSelection ) {
+    h_sel->Fill( 0. );;
+    return;
+  }
 
   fillEB( iEvent, iSetup );
   fillEE( iEvent, iSetup );
@@ -138,6 +139,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // Fill RHTree
   RHTree->Fill();
   h_sel->Fill( 1. );
+  nPassed++;
 
 } // analyze()
 
@@ -146,12 +148,15 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 void 
 RecHitAnalyzer::beginJob()
 {
+  nTotal = 0;
+  nPassed = 0;
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 RecHitAnalyzer::endJob() 
 {
+  std::cout << " selected: " << nPassed << "/" << nTotal << std::endl;
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
@@ -180,14 +185,14 @@ RecHitAnalyzer::getPFCand(edm::Handle<PFCollection> pfCands, float eta, float ph
         iPFC != pfCands->end(); ++iPFC ) {
 
     const reco::Track* thisTrk = iPFC->bestTrack();
-    if(!thisTrk) continue;
+    if ( !thisTrk ) continue;
 
     float thisdR = reco::deltaR( eta, phi, thisTrk->eta(), thisTrk->phi() );
-    if(debug) std::cout << "\tthisdR: " << thisdR << " " << thisTrk->pt() << " " << iPFC->particleId() << std::endl;
+    if (debug) std::cout << "\tthisdR: " << thisdR << " " << thisTrk->pt() << " " << iPFC->particleId() << std::endl;
 
     const reco::PFCandidate& thisPFCand = (*iPFC);
       
-    if( (thisdR < 0.01) && (thisdR <minDr)){
+    if ( (thisdR < 0.01) && (thisdR <minDr) ) {
       minDr    = thisdR; 
       minDRCand = &thisPFCand;
     }
@@ -195,7 +200,6 @@ RecHitAnalyzer::getPFCand(edm::Handle<PFCollection> pfCands, float eta, float ph
 
   return minDRCand;  
 }
-
 
 const reco::Track*
 RecHitAnalyzer::getTrackCand(edm::Handle<reco::TrackCollection> trackCands, float eta, float phi, float& minDr, bool debug ) {
@@ -209,11 +213,11 @@ RecHitAnalyzer::getTrackCand(edm::Handle<reco::TrackCollection> trackCands, floa
     if ( !(iTk->quality(tkQt_)) ) continue;  
 
     float thisdR = reco::deltaR( eta, phi, iTk->eta(),iTk->phi() );
-    if(debug) std::cout << "\tthisdR: " << thisdR << " " << iTk->pt() << std::endl;
+    if (debug) std::cout << "\tthisdR: " << thisdR << " " << iTk->pt() << std::endl;
 
     const reco::Track& thisTrackCand = (*iTk);
       
-    if( (thisdR < 0.01) && (thisdR <minDr)){
+    if ( (thisdR < 0.01) && (thisdR <minDr) ) {
       minDr    = thisdR; 
       minDRCand = &thisTrackCand;
     }
