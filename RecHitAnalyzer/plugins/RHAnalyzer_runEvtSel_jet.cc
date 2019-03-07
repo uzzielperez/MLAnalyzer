@@ -162,6 +162,15 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
 
   
 
+  // Remove jets that failed the Seed cuts 
+  for(int failedJetIdx : vFailedJetIdx_)
+    vJetIdxs.erase(std::remove(vJetIdxs.begin(),vJetIdxs.end(),failedJetIdx),vJetIdxs.end());
+
+  if ( vJetIdxs.size() == 0){
+    if ( debug ) std::cout << " No passing jets...  " << std::endl;
+    return false;
+  }
+
   
   if ( (nJets_ > 0) && nJet != nJets_ ) return false;
   if ( debug ) std::cout << " >> analyze: passed" << std::endl;
@@ -171,9 +180,6 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
   jet_lumiId_ = iEvent.id().luminosityBlock();
 
 
-  // Remove jets that failed the Seed cuts 
-  for(int failedJetIdx : vFailedJetIdx_)
-    vJetIdxs.erase(std::remove(vJetIdxs.begin(),vJetIdxs.end(),failedJetIdx),vJetIdxs.end());
 
 
   if ( jetSelection == "dijet_gg_qq" ) {
