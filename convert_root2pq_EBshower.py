@@ -66,7 +66,7 @@ assert iEvtEnd <= nEvts
 print " >> Processing entries: [",iEvtStart,"->",iEvtEnd,")"
 
 nPhos = 0
-data = {}
+data = {} # Arrays to be written to parquet should be saved to data dict
 sw = ROOT.TStopwatch()
 sw.Start()
 for iEvt in range(iEvtStart,iEvtEnd):

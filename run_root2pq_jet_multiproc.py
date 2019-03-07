@@ -39,7 +39,7 @@ if not os.path.isdir(outDir):
 print(' >> Output directory: %s'%outDir)
 
 proc_file = 'convert_root2pq_jet.py'
-processes = ['%s -i %s -o %s -d %s -n %d'%(proc_file, rhtree, outDir, decay, i+1) for i,rhtree in enumerate(rhFileList)]
+processes = ['%s -i %s -o %s -d %s -n %d'%(proc_file, rhFile, outDir, decay, i+1) for i,rhFile in enumerate(rhFileList)]
 print(' >> Process[0]: %s'%processes[0])
 
 pool = Pool(processes=len(processes))
