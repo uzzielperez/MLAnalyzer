@@ -1,3 +1,4 @@
+
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
 /*
 #include "Geometry/CaloTopology/interface/CaloSubdetectorTopology.h"
@@ -164,8 +165,8 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
     vJetSeed_iphi_.push_back(iphi_);
     vJetSeed_ieta_.push_back(ieta_);
     vJet_pT_      .push_back(iJet->pt());
-    vJet_eta_      .push_back(iJet->eta());
-    vJet_phi_      .push_back(iJet->phi());
+    vJet_eta_     .push_back(iJet->eta());
+    vJet_phi_     .push_back(iJet->phi());
     
     if (debug) std::cout << " Passed Jet " << " Pt:" << iJet->pt()  << " Eta:" << iJet->eta()  << " Phi:" << iJet->phi() 
 			 << " jetE:" << iJet->energy() << " jetM:" << iJet->mass() 
@@ -184,8 +185,8 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
 
 
     int truthLabel = getTruthLabel(iJet,genParticles,0.4, false);
-    if(truthLabel < 0){
-      std::cout << "ERROR truth -1" << std::endl;
+    if(truthLabel == -99){
+      std::cout << "ERROR truth -99" << std::endl;
       getTruthLabel(iJet,genParticles,0.4, true);
     }
     vJet_truthLabel_      .push_back(truthLabel);

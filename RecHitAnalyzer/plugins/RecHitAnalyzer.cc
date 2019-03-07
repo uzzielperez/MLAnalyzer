@@ -240,13 +240,13 @@ int RecHitAnalyzer::getTruthLabel(const reco::PFJetRef& recJet, edm::Handle<reco
     float dR = reco::deltaR( recJet->eta(),recJet->phi(), iGen->eta(),iGen->phi() );
     if ( debug ) std::cout << " \t >> dR " << dR << " id:" << iGen->pdgId() << " status:" << iGen->status() << " nDaught:" << iGen->numberOfDaughters() << " pt:"<< iGen->pt() << " eta:" <<iGen->eta() << " phi:" <<iGen->phi() << " nMoms:" <<iGen->numberOfMothers()<< std::endl;
     if ( dR > dRMatch ) continue; 
-    if ( debug ) std::cout << " Matched pdgID " << std::abs(iGen->pdgId()) << std::endl;
-    return std::abs(iGen->pdgId());
+    if ( debug ) std::cout << " Matched pdgID " << iGen->pdgId() << std::endl;
+    return iGen->pdgId();
 
   } // gen particles 
 
 
-  return -1;
+  return -99;
 }
 
 
