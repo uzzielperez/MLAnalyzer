@@ -53,8 +53,12 @@ process.fevt = cms.EDAnalyzer('SCRegressor'
     , gsfElectronCollection = cms.InputTag('gedGsfElectrons')
     , gedPhotonCollection = cms.InputTag('gedPhotons')
     , reducedEBRecHitCollection = cms.InputTag('reducedEcalRecHitsEB')
+    , reducedEERecHitCollection = cms.InputTag('reducedEcalRecHitsEE')
+    , reducedESRecHitCollection = cms.InputTag('reducedEcalRecHitsES')
     , genParticleCollection = cms.InputTag('genParticles')
     , genJetCollection = cms.InputTag('ak4GenJets')
+    , trackCollection = cms.InputTag("generalTracks")
+    , rhoLabel = cms.InputTag("fixedGridRhoFastjetAll")
     )
 
 process.TFileService = cms.Service("TFileService",

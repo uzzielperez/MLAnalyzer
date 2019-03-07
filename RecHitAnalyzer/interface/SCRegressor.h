@@ -50,6 +50,8 @@
 #include "DataFormats/JetReco/interface/GenJetCollection.h"
 #include "DataFormats/Math/interface/deltaR.h"
 #include "DataFormats/Math/interface/deltaPhi.h"
+#include "Calibration/IsolatedParticles/interface/DetIdFromEtaPhi.h"
+#include "RecoEcal/EgammaCoreTools/interface/EcalClusterLazyTools.h"
 
 //
 // class declaration
@@ -79,8 +81,12 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<reco::GsfElectronCollection> electronCollectionT_;
     edm::EDGetTokenT<reco::PhotonCollection> photonCollectionT_;
     edm::EDGetTokenT<EcalRecHitCollection> EBRecHitCollectionT_;
+    edm::EDGetTokenT<EcalRecHitCollection> EERecHitCollectionT_;
+    edm::EDGetTokenT<EcalRecHitCollection> ESRecHitCollectionT_;
     edm::EDGetTokenT<reco::GenParticleCollection> genParticleCollectionT_;
     edm::EDGetTokenT<reco::GenJetCollection> genJetCollectionT_;
+    edm::EDGetTokenT<reco::TrackCollection> trackCollectionT_;
+    edm::EDGetTokenT<double> rhoLabel_;
 
     static const int nPhotons = 2;
     //static const int nPhotons = 1;
@@ -109,9 +115,13 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
     void branchesSC ( TTree*, edm::Service<TFileService>& );
     void branchesEB ( TTree*, edm::Service<TFileService>& );
+    void branchesTracksAtEBEE ( TTree*, edm::Service<TFileService>& );
+    void branchesPhoVars ( TTree*, edm::Service<TFileService>& );
 
     void fillSC     ( const edm::Event&, const edm::EventSetup& );
     void fillEB     ( const edm::Event&, const edm::EventSetup& );
+    void fillTracksAtEBEE ( const edm::Event&, const edm::EventSetup& );
+    void fillPhoVars ( const edm::Event&, const edm::EventSetup& );
 
     void branchesPhoSel ( TTree*, edm::Service<TFileService>& );
     bool runPhoSel ( const edm::Event&, const edm::EventSetup& );
@@ -132,12 +142,32 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<std::vector<float>> vSC_energyZ_;
     std::vector<std::vector<float>> vSC_time_;
 
+    //TH2F *hTracks_EE[nEE];
+    TH2F *hTracks_EB;
+    //TH2F *hTracksPt_EE[nEE];
+    TH2F *hTracksPt_EB;
+    //std::vector<float> vTracksPt_EE_[nEE];
+    //std::vector<float> vTracksQPt_EE_[nEE];
+    //std::vector<float> vTracks_EE_[nEE];
+    std::vector<float> vTracksPt_EB_;
+    std::vector<float> vTracksQPt_EB_;
+    std::vector<float> vTracks_EB_;
+
     std::vector<float> vPho_pT_;
     std::vector<float> vPho_E_;
     std::vector<float> vPho_eta_;
     std::vector<float> vPho_phi_;
     std::vector<float> vPho_r9_;
     std::vector<float> vPho_sieie_;
+    std::vector<float> vPho_phoIso_; 
+    std::vector<float> vPho_chgIso_; 
+    std::vector<float> vPho_chgIsoWrongVtx_; 
+    std::vector<float> vPho_Eraw_; 
+    std::vector<float> vPho_phiWidth_; 
+    std::vector<float> vPho_etaWidth_; 
+    std::vector<float> vPho_scEta_; 
+    std::vector<float> vPho_sieip_; 
+    std::vector<float> vPho_s4_; 
 
     std::vector<float> vSC_mass_;
     std::vector<float> vSC_DR_;
@@ -168,6 +198,11 @@ static const int EB_IPHI_MIN = EBDetId::MIN_IPHI;//1;
 static const int EB_IPHI_MAX = EBDetId::MAX_IPHI;//360;
 static const int EB_IETA_MIN = EBDetId::MIN_IETA;//1;
 static const int EB_IETA_MAX = EBDetId::MAX_IETA;//85;
+static const int EE_MIN_IX = EEDetId::IX_MIN;//1;
+static const int EE_MIN_IY = EEDetId::IY_MIN;//1;
+static const int EE_MAX_IX = EEDetId::IX_MAX;//100;
+static const int EE_MAX_IY = EEDetId::IY_MAX;//100;
+static const int EE_NC_PER_ZSIDE = EEDetId::IX_MAX*EEDetId::IY_MAX; // 100*100
 //
 // static data member definitions
 //
