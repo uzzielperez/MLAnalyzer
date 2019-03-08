@@ -17,6 +17,7 @@ xrootd='root://cmsxrootd.fnal.gov' # FNAL
 #decays = ['QCDToGG_Pt_80_120_13TeV_TuneCUETP8M1_noPU', 'QCDToQQ_Pt_80_120_13TeV_TuneCUETP8M1_noPU']
 decays = ['','QCDToQQ_Pt_80_120_13TeV_TuneCUETP8M1_noPU']
 
+
 scale = [1., 1.]
 chunk_size = 200
 jet_shape = 125
@@ -28,6 +29,7 @@ for d, decay in enumerate(decays):
     if d != args.label:
         pass
         continue
+
     print '>> Doing decay[%d]: %s'%(d, decay)
 
     tfile_idxs = glob.glob('%s/%s*_IMG/*/*/output_*.root'%(eosDir,decay))
@@ -312,3 +314,4 @@ for d, decay in enumerate(decays):
                                       }, compression='lzf')
 
             print "  >> Done.\n"
+

@@ -10,6 +10,9 @@ TH1D *h_dijet_jet_nJet;
 vector<float> vDijet_jet_pT_;
 vector<float> vDijet_jet_m0_;
 vector<float> vDijet_jet_eta_;
+vector<float> vDijet_jet_phi_;
+vector<float> vDijet_jet_truthLabel_;
+
 
 // Initialize branches _____________________________________________________//
 void RecHitAnalyzer::branchesEvtSel_jet_dijet( TTree* tree, edm::Service<TFileService> &fs ) {
@@ -20,9 +23,11 @@ void RecHitAnalyzer::branchesEvtSel_jet_dijet( TTree* tree, edm::Service<TFileSe
   h_dijet_jet_nJet  = fs->make<TH1D>("h_jet_nJet", "nJet;nJet;Events"     ,  10,  0., 10.);
   h_dijet_jet_m0    = fs->make<TH1D>("h_jet_m0"  , "m0;m0;Events"         , 100,  0., 100.);
 
-  tree->Branch("jetPt",  &vDijet_jet_pT_);
-  tree->Branch("jetM",   &vDijet_jet_m0_);
-  tree->Branch("jetEta", &vDijet_jet_eta_);
+  tree->Branch("jetPt",          &vDijet_jet_pT_);
+  tree->Branch("jetM",           &vDijet_jet_m0_);
+  tree->Branch("jetEta",         &vDijet_jet_eta_);
+  tree->Branch("jetPhi",         &vDijet_jet_phi_);
+  tree->Branch("jet_truthLabel", &vDijet_jet_truthLabel_);
 
 } // branchesEvtSel_jet_dijet()
 
@@ -37,6 +42,8 @@ bool RecHitAnalyzer::runEvtSel_jet_dijet( const edm::Event& iEvent, const edm::E
   vDijet_jet_pT_.clear();
   vDijet_jet_m0_.clear();
   vDijet_jet_eta_.clear();
+  vDijet_jet_phi_.clear();
+  vDijet_jet_truthLabel_.clear();
 
   int nJet = 0;
   // Loop over jets
@@ -81,11 +88,29 @@ void RecHitAnalyzer::fillEvtSel_jet_dijet( const edm::Event& iEvent, const edm::
   edm::Handle<reco::PFJetCollection> jets;
   iEvent.getByToken(jetCollectionT_, jets);
 
+  edm::Handle<reco::GenParticleCollection> genParticles;
+  iEvent.getByToken( genParticleCollectionT_, genParticles );
+
   h_dijet_jet_nJet->Fill( vJetIdxs.size() );
   // Fill branches and histograms 
   for(int thisJetIdx : vJetIdxs){
     reco::PFJetRef thisJet( jets, thisJetIdx );
     if ( debug ) std::cout << " >> Jet[" << thisJetIdx << "] Pt:" << thisJet->pt() << std::endl;
+
+    if (debug) std::cout << " Passed Jet " << " Pt:" << thisJet->pt()  << " Eta:" << thisJet->eta()  << " Phi:" << thisJet->phi() 
+			 << " jetE:" << thisJet->energy() << " jetM:" << thisJet->mass() 
+			 << " photonE:" << thisJet->photonEnergy()  
+			 << " chargedHadronEnergy:" << thisJet->chargedHadronEnergy()  
+			 << " neutralHadronEnergy :" << thisJet->neutralHadronEnergy()
+			 << " electronEnergy	 :" << thisJet->electronEnergy	()
+			 << " muonEnergy		 :" << thisJet->muonEnergy		()
+			 << " HFHadronEnergy	 :" << thisJet->HFHadronEnergy	()
+			 << " HFEMEnergy		 :" << thisJet->HFEMEnergy		()
+			 << " chargedEmEnergy	 :" << thisJet->chargedEmEnergy	()
+			 << " chargedMuEnergy	 :" << thisJet->chargedMuEnergy	()
+			 << " neutralEmEnergy	 :" << thisJet->neutralEmEnergy	()
+			 << std::endl;
+
     h_dijet_jet_pT->Fill( std::abs(thisJet->pt()) );
     h_dijet_jet_E->Fill( thisJet->energy() );
     h_dijet_jet_m0->Fill( thisJet->mass() );
@@ -93,6 +118,16 @@ void RecHitAnalyzer::fillEvtSel_jet_dijet( const edm::Event& iEvent, const edm::
     vDijet_jet_pT_.push_back( std::abs(thisJet->pt()) );
     vDijet_jet_m0_.push_back( thisJet->mass() );
     vDijet_jet_eta_.push_back( thisJet->eta() );
+    vDijet_jet_phi_.push_back( thisJet->phi() );
+
+    int truthLabel = getTruthLabel(thisJet,genParticles,0.4, false);
+    if(truthLabel == -99){
+      std::cout << "ERROR truth -99" << std::endl;
+      getTruthLabel(thisJet,genParticles,0.4, true);
+    }
+    vDijet_jet_truthLabel_      .push_back(truthLabel);
+
+
   }
 
 } // fillEvtSel_jet_dijet()

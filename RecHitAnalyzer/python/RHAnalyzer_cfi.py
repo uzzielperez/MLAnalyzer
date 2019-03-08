@@ -1,3 +1,4 @@
+
 import FWCore.ParameterSet.Config as cms 
 
 fevt = cms.EDAnalyzer('RecHitAnalyzer'
@@ -19,7 +20,7 @@ fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , mode = cms.string("JetLevel")
 
     # Jet level cfg
-    , nJets = cms.int32(2)
-    , minJetPt = cms.double(20.)
+    , nJets = cms.int32(-1)
+    , minJetPt = cms.double(35.)
     , maxJetEta = cms.double(2.4)
     )

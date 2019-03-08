@@ -15,7 +15,7 @@ void RecHitAnalyzer::branchesPFCandsAtEBEE ( TTree* tree, edm::Service<TFileServ
   tree->Branch("EndTracksPt_EB", &vEndTracksPt_EB_);
   tree->Branch("MuonsPt_EB", &vMuonsPt_EB_);
 
-  char hname[50], htitle[50];
+  char hname[50];
   for ( int iz(0); iz < nEE; iz++ ) {
     // Branches for images
     const char *zside = (iz > 0) ? "p" : "m";

@@ -67,6 +67,8 @@ rhTreeStr = args.infile
 rhTree = ROOT.TChain("fevt/RHTree")
 rhTree.Add(rhTreeStr)
 nEvts = rhTree.GetEntries()
+
+rhTree.Print()
 assert nEvts > 0
 print " >> Input file:",rhTreeStr
 print " >> nEvts:",nEvts
@@ -99,29 +101,31 @@ for iEvt in range(iEvtStart,iEvtEnd):
     HBHE_energy = np.array(rhTree.HBHE_energy).reshape(56,72)
     HBHE_energy = upsample_array(HBHE_energy, 5, 5) # (280, 360)
     TracksAtECAL_pt = np.array(rhTree.ECAL_tracksPt).reshape(280,360)
-    data['X_CMSII'] = np.stack([TracksAtECAL_pt, ECAL_energy, HBHE_energy], axis=0) # (3, 280, 360)
+    MuonsAtECAL_pt = np.array(rhTree.ECAL_muonsPt).reshape(280,360)
+    data['X_CMSII'] = np.stack([MuonsAtECAL_pt, TracksAtECAL_pt, ECAL_energy, HBHE_energy], axis=0) # (4, 280, 360)
 
     # Jet attributes 
-    ys = rhTree.jetIsQuark
-    pts = rhTree.jetPt
+    ys = rhTree.jet_truthLabel
+    pts = rhTree.jet_pT
+    etas = rhTree.jet_eta
+    phis = rhTree.jet_phi
     iphis = rhTree.jetSeed_iphi
     ietas = rhTree.jetSeed_ieta
-    pdgIds = rhTree.jetPdgIds
     njets = len(ys)
 
     for i in range(njets):
 
         data['y'] = ys[i]
         data['pt'] = pts[i]
+        data['eta'] = etas[i]
+        data['phi'] = phis[i]
         data['iphi'] = iphis[i]
         data['ieta'] = ietas[i]
-        data['pdgId'] = pdgIds[i]
+        #data['pdgId'] = pdgIds[i]
         data['X_jet'] = crop_jet(data['X_CMSII'], data['iphi'], data['ieta']) # (3, 125, 125)
 
         # Create pyarrow.Table
-
         pqdata = [pa.array([d]) if (np.isscalar(d) or  type(d) == list) else pa.array([d.tolist()]) for d in data.values()]
-
         table = pa.Table.from_arrays(pqdata, data.keys())
 
         if nJets == 0:
@@ -141,7 +145,7 @@ print "========================================================"
 pqIn = pq.ParquetFile(outStr)
 print(pqIn.metadata)
 print(pqIn.schema)
-X = pqIn.read_row_group(0, columns=['y','pt','iphi','ieta','pdgId']).to_pydict()
+X = pqIn.read_row_group(0, columns=['y','pt','eta','phi','iphi','ieta']).to_pydict()
 print(X)
 #X = pqIn.read_row_group(0, columns=['X_jet.list.item.list.item.list.item']).to_pydict()['X_jet'] # read row-by-row 
 #X = pqIn.read(['X_jet.list.item.list.item.list.item', 'y']).to_pydict()['X_jet'] # read entire column(s)

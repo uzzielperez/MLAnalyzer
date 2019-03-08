@@ -1,3 +1,4 @@
+
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
 
 using std::vector;
@@ -14,8 +15,12 @@ unsigned int jet_lumiId_;
 unsigned long long jet_eventId_;
 vector<float> vJetSeed_iphi_;
 vector<float> vJetSeed_ieta_;
+vector<int>   vFailedJetIdx_;
+
+
 //const std::string jetSelection = "dijet_gg_qq"; // TODO: put switch at cfg level
 const std::string jetSelection = "dijet";
+
 
 // Initialize branches _____________________________________________________//
 void RecHitAnalyzer::branchesEvtSel_jet ( TTree* tree, edm::Service<TFileService> &fs ) {
@@ -38,7 +43,7 @@ void RecHitAnalyzer::branchesEvtSel_jet ( TTree* tree, edm::Service<TFileService
 // Run event selection ___________________________________________________________________//
 bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
-  vJetIdxs.clear(); // Each jet selection must fill this with good jet indices
+  // Each jet selection must fill vJetIdxs with good jet indices
 
   // Run explicit jet selection
   bool hasPassed;
@@ -73,15 +78,23 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
   int nJet = 0;
   vJetSeed_iphi_.clear();
   vJetSeed_ieta_.clear();
+  vFailedJetIdx_.clear();
+
   // Loop over jets
   for ( int thisJetIdx : vJetIdxs ) {
 
     reco::PFJetRef iJet( jets, thisJetIdx );
 
+    if ( debug ) std::cout << " >> jet[" << thisJetIdx << "]Pt:" << iJet->pt()  << " Eta:" << iJet->eta()  << " Phi:" << iJet->phi() 
+			   << " jetE:" << iJet->energy() << " jetM:" << iJet->mass() << std::endl;
+    
     // Get closest HBHE tower to jet position
     // This will not always be the most energetic deposit
     HcalDetId hId( spr::findDetIdHCAL( caloGeom, iJet->eta(), iJet->phi(), false ) );
-    if ( hId.subdet() != HcalBarrel && hId.subdet() != HcalEndcap ) continue;
+    if ( hId.subdet() != HcalBarrel && hId.subdet() != HcalEndcap ){
+      vFailedJetIdx_.push_back(thisJetIdx);
+      continue;
+    }
     HBHERecHitCollection::const_iterator iRHit( HBHERecHitsH_->find(hId) );
     seedE = ( iRHit == HBHERecHitsH_->end() ) ? 0. : iRHit->energy() ;
     HcalDetId seedId = hId;
@@ -134,6 +147,7 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
     // Required to keep the seed at the image center
     if ( HBHE_IETA_MAX_HE-1 - ietaAbs_ < image_padding ) { 
       if ( debug ) std::cout << " Fail HE edge cut " << std::endl;
+      vFailedJetIdx_.push_back(thisJetIdx);
       continue;
     }
 
@@ -145,13 +159,29 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
     nJet++;
 
   } // good jets 
+
   
-  if ( nJet != nJets_ ) return false;
+
+  // Remove jets that failed the Seed cuts 
+  for(int failedJetIdx : vFailedJetIdx_)
+    vJetIdxs.erase(std::remove(vJetIdxs.begin(),vJetIdxs.end(),failedJetIdx),vJetIdxs.end());
+
+  if ( vJetIdxs.size() == 0){
+    if ( debug ) std::cout << " No passing jets...  " << std::endl;
+    return false;
+  }
+
+  
+  if ( (nJets_ > 0) && nJet != nJets_ ) return false;
   if ( debug ) std::cout << " >> analyze: passed" << std::endl;
 
   jet_eventId_ = iEvent.id().event();
   jet_runId_ = iEvent.id().run();
   jet_lumiId_ = iEvent.id().luminosityBlock();
+
+
+
+
   if ( jetSelection == "dijet_gg_qq" ) {
     fillEvtSel_jet_dijet_gg_qq( iEvent, iSetup );
   } else {

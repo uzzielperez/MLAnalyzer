@@ -48,6 +48,8 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
     doJets_ = false;
   }
 
+
+
   // Initialize file writer
   // NOTE: initializing dynamic-memory histograms outside of TFileService
   // will cause memory leaks
@@ -223,6 +225,53 @@ RecHitAnalyzer::getTrackCand(edm::Handle<reco::TrackCollection> trackCands, floa
 
   return minDRCand;  
 }
+
+
+int RecHitAnalyzer::getTruthLabel(const reco::PFJetRef& recJet, edm::Handle<reco::GenParticleCollection> genParticles, float dRMatch , bool debug ){
+  if ( debug ) {
+    std::cout << " Mathcing reco jetPt:" << recJet->pt() << " jetEta:" << recJet->eta() << " jetPhi:" << recJet->phi() << std::endl;
+  }
+
+
+  for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
+       iGen != genParticles->end();
+       ++iGen) {
+
+    // From: (page 7/ Table 1.5.2)
+    //https://indico.desy.de/indico/event/7142/session/9/contribution/31/material/slides/6.pdf
+    //code range explanation:
+    // 11 - 19 beam particles
+    // 21 - 29 particles of the hardest subprocess
+    // 31 - 39 particles of subsequent subprocesses in multiparton interactions
+    // 41 - 49 particles produced by initial-state-showers
+    // 51 - 59 particles produced by final-state-showers
+    // 61 - 69 particles produced by beam-remnant treatment
+    // 71 - 79 partons in preparation of hadronization process
+    // 81 - 89 primary hadrons produced by hadronization process
+    // 91 - 99 particles produced in decay process, or by Bose-Einstein effects
+
+    //if ( iGen->numberOfMothers() != 2 ) continue;
+    //if ( iGen->status() != 3 ) continue;
+
+    // Do not want to match to the final particles in the shower
+    if ( iGen->status() > 99 ) continue;
+    
+    // Only want to match to partons/leptons/bosons
+    if ( iGen->pdgId() > 25 ) continue;
+
+    float dR = reco::deltaR( recJet->eta(),recJet->phi(), iGen->eta(),iGen->phi() );
+    if ( debug ) std::cout << " \t >> dR " << dR << " id:" << iGen->pdgId() << " status:" << iGen->status() << " nDaught:" << iGen->numberOfDaughters() << " pt:"<< iGen->pt() << " eta:" <<iGen->eta() << " phi:" <<iGen->phi() << " nMoms:" <<iGen->numberOfMothers()<< std::endl;
+    if ( dR > dRMatch ) continue; 
+    if ( debug ) std::cout << " Matched pdgID " << iGen->pdgId() << std::endl;
+    return iGen->pdgId();
+
+  } // gen particles 
+
+
+  return -99;
+}
+
+
 
 /*
 //____ Fill FC diphoton variables _____//
