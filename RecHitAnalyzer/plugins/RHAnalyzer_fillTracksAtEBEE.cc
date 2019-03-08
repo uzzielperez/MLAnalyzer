@@ -10,17 +10,37 @@ TH2F *hTracksPt_EB;
 std::vector<float> vTracksPt_EE_[nEE];
 std::vector<float> vTracksQPt_EE_[nEE];
 std::vector<float> vTracks_EE_[nEE];
+std::vector<float> vTracksd0_EE_[nEE];
+std::vector<float> vTracksd0Sig_EE_[nEE];
+std::vector<float> vTracksz0_EE_[nEE];
+std::vector<float> vTracksz0Sig_EE_[nEE];
+std::vector<float> vTracksd0Signed_EE_[nEE];
+std::vector<float> vTracksd0SigSigned_EE_[nEE];
+std::vector<float> vTracksz0Signed_EE_[nEE];
+std::vector<float> vTracksz0SigSigned_EE_[nEE];
+
 std::vector<float> vTracksPt_EB_;
 std::vector<float> vTracksQPt_EB_;
 std::vector<float> vTracks_EB_;
+std::vector<float> vTracksd0_EB_;
+std::vector<float> vTracksd0Sig_EB_;
+std::vector<float> vTracksz0_EB_;
+std::vector<float> vTracksz0Sig_EB_;
+std::vector<float> vTracksd0Signed_EB_;
+std::vector<float> vTracksd0SigSigned_EB_;
+std::vector<float> vTracksz0Signed_EB_;
+std::vector<float> vTracksz0SigSigned_EB_;
+
 
 // Initialize branches ____________________________________________________________//
 void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileService> &fs ) {
 
   // Branches for images
-  tree->Branch("Tracks_EB",   &vTracks_EB_);
-  tree->Branch("TracksPt_EB", &vTracksPt_EB_);
+  tree->Branch("Tracks_EB",    &vTracks_EB_);
+  tree->Branch("TracksPt_EB",  &vTracksPt_EB_);
   tree->Branch("TracksQPt_EB", &vTracksQPt_EB_);
+  tree->Branch("Tracksd0_EB",  &vTracksd0_EB_);
+  tree->Branch("Tracksd0_EB",  &vTracksd0_EB_);
 
   // Histograms for monitoring
   hTracks_EB = fs->make<TH2F>("Tracks_EB", "N(i#phi,i#eta);i#phi;i#eta",

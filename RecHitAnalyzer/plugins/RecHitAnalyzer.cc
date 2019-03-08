@@ -232,7 +232,6 @@ int RecHitAnalyzer::getTruthLabel(const reco::PFJetRef& recJet, edm::Handle<reco
     std::cout << " Mathcing reco jetPt:" << recJet->pt() << " jetEta:" << recJet->eta() << " jetPhi:" << recJet->phi() << std::endl;
   }
 
-
   for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
        iGen != genParticles->end();
        ++iGen) {
@@ -250,9 +249,6 @@ int RecHitAnalyzer::getTruthLabel(const reco::PFJetRef& recJet, edm::Handle<reco
     // 81 - 89 primary hadrons produced by hadronization process
     // 91 - 99 particles produced in decay process, or by Bose-Einstein effects
 
-    //if ( iGen->numberOfMothers() != 2 ) continue;
-    //if ( iGen->status() != 3 ) continue;
-
     // Do not want to match to the final particles in the shower
     if ( iGen->status() > 99 ) continue;
     
@@ -260,12 +256,18 @@ int RecHitAnalyzer::getTruthLabel(const reco::PFJetRef& recJet, edm::Handle<reco
     if ( iGen->pdgId() > 25 ) continue;
 
     float dR = reco::deltaR( recJet->eta(),recJet->phi(), iGen->eta(),iGen->phi() );
+
     if ( debug ) std::cout << " \t >> dR " << dR << " id:" << iGen->pdgId() << " status:" << iGen->status() << " nDaught:" << iGen->numberOfDaughters() << " pt:"<< iGen->pt() << " eta:" <<iGen->eta() << " phi:" <<iGen->phi() << " nMoms:" <<iGen->numberOfMothers()<< std::endl;
+
     if ( dR > dRMatch ) continue; 
     if ( debug ) std::cout << " Matched pdgID " << iGen->pdgId() << std::endl;
+
     return iGen->pdgId();
 
   } // gen particles 
+
+
+
 
 
   return -99;
