@@ -1,4 +1,5 @@
 
+
 import FWCore.ParameterSet.Config as cms 
 
 fevt = cms.EDAnalyzer('RecHitAnalyzer'
@@ -17,6 +18,9 @@ fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , trackRecHitCollection = cms.InputTag('generalTracks')
     , trackCollection = cms.InputTag("generalTracks")
     , pfCollection = cms.InputTag("particleFlow")
+    , recoJetsForBTagging = cms.InputTag("ak4PFJetsCHS")
+    , jetTagCollection    = cms.InputTag("pfCombinedInclusiveSecondaryVertexV2BJetTags")
+                      
     , mode = cms.string("JetLevel")
 
     # Jet level cfg
