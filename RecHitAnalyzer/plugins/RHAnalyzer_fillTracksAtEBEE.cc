@@ -1,3 +1,4 @@
+
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
 
 // Fill Tracks in EB+EE ////////////////////////////////
@@ -39,8 +40,18 @@ void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileServi
   tree->Branch("Tracks_EB",    &vTracks_EB_);
   tree->Branch("TracksPt_EB",  &vTracksPt_EB_);
   tree->Branch("TracksQPt_EB", &vTracksQPt_EB_);
-  tree->Branch("Tracksd0_EB",  &vTracksd0_EB_);
-  tree->Branch("Tracksd0_EB",  &vTracksd0_EB_);
+
+  tree->Branch("Tracksd0_EB",     &vTracksd0_EB_);
+  tree->Branch("Tracksd0Sig_EB",  &vTracksd0Sig_EB_);
+  tree->Branch("Tracksz0_EB",     &vTracksz0_EB_);
+  tree->Branch("Tracksz0Sig_EB",  &vTracksz0Sig_EB_);
+
+  tree->Branch("Tracksd0Signed_EB",     &vTracksd0Signed_EB_);
+  tree->Branch("Tracksd0SigSigned_EB",  &vTracksd0SigSigned_EB_);
+  tree->Branch("Tracksz0Signed_EB",     &vTracksz0Signed_EB_);
+  tree->Branch("Tracksz0SigSigned_EB",  &vTracksz0SigSigned_EB_);
+
+
 
   // Histograms for monitoring
   hTracks_EB = fs->make<TH2F>("Tracks_EB", "N(i#phi,i#eta);i#phi;i#eta",
@@ -61,6 +72,25 @@ void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileServi
     tree->Branch(hname,        &vTracksPt_EE_[iz]);
     sprintf(hname, "TracksQPt_EE%s",zside);
     tree->Branch(hname,        &vTracksQPt_EE_[iz]);
+
+    sprintf(hname, "Tracksd0_EE%s",zside);
+    tree->Branch(hname,        &vTracksd0_EE_[iz]);
+    sprintf(hname, "Tracksd0Sig_EE%s",zside);
+    tree->Branch(hname,        &vTracksd0Sig_EE_[iz]);
+    sprintf(hname, "Tracksz0_EE%s",zside);
+    tree->Branch(hname,        &vTracksz0_EE_[iz]);
+    sprintf(hname, "Tracksz0Sig_EE%s",zside);
+    tree->Branch(hname,        &vTracksz0Sig_EE_[iz]);
+
+    sprintf(hname, "Tracksd0Signed_EE%s",zside);
+    tree->Branch(hname,        &vTracksd0Signed_EE_[iz]);
+    sprintf(hname, "Tracksd0SigSigned_EE%s",zside);
+    tree->Branch(hname,        &vTracksd0SigSigned_EE_[iz]);
+    sprintf(hname, "Tracksz0Signed_EE%s",zside);
+    tree->Branch(hname,        &vTracksz0Signed_EE_[iz]);
+    sprintf(hname, "Tracksz0SigSigned_EE%s",zside);
+    tree->Branch(hname,        &vTracksz0SigSigned_EE_[iz]);
+
 
     // Histograms for monitoring
     sprintf(hname, "Tracks_EE%s",zside);
@@ -88,10 +118,30 @@ void RecHitAnalyzer::fillTracksAtEBEE ( const edm::Event& iEvent, const edm::Eve
   vTracks_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
   vTracksPt_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
   vTracksQPt_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
+  vTracksd0_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
+  vTracksd0Sig_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
+  vTracksz0_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
+  vTracksz0Sig_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
+  vTracksd0Signed_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
+  vTracksd0SigSigned_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
+  vTracksz0Signed_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
+  vTracksz0SigSigned_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
+
   for ( int iz(0); iz < nEE; iz++ ) {
     vTracks_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
     vTracksPt_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
     vTracksQPt_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
+
+    vTracksd0_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
+    vTracksd0Sig_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
+    vTracksz0_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
+    vTracksz0Sig_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
+
+    vTracksd0Signed_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
+    vTracksd0SigSigned_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
+    vTracksz0Signed_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
+    vTracksz0SigSigned_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
+
   }
 
   edm::Handle<reco::TrackCollection> tracksH_;
