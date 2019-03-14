@@ -20,7 +20,7 @@ fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , pfCollection = cms.InputTag("particleFlow")
     , recoJetsForBTagging = cms.InputTag("ak4PFJetsCHS")
     , jetTagCollection    = cms.InputTag("pfCombinedInclusiveSecondaryVertexV2BJetTags")
-                      
+    , ipTagInfoCollection = cms.InputTag("pfImpactParameterTagInfos")
     , mode = cms.string("JetLevel")
 
     # Jet level cfg

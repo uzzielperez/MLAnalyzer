@@ -76,6 +76,7 @@
 #include "DataFormats/Math/interface/deltaR.h"
 #include "DataFormats/Math/interface/deltaPhi.h"
 #include "DataFormats/BTauReco/interface/JetTag.h"
+#include "DataFormats/BTauReco/interface/CandIPTagInfo.h"
 
 //
 // class declaration
@@ -114,6 +115,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<reco::TrackCollection> trackCollectionT_;
     edm::EDGetTokenT<edm::View<reco::Jet> > recoJetsT_;
     edm::EDGetTokenT<reco::JetTagCollection> jetTagCollectionT_;
+    edm::EDGetTokenT<std::vector<reco::CandIPTagInfo> >    ipTagInfoCollectionT_;
     
     typedef std::vector<reco::PFCandidate>  PFCollection;
     edm::EDGetTokenT<PFCollection> pfCollectionT_;

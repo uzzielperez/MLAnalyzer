@@ -1,3 +1,4 @@
+
 import FWCore.ParameterSet.Config as cms
 import FWCore.ParameterSet.VarParsing as VarParsing
 
@@ -39,6 +40,9 @@ process.source = cms.Source("PoolSource",
     )
 print " >> Loaded",len(options.inputFiles),"input files from list."
 
+
+
+
 process.load("MLAnalyzer.RecHitAnalyzer.RHAnalyzer_cfi")
 process.fevt.mode = cms.string(options.processMode)
 #process.fevt.mode = cms.string("JetLevel") # for when using crab
@@ -52,3 +56,5 @@ process.TFileService = cms.Service("TFileService",
 
 #process.SimpleMemoryCheck = cms.Service( "SimpleMemoryCheck", ignoreTotal = cms.untracked.int32(1) )
 process.p = cms.Path(process.fevt)
+
+

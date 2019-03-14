@@ -104,7 +104,9 @@ void RecHitAnalyzer::fillEvtSel_jet_dijet( const edm::Event& iEvent, const edm::
   iEvent.getByToken(jetTagCollectionT_, btagDiscriminators);
 
 
-
+  edm::Handle<std::vector<reco::CandIPTagInfo> > ipTagInfo;
+  iEvent.getByToken(ipTagInfoCollectionT_, ipTagInfo);
+ 
   h_dijet_jet_nJet->Fill( vJetIdxs.size() );
   // Fill branches and histograms 
   for(int thisJetIdx : vJetIdxs){
@@ -143,7 +145,36 @@ void RecHitAnalyzer::fillEvtSel_jet_dijet( const edm::Event& iEvent, const edm::
 
     float bTagValue = getBTaggingValue(thisJet,recoJetCollection,btagDiscriminators);
     vDijet_jet_btaggingValue_      .push_back(bTagValue);
-  }
+
+    // loop over jets
+    for( edm::View<reco::Jet>::const_iterator jetToMatch = recoJetCollection->begin(); jetToMatch != recoJetCollection->end(); ++jetToMatch )
+      {
+	reco::Jet matchCand = *jetToMatch;
+	float dR = reco::deltaR( thisJet->eta(),thisJet->phi(), matchCand.eta(),matchCand.phi() );
+	if(dR > 0.1) continue;
+
+	size_t idx = (jetToMatch - recoJetCollection->begin());
+	edm::RefToBase<reco::Jet> jetRef = recoJetCollection->refAt(idx);
+
+	for( std::vector<reco::CandIPTagInfo>::const_iterator itTI = ipTagInfo->begin(); itTI != ipTagInfo->end(); ++itTI ){
+	  if( itTI->jet() == jetRef ){
+	    std::cout << "Have Match !!! " << std::endl;
+	    std::cout << "\thasTracks: " << itTI->hasTracks() << std::endl;
+	    std::cout << "\\tSize IPData: " << itTI->impactParameterData().size() << std::endl;
+	    //for(reco::btau::TaggingVariable& var : itTI->taggingVariables()){
+	    //  std::cout << 
+	    //}
+	    //match = itTI;
+	    break;
+	  }
+	}
+      
+      }// jets
+
+
+  
+
+  }//vJetIdxs
 
 
 } // fillEvtSel_jet_dijet()
