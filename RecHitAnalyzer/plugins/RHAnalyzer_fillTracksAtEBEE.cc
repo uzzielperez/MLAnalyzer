@@ -11,26 +11,10 @@ TH2F *hTracksPt_EB;
 std::vector<float> vTracksPt_EE_[nEE];
 std::vector<float> vTracksQPt_EE_[nEE];
 std::vector<float> vTracks_EE_[nEE];
-std::vector<float> vTracksd0_EE_[nEE];
-std::vector<float> vTracksd0Sig_EE_[nEE];
-std::vector<float> vTracksz0_EE_[nEE];
-std::vector<float> vTracksz0Sig_EE_[nEE];
-std::vector<float> vTracksd0Signed_EE_[nEE];
-std::vector<float> vTracksd0SigSigned_EE_[nEE];
-std::vector<float> vTracksz0Signed_EE_[nEE];
-std::vector<float> vTracksz0SigSigned_EE_[nEE];
 
 std::vector<float> vTracksPt_EB_;
 std::vector<float> vTracksQPt_EB_;
 std::vector<float> vTracks_EB_;
-std::vector<float> vTracksd0_EB_;
-std::vector<float> vTracksd0Sig_EB_;
-std::vector<float> vTracksz0_EB_;
-std::vector<float> vTracksz0Sig_EB_;
-std::vector<float> vTracksd0Signed_EB_;
-std::vector<float> vTracksd0SigSigned_EB_;
-std::vector<float> vTracksz0Signed_EB_;
-std::vector<float> vTracksz0SigSigned_EB_;
 
 
 // Initialize branches ____________________________________________________________//
@@ -40,17 +24,6 @@ void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileServi
   tree->Branch("Tracks_EB",    &vTracks_EB_);
   tree->Branch("TracksPt_EB",  &vTracksPt_EB_);
   tree->Branch("TracksQPt_EB", &vTracksQPt_EB_);
-
-  tree->Branch("Tracksd0_EB",     &vTracksd0_EB_);
-  tree->Branch("Tracksd0Sig_EB",  &vTracksd0Sig_EB_);
-  tree->Branch("Tracksz0_EB",     &vTracksz0_EB_);
-  tree->Branch("Tracksz0Sig_EB",  &vTracksz0Sig_EB_);
-
-  tree->Branch("Tracksd0Signed_EB",     &vTracksd0Signed_EB_);
-  tree->Branch("Tracksd0SigSigned_EB",  &vTracksd0SigSigned_EB_);
-  tree->Branch("Tracksz0Signed_EB",     &vTracksz0Signed_EB_);
-  tree->Branch("Tracksz0SigSigned_EB",  &vTracksz0SigSigned_EB_);
-
 
 
   // Histograms for monitoring
@@ -72,25 +45,6 @@ void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileServi
     tree->Branch(hname,        &vTracksPt_EE_[iz]);
     sprintf(hname, "TracksQPt_EE%s",zside);
     tree->Branch(hname,        &vTracksQPt_EE_[iz]);
-
-    sprintf(hname, "Tracksd0_EE%s",zside);
-    tree->Branch(hname,        &vTracksd0_EE_[iz]);
-    sprintf(hname, "Tracksd0Sig_EE%s",zside);
-    tree->Branch(hname,        &vTracksd0Sig_EE_[iz]);
-    sprintf(hname, "Tracksz0_EE%s",zside);
-    tree->Branch(hname,        &vTracksz0_EE_[iz]);
-    sprintf(hname, "Tracksz0Sig_EE%s",zside);
-    tree->Branch(hname,        &vTracksz0Sig_EE_[iz]);
-
-    sprintf(hname, "Tracksd0Signed_EE%s",zside);
-    tree->Branch(hname,        &vTracksd0Signed_EE_[iz]);
-    sprintf(hname, "Tracksd0SigSigned_EE%s",zside);
-    tree->Branch(hname,        &vTracksd0SigSigned_EE_[iz]);
-    sprintf(hname, "Tracksz0Signed_EE%s",zside);
-    tree->Branch(hname,        &vTracksz0Signed_EE_[iz]);
-    sprintf(hname, "Tracksz0SigSigned_EE%s",zside);
-    tree->Branch(hname,        &vTracksz0SigSigned_EE_[iz]);
-
 
     // Histograms for monitoring
     sprintf(hname, "Tracks_EE%s",zside);
