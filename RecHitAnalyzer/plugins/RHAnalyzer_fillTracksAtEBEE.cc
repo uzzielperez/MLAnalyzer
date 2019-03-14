@@ -72,30 +72,11 @@ void RecHitAnalyzer::fillTracksAtEBEE ( const edm::Event& iEvent, const edm::Eve
   vTracks_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
   vTracksPt_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
   vTracksQPt_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
-  vTracksd0_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
-  vTracksd0Sig_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
-  vTracksz0_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
-  vTracksz0Sig_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
-  vTracksd0Signed_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
-  vTracksd0SigSigned_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
-  vTracksz0Signed_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
-  vTracksz0SigSigned_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
 
   for ( int iz(0); iz < nEE; iz++ ) {
     vTracks_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
     vTracksPt_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
     vTracksQPt_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
-
-    vTracksd0_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
-    vTracksd0Sig_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
-    vTracksz0_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
-    vTracksz0Sig_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
-
-    vTracksd0Signed_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
-    vTracksd0SigSigned_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
-    vTracksz0Signed_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
-    vTracksz0SigSigned_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
-
   }
 
   edm::Handle<reco::TrackCollection> tracksH_;
