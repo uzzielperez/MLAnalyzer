@@ -1,6 +1,9 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
+#include "DataFormats/BTauReco/interface/JetTag.h"
 
 using std::vector;
+using std::cout;
+using std::endl;
 
 TH1D *h_dijet_jet_pT;
 TH1D *h_dijet_jet_E;
@@ -12,6 +15,7 @@ vector<float> vDijet_jet_m0_;
 vector<float> vDijet_jet_eta_;
 vector<float> vDijet_jet_phi_;
 vector<float> vDijet_jet_truthLabel_;
+vector<float> vDijet_jet_btaggingValue_;
 
 
 // Initialize branches _____________________________________________________//
@@ -28,6 +32,7 @@ void RecHitAnalyzer::branchesEvtSel_jet_dijet( TTree* tree, edm::Service<TFileSe
   tree->Branch("jetEta",         &vDijet_jet_eta_);
   tree->Branch("jetPhi",         &vDijet_jet_phi_);
   tree->Branch("jet_truthLabel", &vDijet_jet_truthLabel_);
+  tree->Branch("jet_btagValue",  &vDijet_jet_btaggingValue_);
 
 } // branchesEvtSel_jet_dijet()
 
@@ -44,6 +49,7 @@ bool RecHitAnalyzer::runEvtSel_jet_dijet( const edm::Event& iEvent, const edm::E
   vDijet_jet_eta_.clear();
   vDijet_jet_phi_.clear();
   vDijet_jet_truthLabel_.clear();
+  vDijet_jet_btaggingValue_.clear();
 
   int nJet = 0;
   // Loop over jets
@@ -91,6 +97,14 @@ void RecHitAnalyzer::fillEvtSel_jet_dijet( const edm::Event& iEvent, const edm::
   edm::Handle<reco::GenParticleCollection> genParticles;
   iEvent.getByToken( genParticleCollectionT_, genParticles );
 
+  edm::Handle<edm::View<reco::Jet> > recoJetCollection;
+  iEvent.getByToken(recoJetsT_, recoJetCollection);
+
+  edm::Handle<reco::JetTagCollection> btagDiscriminators;
+  iEvent.getByToken(jetTagCollectionT_, btagDiscriminators);
+
+
+
   h_dijet_jet_nJet->Fill( vJetIdxs.size() );
   // Fill branches and histograms 
   for(int thisJetIdx : vJetIdxs){
@@ -127,7 +141,9 @@ void RecHitAnalyzer::fillEvtSel_jet_dijet( const edm::Event& iEvent, const edm::
     }
     vDijet_jet_truthLabel_      .push_back(truthLabel);
 
-
+    float bTagValue = getBTaggingValue(thisJet,recoJetCollection,btagDiscriminators);
+    vDijet_jet_btaggingValue_      .push_back(bTagValue);
   }
+
 
 } // fillEvtSel_jet_dijet()

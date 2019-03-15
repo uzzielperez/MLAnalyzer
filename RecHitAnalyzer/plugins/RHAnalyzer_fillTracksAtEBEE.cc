@@ -1,3 +1,4 @@
+
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
 
 // Fill Tracks in EB+EE ////////////////////////////////
@@ -10,17 +11,20 @@ TH2F *hTracksPt_EB;
 std::vector<float> vTracksPt_EE_[nEE];
 std::vector<float> vTracksQPt_EE_[nEE];
 std::vector<float> vTracks_EE_[nEE];
+
 std::vector<float> vTracksPt_EB_;
 std::vector<float> vTracksQPt_EB_;
 std::vector<float> vTracks_EB_;
+
 
 // Initialize branches ____________________________________________________________//
 void RecHitAnalyzer::branchesTracksAtEBEE ( TTree* tree, edm::Service<TFileService> &fs ) {
 
   // Branches for images
-  tree->Branch("Tracks_EB",   &vTracks_EB_);
-  tree->Branch("TracksPt_EB", &vTracksPt_EB_);
+  tree->Branch("Tracks_EB",    &vTracks_EB_);
+  tree->Branch("TracksPt_EB",  &vTracksPt_EB_);
   tree->Branch("TracksQPt_EB", &vTracksQPt_EB_);
+
 
   // Histograms for monitoring
   hTracks_EB = fs->make<TH2F>("Tracks_EB", "N(i#phi,i#eta);i#phi;i#eta",
@@ -68,6 +72,7 @@ void RecHitAnalyzer::fillTracksAtEBEE ( const edm::Event& iEvent, const edm::Eve
   vTracks_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
   vTracksPt_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
   vTracksQPt_EB_.assign( EBDetId::kSizeForDenseIndexing, 0. );
+
   for ( int iz(0); iz < nEE; iz++ ) {
     vTracks_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );
     vTracksPt_EE_[iz].assign( EE_NC_PER_ZSIDE, 0. );

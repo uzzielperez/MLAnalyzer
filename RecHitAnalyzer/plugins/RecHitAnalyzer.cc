@@ -32,6 +32,10 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   trackCollectionT_       = consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("trackCollection"));
   pfCollectionT_          = consumes<PFCollection>(iConfig.getParameter<edm::InputTag>("pfCollection"));
 
+  recoJetsT_              = consumes<edm::View<reco::Jet> >(iConfig.getParameter<edm::InputTag>("recoJetsForBTagging"));
+  jetTagCollectionT_      = consumes<reco::JetTagCollection>(iConfig.getParameter<edm::InputTag>("jetTagCollection"));
+
+
   //johnda add configuration
   mode_      = iConfig.getParameter<std::string>("mode");
   minJetPt_  = iConfig.getParameter<double>("minJetPt");
@@ -232,7 +236,6 @@ int RecHitAnalyzer::getTruthLabel(const reco::PFJetRef& recJet, edm::Handle<reco
     std::cout << " Mathcing reco jetPt:" << recJet->pt() << " jetEta:" << recJet->eta() << " jetPhi:" << recJet->phi() << std::endl;
   }
 
-
   for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin();
        iGen != genParticles->end();
        ++iGen) {
@@ -250,9 +253,6 @@ int RecHitAnalyzer::getTruthLabel(const reco::PFJetRef& recJet, edm::Handle<reco
     // 81 - 89 primary hadrons produced by hadronization process
     // 91 - 99 particles produced in decay process, or by Bose-Einstein effects
 
-    //if ( iGen->numberOfMothers() != 2 ) continue;
-    //if ( iGen->status() != 3 ) continue;
-
     // Do not want to match to the final particles in the shower
     if ( iGen->status() > 99 ) continue;
     
@@ -260,13 +260,56 @@ int RecHitAnalyzer::getTruthLabel(const reco::PFJetRef& recJet, edm::Handle<reco
     if ( iGen->pdgId() > 25 ) continue;
 
     float dR = reco::deltaR( recJet->eta(),recJet->phi(), iGen->eta(),iGen->phi() );
+
     if ( debug ) std::cout << " \t >> dR " << dR << " id:" << iGen->pdgId() << " status:" << iGen->status() << " nDaught:" << iGen->numberOfDaughters() << " pt:"<< iGen->pt() << " eta:" <<iGen->eta() << " phi:" <<iGen->phi() << " nMoms:" <<iGen->numberOfMothers()<< std::endl;
+
     if ( dR > dRMatch ) continue; 
     if ( debug ) std::cout << " Matched pdgID " << iGen->pdgId() << std::endl;
+
     return iGen->pdgId();
 
   } // gen particles 
 
+
+
+
+
+  return -99;
+}
+
+
+float RecHitAnalyzer::getBTaggingValue(const reco::PFJetRef& recJet, edm::Handle<edm::View<reco::Jet> >& recoJetCollection, edm::Handle<reco::JetTagCollection>& btagCollection, float dRMatch, bool debug ){
+
+  // loop over jets
+  for( edm::View<reco::Jet>::const_iterator jetToMatch = recoJetCollection->begin(); jetToMatch != recoJetCollection->end(); ++jetToMatch )
+    {
+      reco::Jet thisJet = *jetToMatch;
+      float dR = reco::deltaR( recJet->eta(),recJet->phi(), thisJet.eta(),thisJet.phi() );
+      if(dR > 0.1) continue;
+
+      size_t idx = (jetToMatch - recoJetCollection->begin());
+      edm::RefToBase<reco::Jet> jetRef = recoJetCollection->refAt(idx);
+
+      std::cout << "btag discriminator value = " << (*btagCollection)[jetRef] << std::endl;
+      return (*btagCollection)[jetRef];
+  
+    }
+
+  if(debug){
+    std::cout << "ERROR  No btag match: " << std::endl;
+    
+    // loop over jets
+    for( edm::View<reco::Jet>::const_iterator jetToMatch = recoJetCollection->begin(); jetToMatch != recoJetCollection->end(); ++jetToMatch )
+      {
+	const reco::Jet thisJet = *jetToMatch;
+	std::cout << "\t Match attempt pt: " <<  thisJet.pt() << " vs " <<  recJet->pt()
+		  << " eta: " << thisJet.eta() << " vs " << recJet->eta()
+		  << "phi: "<< thisJet.phi() << " vs " << recJet->phi()
+		  << std::endl;
+	float dR = reco::deltaR( recJet->eta(),recJet->phi(), thisJet.eta(),thisJet.phi() );
+	std::cout << "dR " << dR << std::endl;
+      }
+  }    
 
   return -99;
 }
