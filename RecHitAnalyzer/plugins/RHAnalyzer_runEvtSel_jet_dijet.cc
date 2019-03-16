@@ -103,6 +103,14 @@ void RecHitAnalyzer::fillEvtSel_jet_dijet( const edm::Event& iEvent, const edm::
   edm::Handle<reco::JetTagCollection> btagDiscriminators;
   iEvent.getByToken(jetTagCollectionT_, btagDiscriminators);
 
+  edm::Handle<std::vector<reco::CandIPTagInfo> > ipTagInfo;
+  iEvent.getByToken(ipTagInfoCollectionT_, ipTagInfo);
+
+  edm::Handle<reco::VertexCollection> vertexInfo;
+  iEvent.getByToken(vertexCollectionT_, vertexInfo);
+  const reco::VertexCollection& vtxs = *vertexInfo;
+	      
+ 
   h_dijet_jet_nJet->Fill( vJetIdxs.size() );
   // Fill branches and histograms 
   for(int thisJetIdx : vJetIdxs){
@@ -141,7 +149,72 @@ void RecHitAnalyzer::fillEvtSel_jet_dijet( const edm::Event& iEvent, const edm::
 
     float bTagValue = getBTaggingValue(thisJet,recoJetCollection,btagDiscriminators);
     vDijet_jet_btaggingValue_      .push_back(bTagValue);
-    
+
+    // loop over jets
+    for( edm::View<reco::Jet>::const_iterator jetToMatch = recoJetCollection->begin(); jetToMatch != recoJetCollection->end(); ++jetToMatch )
+      {
+	reco::Jet matchCand = *jetToMatch;
+	float dR = reco::deltaR( thisJet->eta(),thisJet->phi(), matchCand.eta(),matchCand.phi() );
+	if(dR > 0.1) continue;
+
+	size_t idx = (jetToMatch - recoJetCollection->begin());
+	edm::RefToBase<reco::Jet> jetRef = recoJetCollection->refAt(idx);
+
+	for( std::vector<reco::CandIPTagInfo>::const_iterator itTI = ipTagInfo->begin(); itTI != ipTagInfo->end(); ++itTI ){
+	  if( itTI->jet() == jetRef ){
+	    std::cout << "Have Match !!! " << std::endl;
+	    std::cout << "\thasTracks: " << itTI->hasTracks() << std::endl;
+
+	    const std::vector<reco::btag::TrackIPData> &ipData = itTI->impactParameterData();
+	    const auto &tracks = itTI->selectedTracks();
+
+	    std::cout << "\\tSize IPData: " << ipData.size() << std::endl;
+	    std::cout << "\\tSize TrackSize: " << tracks.size() << std::endl;
+	    
+	    unsigned int nTracks = ipData.size();
+	    for(unsigned int idTrk = 0; idTrk < nTracks; ++idTrk){
+	      //const auto &track = tracks[idTrk];
+	      
+	      //math::XYZVector trackMom = track->momentum();
+	      const reco::Track * theTrack = itTI->selectedTrack(idTrk);
+	      float IP2D = ipData[idTrk].ip2d.value();
+	      float IP3D = ipData[idTrk].ip3d.value();
+	      float my_z0 = sqrt(IP3D*IP3D - IP2D*IP2D);
+	      const edm::Ref<reco::VertexCollection> & pvs = itTI->primaryVertex();
+	      cout << " BTag PV Position " << pvs->position().x() << " " << pvs->position().y() << " " << pvs->position().z() << endl;
+	      cout << " PV Position " << vtxs[0].position().x() << " " << vtxs[0].position().y() << " " << vtxs[0].position().z() << endl;
+
+	      const double d0 = ( !vtxs.empty() ?
+				  theTrack->dxy(vtxs[0].position()) :
+				  theTrack->dxy() );
+
+
+	      const double dz = ( !vtxs.empty() ?
+				  theTrack->dz(vtxs[0].position()) :
+				  theTrack->dz() );
+
+	      cout << "IP2D: " << IP2D 
+		   << " IP3D " << IP3D 
+		   << " my_z0 " << my_z0 
+		   << " raw d0 " << theTrack->d0() 
+		   << " raw dz " << theTrack->dz()
+		   << " calc d0 " << d0
+		   << " calc dz " << dz
+		   << endl;
+
+	    }
+
+	    //for(auto& var : itTI->taggingVariables()){
+	    //  std::cout << "Taggin var is " << var.first << std::endl;
+	    //}
+	    //match = itTI;
+	    break;
+	  }
+	}
+      
+      }// jets
+
+
   }//vJetIdxs
 
 
