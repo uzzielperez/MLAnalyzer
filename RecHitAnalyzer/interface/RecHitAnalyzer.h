@@ -76,6 +76,7 @@
 #include "DataFormats/Math/interface/deltaR.h"
 #include "DataFormats/Math/interface/deltaPhi.h"
 #include "DataFormats/BTauReco/interface/JetTag.h"
+#include "DataFormats/BTauReco/interface/CandIPTagInfo.h"
 
 //
 // class declaration
@@ -112,8 +113,10 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<reco::PFJetCollection> jetCollectionT_;
     edm::EDGetTokenT<reco::GenJetCollection> genJetCollectionT_;
     edm::EDGetTokenT<reco::TrackCollection> trackCollectionT_;
+    edm::EDGetTokenT<reco::VertexCollection> vertexCollectionT_;
     edm::EDGetTokenT<edm::View<reco::Jet> > recoJetsT_;
     edm::EDGetTokenT<reco::JetTagCollection> jetTagCollectionT_;
+    edm::EDGetTokenT<std::vector<reco::CandIPTagInfo> >    ipTagInfoCollectionT_;
     
     typedef std::vector<reco::PFCandidate>  PFCollection;
     edm::EDGetTokenT<PFCollection> pfCollectionT_;
@@ -178,6 +181,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     int  nJets_;
     double minJetPt_;
     double maxJetEta_;
+    double z0PVCut_;
     std::vector<int> vJetIdxs;
     void branchesEvtSel_jet_dijet      ( TTree*, edm::Service<TFileService>& );
     void branchesEvtSel_jet_dijet_gg_qq( TTree*, edm::Service<TFileService>& );
@@ -193,8 +197,8 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 //
 // constants, enums and typedefs
 //
-static const bool debug = true;
-//static const bool debug = false;
+//static const bool debug = true;
+static const bool debug = false;
 
 static const int nEE = 2;
 static const int nTOB = 6;
