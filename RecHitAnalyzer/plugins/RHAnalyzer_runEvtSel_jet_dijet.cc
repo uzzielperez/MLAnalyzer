@@ -103,6 +103,14 @@ void RecHitAnalyzer::fillEvtSel_jet_dijet( const edm::Event& iEvent, const edm::
   edm::Handle<reco::JetTagCollection> btagDiscriminators;
   iEvent.getByToken(jetTagCollectionT_, btagDiscriminators);
 
+  edm::Handle<std::vector<reco::CandIPTagInfo> > ipTagInfo;
+  iEvent.getByToken(ipTagInfoCollectionT_, ipTagInfo);
+
+  edm::Handle<reco::VertexCollection> vertexInfo;
+  iEvent.getByToken(vertexCollectionT_, vertexInfo);
+  const reco::VertexCollection& vtxs = *vertexInfo;
+	      
+ 
   h_dijet_jet_nJet->Fill( vJetIdxs.size() );
   // Fill branches and histograms 
   for(int thisJetIdx : vJetIdxs){
@@ -141,7 +149,7 @@ void RecHitAnalyzer::fillEvtSel_jet_dijet( const edm::Event& iEvent, const edm::
 
     float bTagValue = getBTaggingValue(thisJet,recoJetCollection,btagDiscriminators);
     vDijet_jet_btaggingValue_      .push_back(bTagValue);
-    
+
   }//vJetIdxs
 
 

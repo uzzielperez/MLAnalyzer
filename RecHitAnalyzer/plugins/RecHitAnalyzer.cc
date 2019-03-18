@@ -87,6 +87,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   //branchesTRKlayersAtECAL(RHTree, fs);
   //branchesTRKvolumeAtEBEE(RHTree, fs);
   //branchesTRKvolumeAtECAL(RHTree, fs);
+  branchesJetInfoAtECALstitched( RHTree, fs);
 
   // For FC inputs
   //RHTree->Branch("FC_inputs",      &vFC_inputs_);
@@ -139,6 +140,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //fillTRKlayersAtECAL( iEvent, iSetup );
   //fillTRKvolumeAtEBEE( iEvent, iSetup );
   //fillTRKvolumeAtECAL( iEvent, iSetup );
+  fillJetInfoAtECALstitched( iEvent, iSetup );
 
   ////////////// 4-Momenta //////////
   //fillFC( iEvent, iSetup );
@@ -234,6 +236,8 @@ RecHitAnalyzer::getTrackCand(edm::Handle<reco::TrackCollection> trackCands, floa
 }
 
 
+
+
 int RecHitAnalyzer::getTruthLabel(const reco::PFJetRef& recJet, edm::Handle<reco::GenParticleCollection> genParticles, float dRMatch , bool debug ){
   if ( debug ) {
     std::cout << " Mathcing reco jetPt:" << recJet->pt() << " jetEta:" << recJet->eta() << " jetPhi:" << recJet->phi() << std::endl;
@@ -293,7 +297,7 @@ float RecHitAnalyzer::getBTaggingValue(const reco::PFJetRef& recJet, edm::Handle
       size_t idx = (jetToMatch - recoJetCollection->begin());
       edm::RefToBase<reco::Jet> jetRef = recoJetCollection->refAt(idx);
 
-      std::cout << "btag discriminator value = " << (*btagCollection)[jetRef] << std::endl;
+      if(debug) std::cout << "btag discriminator value = " << (*btagCollection)[jetRef] << std::endl;
       return (*btagCollection)[jetRef];
   
     }
