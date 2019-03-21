@@ -116,7 +116,11 @@ void RecHitAnalyzer::fillJetInfoAtECALstitched ( const edm::Event& iEvent, const
   iEvent.getByToken(jetCollectionT_, jets);
 
   edm::Handle<std::vector<reco::CandIPTagInfo> > ipTagInfo;
-  iEvent.getByToken(ipTagInfoCollectionT_, ipTagInfo);
+  if (!ipTagInfoCollectionT_.isUninitialized()) {
+    if(!iEvent.getByToken(ipTagInfoCollectionT_, ipTagInfo)) {
+      return;
+    }
+  }
 
   for(int thisJetIdx : vJetIdxs){
     reco::PFJetRef thisJet( jets, thisJetIdx );
@@ -216,4 +220,4 @@ void RecHitAnalyzer::fillJetInfoAtECALstitched ( const edm::Event& iEvent, const
   fillJetInfoAtECAL_with_EEproj( hEvt_EE_tracksIP2D[1], hEvt_EE_tracksIP3D[1],  hEvt_EE_tracksIP2Dsig[1], hEvt_EE_tracksIP3Dsig[1], ieta_global_offset, ieta_signed_offset );
 
 
-} // fillTracksAtECALstitched()
+} // fillJetInfoAtECALstitched()
