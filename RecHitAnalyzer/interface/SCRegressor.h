@@ -123,12 +123,15 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     void fillTracksAtEBEE ( const edm::Event&, const edm::EventSetup& );
     void fillPhoVars ( const edm::Event&, const edm::EventSetup& );
 
-    void branchesPhoSel ( TTree*, edm::Service<TFileService>& );
-    bool runPhoSel ( const edm::Event&, const edm::EventSetup& );
-    void fillPhoSel     ( const edm::Event&, const edm::EventSetup& );
-    void branchesPhoSel_gamma ( TTree*, edm::Service<TFileService>& );
-    bool runPhoSel_gamma ( const edm::Event&, const edm::EventSetup& );
-    void fillPhoSel_gamma     ( const edm::Event&, const edm::EventSetup& );
+    void branchesPiSel       ( TTree*, edm::Service<TFileService>& );
+    void branchesPhotonSel   ( TTree*, edm::Service<TFileService>& );
+    void branchesDiPhotonSel ( TTree*, edm::Service<TFileService>& );
+    bool runPiSel        ( const edm::Event&, const edm::EventSetup& );
+    bool runPhotonSel    ( const edm::Event&, const edm::EventSetup& );
+    bool runDiPhotonSel  ( const edm::Event&, const edm::EventSetup& );
+    void fillPiSel       ( const edm::Event&, const edm::EventSetup& );
+    void fillPhotonSel   ( const edm::Event&, const edm::EventSetup& );
+    void fillDiPhotonSel ( const edm::Event&, const edm::EventSetup& );
 
     std::map<unsigned int, std::vector<unsigned int>> mGenPi0_RecoPho;
     std::vector<int> vPreselPhoIdxs_;
@@ -182,6 +185,9 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     TH2F * hdPhidEta_nPhoGt2;
     TProfile2D * hdPhidEta_jphoPt_o_iphoPt;
     TH1F * hjphoPt_o_iphoPt;
+
+    float m0_;
+    std::vector<float> vFC_inputs_;
 
 };
 

@@ -57,7 +57,7 @@ void SCRegressor::fillPhoVars ( const edm::Event& iEvent, const edm::EventSetup&
     vPho_E_.push_back( iPho->energy() );
     vPho_eta_.push_back( iPho->eta() );
     vPho_phi_.push_back( iPho->phi() );
-    vPho_r9_.push_back( iPho->r9() );
+    vPho_r9_.push_back( iPho->full5x5_r9() );
     vPho_sieie_.push_back( iPho->full5x5_sigmaIetaIeta() );
   } // photons
   */
