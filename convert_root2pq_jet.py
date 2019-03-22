@@ -120,7 +120,7 @@ for iEvt in range(iEvtStart,iEvtEnd):
 
         # Create pyarrow.Table
 
-        pqdata = [pa.array([d]) if (np.isscalar(d) or  type(d) == list) else pa.array([d.tolist()]) for d in data.values()]
+        pqdata = [pa.array([d]) if (np.isscalar(d) or type(d) == list) else pa.array([d.tolist()]) for d in data.values()]
 
         table = pa.Table.from_arrays(pqdata, data.keys())
 

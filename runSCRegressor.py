@@ -15,6 +15,7 @@ cfg='RecHitAnalyzer/python/SCRegressor_cfg.py'
 #inputFiles_='/store/user/lpcml/mandrews/AODSIM/DoublePi0Pt15To100_m0To1600_pythia8_noPU_AODSIM/190116_160039/0000/step_full_1.root'
 #inputFiles_='/store/user/lpcml/mandrews/AODSIM/DoublePhotonPt15To100_pythia8_noPU_AODSIM/190219_231402/0000/step_full_1.root'
 #inputFiles_='/store/user/lpcml/mandrews/AODSIM/DoublePi0Pt15To100_m000_pythia8_noPU_AODSIM/190220_040632/0000/step_full_1.root'
+#inputFiles_='/store/user/lpcml/mandrews/AODSIM/SM2gamma_1j_1M_2016_25ns_Moriond17MC_PoissonOOTPU_AODSIM/180904_071354/0000/step_full_1.root'
 inputFiles_='/store/user/lpcml/mandrews/AODSIM/DoublePi0Pt15To100_m0To1600_pythia8_noPU_AODSIM_mlog_ptexp/190217_185619/0000/step_full_1.root'
 
 #inputFiles_='file:step_full_filtered.root'

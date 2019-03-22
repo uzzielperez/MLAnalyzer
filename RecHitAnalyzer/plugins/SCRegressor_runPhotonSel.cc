@@ -1,25 +1,25 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/SCRegressor.h"
 
 // Initialize branches _____________________________________________________//
-void SCRegressor::branchesPhoSel_gamma ( TTree* tree, edm::Service<TFileService> &fs )
+void SCRegressor::branchesPhotonSel ( TTree* tree, edm::Service<TFileService> &fs )
 {
   hSC_pT = fs->make<TH1F>("SC_pT", "Pt", 27, 15., 150.);
 
-  RHTree->Branch("SC_mass",   &vSC_mass_);
-  RHTree->Branch("SC_DR",     &vSC_DR_);
-  RHTree->Branch("SC_pT",     &vSC_pT_);
+  tree->Branch("SC_mass",   &vSC_mass_);
+  tree->Branch("SC_DR",     &vSC_DR_);
+  tree->Branch("SC_pT",     &vSC_pT_);
 
-  RHTree->Branch("pho_pT",    &vPho_pT_);
-  RHTree->Branch("pho_E",     &vPho_E_);
-  RHTree->Branch("pho_eta",   &vPho_eta_);
-  RHTree->Branch("pho_phi",   &vPho_phi_);
-  //RHTree->Branch("pho_r9",    &vPho_r9_);
-  //RHTree->Branch("pho_sieie", &vPho_sieie_);
+  tree->Branch("pho_pT",    &vPho_pT_);
+  tree->Branch("pho_E",     &vPho_E_);
+  tree->Branch("pho_eta",   &vPho_eta_);
+  tree->Branch("pho_phi",   &vPho_phi_);
+  //tree->Branch("pho_r9",    &vPho_r9_);
+  //tree->Branch("pho_sieie", &vPho_sieie_);
 
 }
 
 // Run event selection ___________________________________________________________________//
-bool SCRegressor::runPhoSel_gamma ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
+bool SCRegressor::runPhotonSel ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
   edm::Handle<reco::GenParticleCollection> genParticles;
   iEvent.getByToken(genParticleCollectionT_, genParticles);
@@ -87,7 +87,7 @@ bool SCRegressor::runPhoSel_gamma ( const edm::Event& iEvent, const edm::EventSe
     if ( iPho->pt() < ptCut ) continue;
     if ( std::abs(iPho->eta()) > etaCut ) continue;
     if ( debug ) std::cout << " >> pT: " << iPho->pt() << " eta: " << iPho->eta() << std::endl;
-    if ( iPho->r9() < 0.5 ) continue;
+    if ( iPho->full5x5_r9() < 0.5 ) continue;
     if ( iPho->hadTowOverEm() > 0.07 ) continue;
     if ( iPho->full5x5_sigmaIetaIeta() > 0.0105 ) continue;
     if ( iPho->hasPixelSeed() == true ) continue;
@@ -120,7 +120,7 @@ bool SCRegressor::runPhoSel_gamma ( const edm::Event& iEvent, const edm::EventSe
 }
 
 // Fill branches ___________________________________________________________________//
-void SCRegressor::fillPhoSel_gamma ( const edm::Event& iEvent, const edm::EventSetup& iSetup )
+void SCRegressor::fillPhotonSel ( const edm::Event& iEvent, const edm::EventSetup& iSetup )
 {
   edm::Handle<reco::PhotonCollection> photons;
   iEvent.getByToken(photonCollectionT_, photons);

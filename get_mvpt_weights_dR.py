@@ -20,20 +20,19 @@ eosDir='/eos/uscms/store/user/lpcml/mandrews/IMG'
 pu = '2016_25ns_Moriond17MC_PoissonOOTPU'
 decay = 'DoublePi0Pt15To100_m0To1600_pythia8_%s_mlog_ptexp'%pu
 decay = '%s_genDR%d_recoDR16_seedPos_phoVars_IMG'%(decay, genDR)
-date_str = '190301_012801' # DR10
+date_str = '190310_173649' # DR10
 
 # Paths to input files
-rhFileLists = '%s/%s/%s/*/output_*.root'%(eosDir, decay, date_str)
+rhFileList = '%s/%s/%s/*/output_*.root'%(eosDir, decay, date_str)
 print(" >> Input file list: %s"%rhFileList)
-rhFileLists = glob.glob(rhFileLists)
-assert len(rhFileLists) > 0
-print(" >> %d files found"%len(rhFileLists))
-rhFileLists = [('%s/%s'%(xrootd, rhFile)).replace('/eos/uscms','') for rhFile in rhFileLists]
+rhFileList = glob.glob(rhFileList)
+assert len(rhFileList) > 0
+print(" >> %d files found"%len(rhFileList))
+rhFileList = [('%s/%s'%(xrootd, rhFile)).replace('/eos/uscms','') for rhFile in rhFileList]
 print(' >> Input File[0]: %s'%rhFileList[0])
-sort_nicely(rhFileLists)
 
 rhTree = ROOT.TChain("fevt/RHTree")
-for f in rhFileLists:
+for f in rhFileList:
     rhTree.Add(f)
 nEvts = rhTree.GetEntries()
 assert nEvts > 0

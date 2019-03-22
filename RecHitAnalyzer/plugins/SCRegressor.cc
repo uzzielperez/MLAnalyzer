@@ -42,8 +42,9 @@ SCRegressor::SCRegressor(const edm::ParameterSet& iConfig)
   RHTree->Branch("SC_iphi", &vIphi_Emax_);
   RHTree->Branch("SC_ieta", &vIeta_Emax_);
 
-  branchesPhoSel ( RHTree, fs );
-  //branchesPhoSel_gamma ( RHTree, fs );
+  branchesPiSel ( RHTree, fs );
+  //branchesPhotonSel ( RHTree, fs );
+  //branchesDiPhotonSel ( RHTree, fs );
   branchesSC     ( RHTree, fs );
   branchesEB     ( RHTree, fs );
   branchesTracksAtEBEE     ( RHTree, fs );
@@ -84,8 +85,9 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   bool hasPassed;
   vPreselPhoIdxs_.clear();
   nTotal += nPhotons;
-  hasPassed = runPhoSel ( iEvent, iSetup ); //TODO: add config-level switch
-  //hasPassed = runPhoSel_gamma ( iEvent, iSetup );
+  hasPassed = runPiSel ( iEvent, iSetup ); //TODO: add config-level switch
+  //hasPassed = runPhotonSel ( iEvent, iSetup );
+  //hasPassed = runDiPhotonSel ( iEvent, iSetup );
   if ( !hasPassed ) return; 
 
   // Get coordinates of photon supercluster seed 
@@ -156,10 +158,12 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // Enforce selection
   if ( debug ) std::cout << " >> nPho: " << nPho << std::endl;
   if ( nPho == 0 ) return;
+  //if ( nPho != 2 ) return;
   if ( debug ) std::cout << " >> Passed cropping. " << std::endl;
 
-  fillPhoSel ( iEvent, iSetup );
-  //fillPhoSel_gamma ( iEvent, iSetup );
+  fillPiSel ( iEvent, iSetup );
+  //fillPhotonSel ( iEvent, iSetup );
+  //fillDiPhotonSel ( iEvent, iSetup );
   fillSC     ( iEvent, iSetup );
   fillEB     ( iEvent, iSetup );
   fillTracksAtEBEE     ( iEvent, iSetup );
