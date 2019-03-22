@@ -18,7 +18,7 @@ def run_process(process):
 import argparse
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('-d', '--genDR', default=10, type=int, help='gen-level dR.')
-parser.add_argument('-p', '--p_drop', default=0.80, type=float, help='p(drop) scale.')
+parser.add_argument('-p', '--p_drop', default=1.00, type=float, help='p(drop) scale.')
 args = parser.parse_args()
 
 genDR = args.genDR
@@ -31,19 +31,22 @@ eosDir='/eos/uscms/store/user/lpcml/mandrews/IMG'
 #pu = 'noPU'
 pu = '2016_25ns_Moriond17MC_PoissonOOTPU'
 decay = 'DoublePi0Pt15To100_m0To1600_pythia8_%s_mlog_ptexp'%pu
+#decay = 'DoublePhotonPt15To100_pythia8_%s'%pu
 #decay = '%s_genDR%d_recoDR16_IMG'%(decay, genDR)
 decay = '%s_genDR%d_recoDR16_seedPos_phoVars_IMG'%(decay, genDR)
-date_str = '190301_012801' # DR10
+#date_str = '190301_012801' # DR10
+#date_str = '190309_200344' # DR10
+date_str = '190310_173649'
 
 # Paths to input files 
-rhFileLists = '%s/%s/%s/*/output_*.root'%(eosDir, decay, date_str)
+rhFileList = '%s/%s/%s/*/output_*.root'%(eosDir, decay, date_str)
 print(" >> Input file list: %s"%rhFileList)
-rhFileLists = glob.glob(rhFileLists)
-assert len(rhFileLists) > 0
-print(" >> %d files found"%len(rhFileLists))
-rhFileLists = [('%s/%s'%(xrootd, rhFile)).replace('/eos/uscms','') for rhFile in rhFileLists]
+rhFileList = glob.glob(rhFileList)
+assert len(rhFileList) > 0
+print(" >> %d files found"%len(rhFileList))
+rhFileList = [('%s/%s'%(xrootd, rhFile)).replace('/eos/uscms','') for rhFile in rhFileList]
 print(' >> Input File[0]: %s'%rhFileList[0])
-sort_nicely(rhFileLists)
+sort_nicely(rhFileList)
 
 # Weights file
 wgt_file = '%s_mvpt_weights_pdrop%.2f.npz'%(decay, p_drop_scale)
@@ -57,10 +60,10 @@ if not os.path.isdir(outDir):
 print(' >> Output directory: %s'%outDir)
 
 proc_file = 'convert_root2pq_EBshower.py'
-processes = ['%s -i %s -o %s -d %s -n %d -w %s'%(proc_file, rhFile, outDir, decay, i+1, wgt_file) for i,rhFile in enumerate(rhFileLists)]
-#processes = ['%s -i %s -o %s -d %s -n %d'%(proc_file, rhFile, outDir, decay, i+1) for i,rhFile in enumerate(rhFileLists)]
+processes = ['%s -i %s -o %s -d %s -n %d -w %s'%(proc_file, rhFile, outDir, decay, i+1, wgt_file) for i,rhFile in enumerate(rhFileList)]
+#processes = ['%s -i %s -o %s -d %s -n %d'%(proc_file, rhFile, outDir, decay, i+1) for i,rhFile in enumerate(rhFileList)]
 print(' >> Process[0]: %s'%processes[0])
 
-#os.system('python %s -i %s -o %s -d %s -n %d -w %s'%(proc_file, rhFileLists[0], outDir, decay, 1, wgt_file))
+#os.system('python %s -i %s -o %s -d %s -n %d -w %s'%(proc_file, rhFileList[0], outDir, decay, 1, wgt_file))
 pool = Pool(processes=len(processes))
 pool.map(run_process, processes)

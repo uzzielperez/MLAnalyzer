@@ -1,5 +1,5 @@
 import pyarrow.parquet as pq
-import pyarrow as pa
+import pyarrow as pa # pip install pyarrow==0.7.1
 import ROOT
 import numpy as np
 import glob, os
