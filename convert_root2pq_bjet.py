@@ -100,15 +100,21 @@ for iEvt in range(iEvtStart,iEvtEnd):
     ECAL_energy = resample_EE(ECAL_energy)
     HBHE_energy = np.array(rhTree.HBHE_energy).reshape(56,72)
     HBHE_energy = upsample_array(HBHE_energy, 5, 5) # (280, 360)
-    TracksAtECAL_pt = np.array(rhTree.ECAL_tracksPt).reshape(280,360)
+    #TracksAtECAL_pt = np.array(rhTree.ECAL_tracksPt).reshape(280,360)
+    TracksAtECAL_Qpt = np.array(rhTree.ECAL_tracksQPt).reshape(280,360)
+    TracksAtECAL_IP2D = np.array(rhTree.ECAL_tracksIP2D).reshape(280,360)
+    TracksAtECAL_IP2Dsig = np.array(rhTree.ECAL_tracksIP2Dsig).reshape(280,360)
     MuonsAtECAL_pt = np.array(rhTree.ECAL_muonsPt).reshape(280,360)
-    data['X_CMSII'] = np.stack([MuonsAtECAL_pt, TracksAtECAL_pt, ECAL_energy, HBHE_energy], axis=0) # (4, 280, 360)
+    #data['X_CMSII'] = np.stack([MuonsAtECAL_pt, TracksAtECAL_Qpt, ECAL_energy, HBHE_energy], axis=0) # (4, 280, 360)
+    data['X_CMSII'] = np.stack([MuonsAtECAL_pt, TracksAtECAL_Qpt, ECAL_energy, HBHE_energy, 
+                                TracksAtECAL_IP2D,TracksAtECAL_IP2Dsig,TracksAtECAL_IP3D,TracksAtECAL_IP3Dsig,
+                                ], axis=0) # (4, 280, 360)
 
     # Jet attributes 
     ys = rhTree.jet_truthLabel
-    pts = rhTree.jet_pT
-    etas = rhTree.jet_eta
-    phis = rhTree.jet_phi
+    pts = rhTree.jetPt
+    etas = rhTree.jetEta
+    phis = rhTree.jetPhi
     iphis = rhTree.jetSeed_iphi
     ietas = rhTree.jetSeed_ieta
     njets = len(ys)

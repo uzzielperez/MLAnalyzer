@@ -15,6 +15,7 @@ cfg='RecHitAnalyzer/python/ConfFile_cfg.py'
 #inputFiles_='/store/group/lpcml/mandrews/AODSIM/QCDToGG_Pt_80_120_13TeV_TuneCUETP8M1_noPU_AODSIM/180809_215549/0000/step_full_1.root'
 #inputFiles_='/store/group/lpcml/AODSIM/h24gamma_1j_1M_200MeV_2016_25ns_Moriond17MC_PoissonOOTPU_AODSIM/180907_083212/0000/step_full_1.root'
 inputFiles_='file:../step_AODSIM.root'
+#inputFiles_='/store/group/lpcml/mandrews/AODSIM/SM2gammaj_1j_1M_2016_25ns_Moriond17MC_PoissonOOTPU_AODSIM/180906_154222/0000/step_full_98.root'
 
 maxEvents_=-1
 skipEvents_=0#
