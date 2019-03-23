@@ -101,12 +101,23 @@ for iEvt in range(iEvtStart,iEvtEnd):
     HBHE_energy = np.array(rhTree.HBHE_energy).reshape(56,72)
     HBHE_energy = upsample_array(HBHE_energy, 5, 5) # (280, 360)
     #TracksAtECAL_pt = np.array(rhTree.ECAL_tracksPt).reshape(280,360)
-    TracksAtECAL_Qpt = np.array(rhTree.ECAL_tracksQPt).reshape(280,360)
+    #TracksAtECAL_Qpt = np.array(rhTree.ECAL_tracksQPt).reshape(280,360)
+    TracksAtECAL_Qpt_PV = np.array(rhTree.ECAL_tracksQPt_PV).reshape(280,360)
+    TracksAtECAL_d0_PV = np.array(rhTree.ECAL_tracksd0_PV).reshape(280,360)
+    TracksAtECAL_z0_PV = np.array(rhTree.ECAL_tracksz0_PV).reshape(280,360)
+    TracksAtECAL_d0sig_PV = np.array(rhTree.ECAL_tracksd0sig_PV).reshape(280,360)
+    TracksAtECAL_z0sig_PV = np.array(rhTree.ECAL_tracksz0sig_PV).reshape(280,360)
+
+    TracksAtECAL_Qpt_nPV = np.array(rhTree.ECAL_tracksQPt_nPV).reshape(280,360)    
+
     TracksAtECAL_IP2D = np.array(rhTree.ECAL_tracksIP2D).reshape(280,360)
     TracksAtECAL_IP2Dsig = np.array(rhTree.ECAL_tracksIP2Dsig).reshape(280,360)
-    MuonsAtECAL_pt = np.array(rhTree.ECAL_muonsPt).reshape(280,360)
+    TracksAtECAL_IP3D = np.array(rhTree.ECAL_tracksIP3D).reshape(280,360)
+    TracksAtECAL_IP3Dsig = np.array(rhTree.ECAL_tracksIP3Dsig).reshape(280,360)
+    #MuonsAtECAL_pt = np.array(rhTree.ECAL_muonsPt).reshape(280,360)
+    MuonsAtECAL_Qpt = np.array(rhTree.ECAL_muonsQPt).reshape(280,360)
     #data['X_CMSII'] = np.stack([MuonsAtECAL_pt, TracksAtECAL_Qpt, ECAL_energy, HBHE_energy], axis=0) # (4, 280, 360)
-    data['X_CMSII'] = np.stack([MuonsAtECAL_pt, TracksAtECAL_Qpt, ECAL_energy, HBHE_energy, 
+    data['X_CMSII'] = np.stack([MuonsAtECAL_Qpt, TracksAtECAL_Qpt, ECAL_energy, HBHE_energy, 
                                 TracksAtECAL_IP2D,TracksAtECAL_IP2Dsig,TracksAtECAL_IP3D,TracksAtECAL_IP3Dsig,
                                 ], axis=0) # (4, 280, 360)
 
