@@ -9,13 +9,6 @@ void SCRegressor::branchesPhotonSel ( TTree* tree, edm::Service<TFileService> &f
   tree->Branch("SC_DR",     &vSC_DR_);
   tree->Branch("SC_pT",     &vSC_pT_);
 
-  tree->Branch("pho_pT",    &vPho_pT_);
-  tree->Branch("pho_E",     &vPho_E_);
-  tree->Branch("pho_eta",   &vPho_eta_);
-  tree->Branch("pho_phi",   &vPho_phi_);
-  //tree->Branch("pho_r9",    &vPho_r9_);
-  //tree->Branch("pho_sieie", &vPho_sieie_);
-
 }
 
 // Run event selection ___________________________________________________________________//
@@ -24,7 +17,7 @@ bool SCRegressor::runPhotonSel ( const edm::Event& iEvent, const edm::EventSetup
   edm::Handle<reco::GenParticleCollection> genParticles;
   iEvent.getByToken(genParticleCollectionT_, genParticles);
 
-  edm::Handle<reco::PhotonCollection> photons;
+  edm::Handle<PhotonCollection> photons;
   iEvent.getByToken(photonCollectionT_, photons);
 
   // Get reco (pT>5GeV) photons associated to gen photons
@@ -46,7 +39,7 @@ bool SCRegressor::runPhotonSel ( const edm::Event& iEvent, const edm::EventSetup
     minDR_idx = -1;
     for ( unsigned int iP = 0; iP < photons->size(); iP++ ) {
 
-      reco::PhotonRef iPho( photons, iP );
+      PhotonRef iPho( photons, iP );
       if ( iPho->pt() < 5. ) continue;
       dR = reco::deltaR( iPho->eta(),iPho->phi(), iGen->eta(),iGen->phi() );
       if ( dR > minDR ) continue;
@@ -68,7 +61,7 @@ bool SCRegressor::runPhotonSel ( const edm::Event& iEvent, const edm::EventSetup
 
   if ( debug ) std::cout << " >> PhoCol.size: " << photons->size() << std::endl;
   // Ensure only 1 reco photon associated to each gen pho 
-  std::vector<int> vRecoPhoIdxs_;
+  std::vector<unsigned int> vRecoPhoIdxs_;
   for ( auto const& mG : mGenPi0_RecoPho ) {
     if ( mG.second.empty() ) continue;
     if ( mG.second.size() != 1 ) continue;
@@ -82,7 +75,7 @@ bool SCRegressor::runPhotonSel ( const edm::Event& iEvent, const edm::EventSetup
   vPreselPhoIdxs_.clear();
   for ( unsigned int i = 0; i < vRecoPhoIdxs_.size(); i++ ) {
 
-    reco::PhotonRef iPho( photons, vRecoPhoIdxs_[i] );
+    PhotonRef iPho( photons, vRecoPhoIdxs_[i] );
 
     if ( iPho->pt() < ptCut ) continue;
     if ( std::abs(iPho->eta()) > etaCut ) continue;
@@ -93,18 +86,18 @@ bool SCRegressor::runPhotonSel ( const edm::Event& iEvent, const edm::EventSetup
     if ( iPho->hasPixelSeed() == true ) continue;
 
     ///*
-    // Ensure pre-sel photons are isolated 
+    // Ensure pre-sel photons are isolated
     isIso = true;
-    for ( unsigned int j = 0; j < vRecoPhoIdxs_.size(); j++ ) {
+    for ( unsigned int j = 0; j < photons->size(); j++ ) {
 
-      if ( i == j ) continue;
-      reco::PhotonRef jPho( photons, vRecoPhoIdxs_[j] ); 
+      if ( j == vRecoPhoIdxs_[i] ) continue;
+      PhotonRef jPho( photons, j );
+      if ( jPho->pt() < 5. ) continue;
       dR = reco::deltaR( iPho->eta(),iPho->phi(), jPho->eta(),jPho->phi() );
       if ( debug ) std::cout << "   >> reco dR:" << dR << std::endl;
       if ( dR > 16*.0174 ) continue;
       isIso = false;
       break;
-
     } // reco photon j
     if ( !isIso ) continue;
     //*/
@@ -122,7 +115,7 @@ bool SCRegressor::runPhotonSel ( const edm::Event& iEvent, const edm::EventSetup
 // Fill branches ___________________________________________________________________//
 void SCRegressor::fillPhotonSel ( const edm::Event& iEvent, const edm::EventSetup& iSetup )
 {
-  edm::Handle<reco::PhotonCollection> photons;
+  edm::Handle<PhotonCollection> photons;
   iEvent.getByToken(photonCollectionT_, photons);
 
   edm::Handle<reco::GenParticleCollection> genParticles;
@@ -148,22 +141,6 @@ void SCRegressor::fillPhotonSel ( const edm::Event& iEvent, const edm::EventSetu
   }
 
   ////////// Store kinematics //////////
-  vPho_pT_.clear();
-  vPho_E_.clear();
-  vPho_eta_.clear();
-  vPho_phi_.clear();
-  //vPho_r9_.clear();
-  //vPho_sieie_.clear();
-  for ( auto const& mG : mGenPi0_RecoPho ) {
-    reco::PhotonRef iPho( photons, mG.second[0] );
-    // Fill branch arrays
-    vPho_pT_.push_back( iPho->pt() );
-    vPho_E_.push_back( iPho->energy() );
-    vPho_eta_.push_back( iPho->eta() );
-    vPho_phi_.push_back( iPho->phi() );
-    //vPho_r9_.push_back( iPho->full5x5_r9() );
-    //vPho_sieie_.push_back( iPho->full5x5_sigmaIetaIeta() );
-  } // photons
 
   vSC_DR_.clear();
   vSC_pT_.clear();

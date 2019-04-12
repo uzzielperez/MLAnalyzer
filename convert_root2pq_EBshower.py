@@ -6,7 +6,9 @@ import glob, os
 
 import argparse
 parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('-i', '--infile', default='output.root', type=str, help='Input root file.')
+#parser.add_argument('-i', '--infile', default='output.root', type=str, help='Input root file.')
+parser.add_argument('-i', '--infile', default=['output.root'], nargs='+', type=str, help='Input root file.')
+#parser.add_argument('-i', '--infile', default=['output.root'], type=list, help='Input root file.')
 parser.add_argument('-o', '--outdir', default='.', type=str, help='Output pq file dir.')
 parser.add_argument('-d', '--decay', default='test', type=str, help='Decay name.')
 parser.add_argument('-n', '--idx', default=0, type=int, help='Input root file index.')
@@ -47,20 +49,22 @@ if args.wgt_file is not None:
     hmvpt, m_edges, pt_edges = w['mvpt'], w['m_edges'], w['pt_edges']
 
 rhTreeStr = args.infile 
+print " >> Input file:",rhTreeStr
 rhTree = ROOT.TChain("fevt/RHTree")
-rhTree.Add(rhTreeStr)
+for f in rhTreeStr:
+  rhTree.Add(f)
 nEvts = rhTree.GetEntries()
 assert nEvts > 0
-print " >> Input file:",rhTreeStr
 print " >> nEvts:",nEvts
-outStr = '%s/%s.parquet.%d'%(args.outdir, args.decay, args.idx) 
+#outStr = '%s/%s.parquet.%d'%(args.outdir, args.decay, args.idx) 
+outStr = '%s/%s.reg_2reco.parquet.%d'%(args.outdir, args.decay, args.idx) 
 print " >> Output file:",outStr
 
 ##### EVENT SELECTION START #####
 
 # Event range to process
 iEvtStart = 0
-iEvtEnd   = 100
+#iEvtEnd   = 10
 iEvtEnd   = nEvts 
 assert iEvtEnd <= nEvts
 print " >> Processing entries: [",iEvtStart,"->",iEvtEnd,")"
@@ -77,11 +81,16 @@ for iEvt in range(iEvtStart,iEvtEnd):
     if iEvt % 10000 == 0:
         print " .. Processing entry",iEvt
 
+    if rhTree.m0 < 100. or rhTree.m0 > 110.:
+      continue
+
+    idx = [rhTree.runId, rhTree.lumiId, rhTree.eventId]
+
     SC_energyT = rhTree.SC_energyT
     SC_energyZ = rhTree.SC_energyZ
     SC_energy = rhTree.SC_energy
-    SC_mass = rhTree.SC_mass
-    SC_pT = rhTree.SC_pT
+    #SC_mass = rhTree.SC_mass
+    #SC_pT = rhTree.SC_pT
     SC_iphi = rhTree.SC_iphi
     SC_ieta = rhTree.SC_ieta
 
@@ -98,21 +107,25 @@ for iEvt in range(iEvtStart,iEvtEnd):
     pho_sieips =          rhTree.pho_sieip
     pho_s4s =             rhTree.pho_s4
 
-    EB_time = np.array(rhTree.EB_time).reshape(170,360)
-    TracksAtEB_pt = np.array(rhTree.TracksPt_EB).reshape(170,360)
-    X_EB = np.stack([TracksAtEB_pt, EB_time], axis=0) 
+    #EB_time = np.array(rhTree.EB_time).reshape(170,360)
+    #TracksAtEB_pt = np.array(rhTree.TracksPt_EB).reshape(170,360)
+    #X_EB = np.stack([TracksAtEB_pt, EB_time], axis=0) 
+    #X_EB = np.array(rhTree.EB_energy).reshape(1,170,360)
 
-    nphos = len(SC_mass)
+    nphos = len(SC_iphi)
     rands = np.random.random(nphos)
     for i in range(nphos):
 
-        data['m'] = SC_mass[i]
-        data['pt'] = SC_pT[i]
+        data['idx'] = idx + [i]
+        data['m0'] = rhTree.m0
+
+        #data['m'] = SC_mass[i]
+        #data['pt'] = SC_pT[i]
         data['iphi'] = SC_iphi[i]
         data['ieta'] = SC_ieta[i]
 
-        if data['ieta'] >= 170-16:
-            continue
+        #if data['ieta'] >= 170-16:
+        #    continue
 
         if args.wgt_file is not None:
             if rands[i] < get_weight_2d(data['m'], data['pt'], m_edges, pt_edges, hmvpt):
@@ -138,11 +151,11 @@ for iEvt in range(iEvtStart,iEvtEnd):
         sc_energyZ = np.array(SC_energyT[i]).reshape(1,32,32)
         data['Xtz'] = np.concatenate((sc_energyT, sc_energyZ), axis=0)
 
-        sc_cms = crop_EBshower(X_EB, data['iphi'], data['ieta']) 
-        if sc_cms.shape != data['Xtz'].shape:
-            print(sc_cms.shape)
-            print(data['Xtz'].shape)
-        data['Xcms'] = np.concatenate([sc_cms, data['Xtz']], axis=0)
+        #sc_cms = crop_EBshower(X_EB, data['iphi'], data['ieta']) 
+        #if sc_cms.shape != data['Xtz'].shape:
+        #    print(sc_cms.shape)
+        #    print(data['Xtz'].shape)
+        #data['Xcms'] = np.concatenate([sc_cms, data['Xtz']], axis=0)
 
         pqdata = [pa.array([d]) if np.isscalar(d) or type(d) == list else pa.array([d.tolist()]) for d in data.values()]
         table = pa.Table.from_arrays(pqdata, data.keys())
@@ -165,7 +178,9 @@ print " >> ======================================"
 pqIn = pq.ParquetFile(outStr)
 print(pqIn.metadata)
 print(pqIn.schema)
-X = pqIn.read_row_group(0, columns=['m','pt','iphi','ieta','pt_reco']).to_pydict()
+#X = pqIn.read_row_group(0, columns=['m','pt','iphi','ieta','pt_reco']).to_pydict()
+X = pqIn.read_row_group(0, columns=['idx.list.item','iphi','ieta','pt_reco']).to_pydict()
+X = pqIn.read_row_group(1, columns=['idx.list.item','iphi','ieta','pt_reco']).to_pydict()
 print(X)
 #X = pqIn.read_row_group(0, columns=['X.list.item.list.item.list.item']).to_pydict()['X']
 #X = pqIn.read(['X.list.item.list.item.list.item']).to_pydict()['X']

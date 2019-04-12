@@ -30,6 +30,7 @@
 #include "DataFormats/EgammaCandidates/interface/GsfElectron.h"
 #include "DataFormats/EgammaCandidates/interface/Photon.h"
 #include "DataFormats/EgammaCandidates/interface/PhotonFwd.h" // reco::PhotonCollection defined here
+#include "DataFormats/PatCandidates/interface/Photon.h"
 
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
@@ -56,6 +57,10 @@
 //
 // class declaration
 //
+using pat::PhotonCollection;
+using pat::PhotonRef;
+//using reco::PhotonCollection;
+//using reco::PhotonRef;
 
 // If the analyzer does not use TFileService, please remove
 // the template argument to the base class so the class inherits
@@ -79,7 +84,7 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     // ----------member data ---------------------------
     //edm::EDGetTokenT<edm::View<reco::GsfElectron>> electronCollectionT_;
     edm::EDGetTokenT<reco::GsfElectronCollection> electronCollectionT_;
-    edm::EDGetTokenT<reco::PhotonCollection> photonCollectionT_;
+    edm::EDGetTokenT<PhotonCollection> photonCollectionT_;
     edm::EDGetTokenT<EcalRecHitCollection> EBRecHitCollectionT_;
     edm::EDGetTokenT<EcalRecHitCollection> EERecHitCollectionT_;
     edm::EDGetTokenT<EcalRecHitCollection> ESRecHitCollectionT_;

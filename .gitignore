@@ -3,5 +3,6 @@
 *.txt
 *.pyc
 *.hdf5
+*.parquet*
 .*.*
 __init__.py
