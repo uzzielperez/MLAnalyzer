@@ -20,7 +20,7 @@ SCRegressor::SCRegressor(const edm::ParameterSet& iConfig)
   //EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EBRecHitCollection"));
   //electronCollectionT_ = consumes<edm::View<reco::GsfElectron>>(iConfig.getParameter<edm::InputTag>("gsfElectronCollection"));
   electronCollectionT_ = consumes<reco::GsfElectronCollection>(iConfig.getParameter<edm::InputTag>("gsfElectronCollection"));
-  photonCollectionT_ = consumes<reco::PhotonCollection>(iConfig.getParameter<edm::InputTag>("gedPhotonCollection"));
+  photonCollectionT_ = consumes<PhotonCollection>(iConfig.getParameter<edm::InputTag>("photonCollection"));
   EBRecHitCollectionT_ = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
   EERecHitCollectionT_    = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEERecHitCollection"));
   ESRecHitCollectionT_    = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedESRecHitCollection"));
@@ -42,12 +42,12 @@ SCRegressor::SCRegressor(const edm::ParameterSet& iConfig)
   RHTree->Branch("SC_iphi", &vIphi_Emax_);
   RHTree->Branch("SC_ieta", &vIeta_Emax_);
 
-  branchesPiSel ( RHTree, fs );
+  //branchesPiSel ( RHTree, fs );
   //branchesPhotonSel ( RHTree, fs );
-  //branchesDiPhotonSel ( RHTree, fs );
+  branchesDiPhotonSel ( RHTree, fs );
   branchesSC     ( RHTree, fs );
   branchesEB     ( RHTree, fs );
-  branchesTracksAtEBEE     ( RHTree, fs );
+  //branchesTracksAtEBEE     ( RHTree, fs );
   branchesPhoVars     ( RHTree, fs );
 
 }
@@ -73,7 +73,7 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle<EcalRecHitCollection> EBRecHitsH;
   iEvent.getByToken(EBRecHitCollectionT_, EBRecHitsH);
 
-  edm::Handle<reco::PhotonCollection> photons;
+  edm::Handle<PhotonCollection> photons;
   iEvent.getByToken(photonCollectionT_, photons);
 
   // Provides access to global cell position and coordinates below
@@ -85,9 +85,9 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   bool hasPassed;
   vPreselPhoIdxs_.clear();
   nTotal += nPhotons;
-  hasPassed = runPiSel ( iEvent, iSetup ); //TODO: add config-level switch
+  //hasPassed = runPiSel ( iEvent, iSetup ); //TODO: add config-level switch
   //hasPassed = runPhotonSel ( iEvent, iSetup );
-  //hasPassed = runDiPhotonSel ( iEvent, iSetup );
+  hasPassed = runDiPhotonSel ( iEvent, iSetup );
   if ( !hasPassed ) return; 
 
   // Get coordinates of photon supercluster seed 
@@ -103,7 +103,7 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   int iphi_, ieta_; // rows:ieta, cols:iphi
   for ( unsigned int i = 0; i < vPreselPhoIdxs_.size(); i++ ) {
 
-    reco::PhotonRef iPho( photons, vPreselPhoIdxs_[i] );
+    PhotonRef iPho( photons, vPreselPhoIdxs_[i] );
 
     // Get underlying super cluster
     reco::SuperClusterRef const& iSC = iPho->superCluster();
@@ -157,16 +157,16 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // Enforce selection
   if ( debug ) std::cout << " >> nPho: " << nPho << std::endl;
-  if ( nPho == 0 ) return;
-  //if ( nPho != 2 ) return;
+  //if ( nPho == 0 ) return;
+  if ( nPho != 2 ) return;
   if ( debug ) std::cout << " >> Passed cropping. " << std::endl;
 
-  fillPiSel ( iEvent, iSetup );
+  //fillPiSel ( iEvent, iSetup );
   //fillPhotonSel ( iEvent, iSetup );
-  //fillDiPhotonSel ( iEvent, iSetup );
+  fillDiPhotonSel ( iEvent, iSetup );
   fillSC     ( iEvent, iSetup );
   fillEB     ( iEvent, iSetup );
-  fillTracksAtEBEE     ( iEvent, iSetup );
+  //fillTracksAtEBEE     ( iEvent, iSetup );
   fillPhoVars     ( iEvent, iSetup );
 
   eventId_ = iEvent.id().event();

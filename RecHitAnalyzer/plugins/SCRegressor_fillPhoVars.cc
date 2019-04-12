@@ -3,17 +3,23 @@
 // Initialize branches _____________________________________________________//
 void SCRegressor::branchesPhoVars ( TTree* tree, edm::Service<TFileService> &fs )
 {
-  RHTree->Branch("pho_r9",             &vPho_r9_);
-  RHTree->Branch("pho_sieie",          &vPho_sieie_);
-  RHTree->Branch("pho_phoIso",         &vPho_phoIso_);
-  RHTree->Branch("pho_chgIso",         &vPho_chgIso_);
-  RHTree->Branch("pho_chgIsoWrongVtx", &vPho_chgIsoWrongVtx_);
-  RHTree->Branch("pho_Eraw",           &vPho_Eraw_);
-  RHTree->Branch("pho_phiWidth",       &vPho_phiWidth_);
-  RHTree->Branch("pho_etaWidth",       &vPho_etaWidth_);
-  RHTree->Branch("pho_scEta",          &vPho_scEta_);
-  RHTree->Branch("pho_sieip",          &vPho_sieip_);
-  RHTree->Branch("pho_s4",             &vPho_s4_);
+
+  tree->Branch("pho_pT",    &vPho_pT_);
+  tree->Branch("pho_E",     &vPho_E_);
+  tree->Branch("pho_eta",   &vPho_eta_);
+  tree->Branch("pho_phi",   &vPho_phi_);
+
+  tree->Branch("pho_r9",             &vPho_r9_);
+  tree->Branch("pho_sieie",          &vPho_sieie_);
+  tree->Branch("pho_phoIso",         &vPho_phoIso_);
+  tree->Branch("pho_chgIso",         &vPho_chgIso_);
+  tree->Branch("pho_chgIsoWrongVtx", &vPho_chgIsoWrongVtx_);
+  tree->Branch("pho_Eraw",           &vPho_Eraw_);
+  tree->Branch("pho_phiWidth",       &vPho_phiWidth_);
+  tree->Branch("pho_etaWidth",       &vPho_etaWidth_);
+  tree->Branch("pho_scEta",          &vPho_scEta_);
+  tree->Branch("pho_sieip",          &vPho_sieip_);
+  tree->Branch("pho_s4",             &vPho_s4_);
 
 } // branchesPhoVars()
 
@@ -30,7 +36,7 @@ void SCRegressor::fillPhoVars ( const edm::Event& iEvent, const edm::EventSetup&
   //std::cout << "rho:" << *(rhoH.product()) << std::endl;
   */
 
-  edm::Handle<reco::PhotonCollection> photons;
+  edm::Handle<PhotonCollection> photons;
   iEvent.getByToken(photonCollectionT_, photons);
   /*
   edm::Handle<reco::GenParticleCollection> genParticles;
@@ -43,24 +49,23 @@ void SCRegressor::fillPhoVars ( const edm::Event& iEvent, const edm::EventSetup&
   */
 
   ////////// Store kinematics //////////
-  /*
+
   vPho_pT_.clear();
   vPho_E_.clear();
   vPho_eta_.clear();
   vPho_phi_.clear();
   vPho_r9_.clear();
   vPho_sieie_.clear();
-  for ( auto const& mG : mGenPi0_RecoPho ) { 
-    reco::PhotonRef iPho( photons, mG.second[0] );
+  for ( int iP : vRegressPhoIdxs_ ) {
+
+    PhotonRef iPho( photons, iP );
     // Fill branch arrays
     vPho_pT_.push_back( iPho->pt() );
     vPho_E_.push_back( iPho->energy() );
     vPho_eta_.push_back( iPho->eta() );
     vPho_phi_.push_back( iPho->phi() );
-    vPho_r9_.push_back( iPho->full5x5_r9() );
-    vPho_sieie_.push_back( iPho->full5x5_sigmaIetaIeta() );
   } // photons
-  */
+  
   vPho_r9_.clear(); 
   vPho_sieie_.clear(); 
   vPho_phoIso_.clear(); 
@@ -72,9 +77,12 @@ void SCRegressor::fillPhoVars ( const edm::Event& iEvent, const edm::EventSetup&
   vPho_scEta_.clear(); 
   vPho_sieip_.clear(); 
   vPho_s4_.clear(); 
-  for ( auto const& mG : mGenPi0_RecoPho ) { 
 
-    reco::PhotonRef iPho( photons, mG.second[0] );
+  //for ( auto const& mG : mGenPi0_RecoPho ) { 
+  for ( int iP : vRegressPhoIdxs_ ) {
+
+    //PhotonRef iPho( photons, mG.second[0] );
+    PhotonRef iPho( photons, iP );
     reco::SuperClusterRef const& iSC = iPho->superCluster();
     std::vector<float> vCov = clusterTools.localCovariances( *(iSC->seed()) );
 

@@ -17,19 +17,12 @@ void SCRegressor::branchesPiSel ( TTree* tree, edm::Service<TFileService> &fs )
   tree->Branch("SC_DR",     &vSC_DR_);
   tree->Branch("SC_pT",     &vSC_pT_);
 
-  tree->Branch("pho_pT",    &vPho_pT_);
-  tree->Branch("pho_E",     &vPho_E_);
-  tree->Branch("pho_eta",   &vPho_eta_);
-  tree->Branch("pho_phi",   &vPho_phi_);
-  //tree->Branch("pho_r9",    &vPho_r9_);
-  //tree->Branch("pho_sieie", &vPho_sieie_);
-
 }
 
 // Run event selection ___________________________________________________________________//
 bool SCRegressor::runPiSel ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
 
-  edm::Handle<reco::PhotonCollection> photons;
+  edm::Handle<PhotonCollection> photons;
   iEvent.getByToken(photonCollectionT_, photons);
 
   edm::Handle<reco::GenParticleCollection> genParticles;
@@ -82,7 +75,7 @@ bool SCRegressor::runPiSel ( const edm::Event& iEvent, const edm::EventSetup& iS
       if ( debug ) std::cout << "  >> iD[" << iD << "]" << std::endl;
       for ( unsigned int iP = 0; iP < photons->size(); iP++ ) {
 
-        reco::PhotonRef iPho( photons, iP );
+        PhotonRef iPho( photons, iP );
         if ( iPho->pt() < 5. ) continue;
         dR = reco::deltaR( iPho->eta(),iPho->phi(), iGenPho->eta(),iGenPho->phi() );
         if ( dR > minDR ) continue;
@@ -103,7 +96,7 @@ bool SCRegressor::runPiSel ( const edm::Event& iEvent, const edm::EventSetup& iS
   } // gen pi0s
 
   // Ensure only 1 reco photon associated to each gen pi0
-  std::vector<int> vRecoPhoIdxs_;
+  std::vector<unsigned int> vRecoPhoIdxs_;
   for ( auto const& mG : mGenPi0_RecoPho ) {
     if ( debug ) std::cout << " >> pi0[" << mG.first << "] size:" << mG.second.size() << std::endl; 
     // Possibilities:
@@ -115,6 +108,7 @@ bool SCRegressor::runPiSel ( const edm::Event& iEvent, const edm::EventSetup& iS
     if ( mG.second.empty() ) continue;
     if ( mG.second.size() == 2 && mG.second[0] != mG.second[1] ) continue; // 2 resolved reco photons 
     vRecoPhoIdxs_.push_back( mG.second[0] );
+    //if ( mG.second.size() == 2 && mG.second[0] != mG.second[1] ) vRecoPhoIdxs_.push_back( mG.second[1] );
   } 
   if ( debug ) std::cout << " >> RecoPhos.size: " << vRecoPhoIdxs_.size() << std::endl;
   if ( vRecoPhoIdxs_.empty() ) return false;
@@ -127,7 +121,7 @@ bool SCRegressor::runPiSel ( const edm::Event& iEvent, const edm::EventSetup& iS
   if ( debug ) std::cout << " >> PhoCol.size: " << photons->size() << std::endl;
   for ( unsigned int i = 0; i < vRecoPhoIdxs_.size(); i++ ) {
 
-    reco::PhotonRef iPho( photons, vRecoPhoIdxs_[i] );
+    PhotonRef iPho( photons, vRecoPhoIdxs_[i] );
 
     if ( iPho->pt() < ptCut ) continue;
     if ( std::abs(iPho->eta()) > etaCut ) continue;
@@ -138,19 +132,20 @@ bool SCRegressor::runPiSel ( const edm::Event& iEvent, const edm::EventSetup& iS
     if ( iPho->hasPixelSeed() == true ) continue;
 
     ///*
-    // Ensure pre-sel photons are isolated 
+    // Ensure pre-sel photons are isolated
     isIso = true;
-    for ( unsigned int j = 0; j < vRecoPhoIdxs_.size(); j++ ) {
+    for ( unsigned int j = 0; j < photons->size(); j++ ) {
 
-      if ( i == j ) continue;
-      reco::PhotonRef jPho( photons, vRecoPhoIdxs_[j] ); 
+      if ( j == vRecoPhoIdxs_[i] ) continue;
+      PhotonRef jPho( photons, j );
+      if ( jPho->pt() < 5. ) continue;
       dR = reco::deltaR( iPho->eta(),iPho->phi(), jPho->eta(),jPho->phi() );
       if ( debug ) std::cout << "   >> reco dR:" << dR << std::endl;
       if ( dR > 16*.0174 ) continue;
       isIso = false;
       break;
 
-    } // reco photon j
+    } // photon j
     if ( !isIso ) continue;
     //*/
 
@@ -167,7 +162,7 @@ bool SCRegressor::runPiSel ( const edm::Event& iEvent, const edm::EventSetup& iS
 // Fill branches ___________________________________________________________________//
 void SCRegressor::fillPiSel ( const edm::Event& iEvent, const edm::EventSetup& iSetup )
 {
-  edm::Handle<reco::PhotonCollection> photons;
+  edm::Handle<PhotonCollection> photons;
   iEvent.getByToken(photonCollectionT_, photons);
 
   edm::Handle<reco::GenParticleCollection> genParticles;
@@ -193,22 +188,6 @@ void SCRegressor::fillPiSel ( const edm::Event& iEvent, const edm::EventSetup& i
   }
 
   ////////// Store kinematics //////////
-  vPho_pT_.clear();
-  vPho_E_.clear();
-  vPho_eta_.clear();
-  vPho_phi_.clear();
-  //vPho_r9_.clear();
-  //vPho_sieie_.clear();
-  for ( auto const& mG : mGenPi0_RecoPho ) {
-    reco::PhotonRef iPho( photons, mG.second[0] );
-    // Fill branch arrays
-    vPho_pT_.push_back( iPho->pt() );
-    vPho_E_.push_back( iPho->energy() );
-    vPho_eta_.push_back( iPho->eta() );
-    vPho_phi_.push_back( iPho->phi() );
-    //vPho_r9_.push_back( iPho->full5x5_r9() );
-    //vPho_sieie_.push_back( iPho->full5x5_sigmaIetaIeta() );
-  } // photons
 
   vSC_DR_.clear();
   vSC_pT_.clear();

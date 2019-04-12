@@ -51,10 +51,14 @@ process.es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
 process.fevt = cms.EDAnalyzer('SCRegressor'
     #, EBRecHitCollection = cms.InputTag('ecalRecHit:EcalRecHitsEB')
     , gsfElectronCollection = cms.InputTag('gedGsfElectrons')
-    , gedPhotonCollection = cms.InputTag('gedPhotons')
-    , reducedEBRecHitCollection = cms.InputTag('reducedEcalRecHitsEB')
-    , reducedEERecHitCollection = cms.InputTag('reducedEcalRecHitsEE')
-    , reducedESRecHitCollection = cms.InputTag('reducedEcalRecHitsES')
+    #, photonCollection = cms.InputTag('gedPhotons')
+    , photonCollection = cms.InputTag('slimmedPhotons')
+    #, reducedEBRecHitCollection = cms.InputTag('reducedEcalRecHitsEB')
+    #, reducedEERecHitCollection = cms.InputTag('reducedEcalRecHitsEE')
+    #, reducedESRecHitCollection = cms.InputTag('reducedEcalRecHitsES')
+    , reducedEBRecHitCollection = cms.InputTag('reducedEgamma:reducedEBRecHits')
+    , reducedEERecHitCollection = cms.InputTag('reducedEgamma:reducedEERecHits')
+    , reducedESRecHitCollection = cms.InputTag('reducedEgamma:reducedESRecHits')
     , genParticleCollection = cms.InputTag('genParticles')
     , genJetCollection = cms.InputTag('ak4GenJets')
     , trackCollection = cms.InputTag("generalTracks")
@@ -66,4 +70,13 @@ process.TFileService = cms.Service("TFileService",
     fileName = cms.string(options.outputFile)
     )
 
-process.p = cms.Path(process.fevt)
+process.hltFilter = cms.EDFilter("HLTHighLevel",
+                                          eventSetupPathsKey = cms.string(''),
+                                          TriggerResultsTag = cms.InputTag("TriggerResults","","HLT"),
+                                          HLTPaths = cms.vstring('HLT_Diphoton30PV_18PV_R9Id_AND_IsoCaloId_AND_HE_R9Id_PixelVeto_Mass55_v*'),
+                                          andOr = cms.bool(True),
+                                          throw = cms.bool(False)
+                                          )
+
+#process.p = cms.Path(process.fevt)
+process.p = cms.Path(process.hltFilter*process.fevt)
