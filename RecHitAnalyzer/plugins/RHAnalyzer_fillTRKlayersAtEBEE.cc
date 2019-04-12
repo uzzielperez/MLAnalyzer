@@ -71,8 +71,8 @@ void RecHitAnalyzer::branchesTRKlayersAtEBEE ( TTree* tree, edm::Service<TFileSe
     // Histograms for monitoring
     sprintf(htitle,"N(i#phi,i#eta);i#phi;i#eta");
     hTOB_EB[iL] = fs->make<TH2F>(hname, htitle,
-        EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
-        2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
+        EB_IPHI_MAX  , EB_IPHI_MIN-1, EB_IPHI_MAX,
+        2*EB_IETA_MAX,-EB_IETA_MAX,   EB_IETA_MAX );
     for ( int iz(0); iz < nEE; iz++ ) {
       const char *zside = (iz > 0) ? "p" : "m";
       sprintf(hname, "TOB_layer%d_EE%s",layer,zside);
@@ -83,8 +83,8 @@ void RecHitAnalyzer::branchesTRKlayersAtEBEE ( TTree* tree, edm::Service<TFileSe
       sprintf(htitle,"N(ix,iy);ix;iy");
       //hTOB_EE[iz][iL] = fs->make<TH2F>(hname, htitle,
       hTOB_EE[iL][iz] = fs->make<TH2F>(hname, htitle,
-          EEDetId::IX_MAX, EEDetId::IX_MIN-1, EEDetId::IX_MAX,
-          EEDetId::IY_MAX, EEDetId::IY_MIN-1, EEDetId::IY_MAX );
+          EE_MAX_IX, EE_MIN_IX-1, EE_MAX_IX,
+          EE_MAX_IY, EE_MIN_IY-1, EE_MAX_IY );
     } // iz
   } // iL
   for ( int iL(0); iL < nTEC; iL++ ) {
@@ -96,8 +96,8 @@ void RecHitAnalyzer::branchesTRKlayersAtEBEE ( TTree* tree, edm::Service<TFileSe
     // Histograms for monitoring
     sprintf(htitle,"N(i#phi,i#eta);i#phi;i#eta");
     hTEC_EB[iL] = fs->make<TH2F>(hname, htitle,
-        EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
-        2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
+        EB_IPHI_MAX  , EB_IPHI_MIN-1, EB_IPHI_MAX,
+        2*EB_IETA_MAX,-EB_IETA_MAX,   EB_IETA_MAX );
     for ( int iz(0); iz < nEE; iz++ ) {
       const char *zside = (iz > 0) ? "p" : "m";
       sprintf(hname, "TEC_layer%d_EE%s",layer,zside);
@@ -108,8 +108,8 @@ void RecHitAnalyzer::branchesTRKlayersAtEBEE ( TTree* tree, edm::Service<TFileSe
       sprintf(htitle,"N(ix,iy);ix;iy");
       //hTEC_EE[iz][iL] = fs->make<TH2F>(hname, htitle,
       hTEC_EE[iL][iz] = fs->make<TH2F>(hname, htitle,
-          EEDetId::IX_MAX, EEDetId::IX_MIN-1, EEDetId::IX_MAX,
-          EEDetId::IY_MAX, EEDetId::IY_MIN-1, EEDetId::IY_MAX );
+          EE_MAX_IX, EE_MIN_IX-1, EE_MAX_IX,
+          EE_MAX_IY, EE_MIN_IY-1, EE_MAX_IY );
     } // iz
   } // iL
   for ( int iL(0); iL < nTIB; iL++ ) {
@@ -121,8 +121,8 @@ void RecHitAnalyzer::branchesTRKlayersAtEBEE ( TTree* tree, edm::Service<TFileSe
     // Histograms for monitoring
     sprintf(htitle,"N(i#phi,i#eta);i#phi;i#eta");
     hTIB_EB[iL] = fs->make<TH2F>(hname, htitle,
-        EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
-        2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
+        EB_IPHI_MAX  , EB_IPHI_MIN-1, EB_IPHI_MAX,
+        2*EB_IETA_MAX,-EB_IETA_MAX,   EB_IETA_MAX );
     for ( int iz(0); iz < nEE; iz++ ) {
       const char *zside = (iz > 0) ? "p" : "m";
       sprintf(hname, "TIB_layer%d_EE%s",layer,zside);
@@ -133,8 +133,8 @@ void RecHitAnalyzer::branchesTRKlayersAtEBEE ( TTree* tree, edm::Service<TFileSe
       sprintf(htitle,"N(ix,iy);ix;iy");
       //hTIB_EE[iz][iL] = fs->make<TH2F>(hname, htitle,
       hTIB_EE[iL][iz] = fs->make<TH2F>(hname, htitle,
-          EEDetId::IX_MAX, EEDetId::IX_MIN-1, EEDetId::IX_MAX,
-          EEDetId::IY_MAX, EEDetId::IY_MIN-1, EEDetId::IY_MAX );
+          EE_MAX_IX, EE_MIN_IX-1, EE_MAX_IX,
+          EE_MAX_IY, EE_MIN_IY-1, EE_MAX_IY );
     } // iz
   } // iL
   for ( int iL(0); iL < nTID; iL++ ) {
@@ -146,8 +146,8 @@ void RecHitAnalyzer::branchesTRKlayersAtEBEE ( TTree* tree, edm::Service<TFileSe
     // Histograms for monitoring
     sprintf(htitle,"N(i#phi,i#eta);i#phi;i#eta");
     hTID_EB[iL] = fs->make<TH2F>(hname, htitle,
-        EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
-        2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
+        EB_IPHI_MAX  , EB_IPHI_MIN-1, EB_IPHI_MAX,
+        2*EB_IETA_MAX,-EB_IETA_MAX,   EB_IETA_MAX );
     for ( int iz(0); iz < nEE; iz++ ) {
       const char *zside = (iz > 0) ? "p" : "m";
       sprintf(hname, "TID_layer%d_EE%s",layer,zside);
@@ -158,8 +158,8 @@ void RecHitAnalyzer::branchesTRKlayersAtEBEE ( TTree* tree, edm::Service<TFileSe
       sprintf(htitle,"N(ix,iy);ix;iy");
       //hTID_EE[iz][iL] = fs->make<TH2F>(hname, htitle,
       hTID_EE[iL][iz] = fs->make<TH2F>(hname, htitle,
-          EEDetId::IX_MAX, EEDetId::IX_MIN-1, EEDetId::IX_MAX,
-          EEDetId::IY_MAX, EEDetId::IY_MIN-1, EEDetId::IY_MAX );
+          EE_MAX_IX, EE_MIN_IX-1, EE_MAX_IX,
+          EE_MAX_IY, EE_MIN_IY-1, EE_MAX_IY );
     } // iz
   } // iL
   for ( int iL(0); iL < nBPIX; iL++ ) {
@@ -171,8 +171,8 @@ void RecHitAnalyzer::branchesTRKlayersAtEBEE ( TTree* tree, edm::Service<TFileSe
     // Histograms for monitoring
     sprintf(htitle,"N(i#phi,i#eta);i#phi;i#eta");
     hBPIX_EB[iL] = fs->make<TH2F>(hname, htitle,
-        EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
-        2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
+        EB_IPHI_MAX  , EB_IPHI_MIN-1, EB_IPHI_MAX,
+        2*EB_IETA_MAX,-EB_IETA_MAX,   EB_IETA_MAX );
     for ( int iz(0); iz < nEE; iz++ ) {
       const char *zside = (iz > 0) ? "p" : "m";
       sprintf(hname, "BPIX_layer%d_EE%s",layer,zside);
@@ -183,8 +183,8 @@ void RecHitAnalyzer::branchesTRKlayersAtEBEE ( TTree* tree, edm::Service<TFileSe
       sprintf(htitle,"N(ix,iy);ix;iy");
       //hBPIX_EE[iz][iL] = fs->make<TH2F>(hname, htitle,
       hBPIX_EE[iL][iz] = fs->make<TH2F>(hname, htitle,
-          EEDetId::IX_MAX, EEDetId::IX_MIN-1, EEDetId::IX_MAX,
-          EEDetId::IY_MAX, EEDetId::IY_MIN-1, EEDetId::IY_MAX );
+          EE_MAX_IX, EE_MIN_IX-1, EE_MAX_IX,
+          EE_MAX_IY, EE_MIN_IY-1, EE_MAX_IY );
     } // iz
   } // iL
   for ( int iL(0); iL < nFPIX; iL++ ) {
@@ -196,8 +196,8 @@ void RecHitAnalyzer::branchesTRKlayersAtEBEE ( TTree* tree, edm::Service<TFileSe
     // Histograms for monitoring
     sprintf(htitle,"N(i#phi,i#eta);i#phi;i#eta");
     hFPIX_EB[iL] = fs->make<TH2F>(hname, htitle,
-        EBDetId::MAX_IPHI  , EBDetId::MIN_IPHI-1, EBDetId::MAX_IPHI,
-        2*EBDetId::MAX_IETA,-EBDetId::MAX_IETA,   EBDetId::MAX_IETA );
+        EB_IPHI_MAX  , EB_IPHI_MIN-1, EB_IPHI_MAX,
+        2*EB_IETA_MAX,-EB_IETA_MAX,   EB_IETA_MAX );
     for ( int iz(0); iz < nEE; iz++ ) {
       const char *zside = (iz > 0) ? "p" : "m";
       sprintf(hname, "FPIX_layer%d_EE%s",layer,zside);
@@ -208,8 +208,8 @@ void RecHitAnalyzer::branchesTRKlayersAtEBEE ( TTree* tree, edm::Service<TFileSe
       sprintf(htitle,"N(ix,iy);ix;iy");
       //hFPIX_EE[iz][iL] = fs->make<TH2F>(hname, htitle,
       hFPIX_EE[iL][iz] = fs->make<TH2F>(hname, htitle,
-          EEDetId::IX_MAX, EEDetId::IX_MIN-1, EEDetId::IX_MAX,
-          EEDetId::IY_MAX, EEDetId::IY_MIN-1, EEDetId::IY_MAX );
+          EE_MAX_IX, EE_MIN_IX-1, EE_MAX_IX,
+          EE_MAX_IY, EE_MIN_IY-1, EE_MAX_IY );
     } // iz
   } // iL
 
@@ -221,7 +221,7 @@ void fillTRKatEB ( EBDetId ebId, int iL, TH2F *hTRK_EB[], std::vector<float> vTR
   ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
   // Fill histograms for monitoring
   hTRK_EB[iL]->Fill( iphi_, ieta_ );
-  idx_ = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
+  idx_ = ebId.hashedIndex(); // (ieta_+EB_IETA_MAX)*EB_IPHI_MAX + iphi_
   // Fill vectors for images
   vTRK_EB_[iL][idx_] += 1.;
 }
@@ -235,7 +235,7 @@ void fillTRKatEE ( EEDetId eeId, int iL, TH2F *hTRK_EE[][nEE], std::vector<float
   // Fill histograms for monitoring
   hTRK_EE[iL][iz_]->Fill( ix_, iy_ );
   // Create hashed Index: maps from [iy][ix] -> [idx_]
-  idx_ = iy_*EEDetId::IX_MAX + ix_;
+  idx_ = iy_*EE_MAX_IX + ix_;
   // Fill vectors for images
   vTRK_EE_[iL][iz_][idx_] += 1.;
 }

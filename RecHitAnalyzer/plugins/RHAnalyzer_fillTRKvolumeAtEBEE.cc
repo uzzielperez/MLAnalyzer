@@ -21,18 +21,18 @@ void RecHitAnalyzer::branchesTRKvolumeAtEBEE ( TTree* tree, edm::Service<TFileSe
   // Histograms for monitoring
   /*
   hTRK_EB = fs->make<TH3F>("TRK_volume_EB", "N(#phi,#eta,#rho);#phi;#eta;#rho",
-      EBDetId::MAX_IPHI  ,-TMath::Pi(),         TMath::Pi(),
-      2*EBDetId::MAX_IETA,-1.479,               1.479,
+      EB_IPHI_MAX  ,-TMath::Pi(),         TMath::Pi(),
+      2*EB_IETA_MAX,-1.479,               1.479,
       12,                  0.,                  110. );
   */
   hTRK_EB = fs->make<TH3F>("TRK_volume_EB", "N(iphi,ieta,#rho);iphi;ieta;#rho",
-      EBDetId::MAX_IPHI  , EB_IPHI_MIN-1, EB_IPHI_MAX,
+      EB_IPHI_MAX  , EB_IPHI_MIN-1, EB_IPHI_MAX,
       2*EB_IETA_MAX      ,-EB_IETA_MAX  , EB_IETA_MAX, 
       12                 ,0.            , 110. );
   hTRK_EB_eta = fs->make<TH1F>("TRK_eta_EB", "N(eta);eta",
-      2*EBDetId::MAX_IETA,-1.479,               1.479 );
+      2*EB_IETA_MAX,-1.479,               1.479 );
   hTRK_EB_phi = fs->make<TH1F>("TRK_phi_EB", "N(phi);phi",
-      EBDetId::MAX_IPHI  ,-TMath::Pi(),         TMath::Pi() );
+      EB_IPHI_MAX  ,-TMath::Pi(),         TMath::Pi() );
   hTRK_EB_rho = fs->make<TH1F>("TRK_rho_EB", "N(rho);rho",
       120,                 0.,                  110. );
 
@@ -50,8 +50,8 @@ void RecHitAnalyzer::branchesTRKvolumeAtEBEE ( TTree* tree, edm::Service<TFileSe
     sprintf(hname, "TRK_volume_EE%s",zside);
     sprintf(htitle,"N(x,y,z);x;y,z");
     hTRK_EE[iz] = fs->make<TH3F>(hname, htitle,
-        EEDetId::IX_MAX, -100., 100.,
-        EEDetId::IY_MAX, -100., 100.,
+        EE_MAX_IX, -100., 100.,
+        EE_MAX_IY, -100., 100.,
         28,               zMin, zMax );
   } // iz
   hTRK_EE_z = fs->make<TH1F>("TRK_EE_z", "N(z);z",
@@ -134,7 +134,7 @@ void RecHitAnalyzer::fillTRKvolumeAtEBEE ( const edm::Event& iEvent, const edm::
       ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
       // Fill histograms for monitoring
       hTRK_EB->Fill( iphi_, ieta_ );
-      idx_ = ebId.hashedIndex(); // (ieta_+EBDetId::MAX_IETA)*EBDetId::MAX_IPHI + iphi_
+      idx_ = ebId.hashedIndex(); // (ieta_+EB_IETA_MAX)*EB_IPHI_MAX + iphi_
       // Fill vectors for images
       vTRK_EB_[idx_] += 1.;
     } else if ( id.subdetId() == EcalEndcap ) {
@@ -145,7 +145,7 @@ void RecHitAnalyzer::fillTRKvolumeAtEBEE ( const edm::Event& iEvent, const edm::
       // Fill histograms for monitoring
       hTRK_EE[iz_]->Fill( ix_, iy_ );
       // Create hashed Index: maps from [iy][ix] -> [idx_]
-      idx_ = iy_*EEDetId::IX_MAX + ix_;
+      idx_ = iy_*EE_MAX_IX + ix_;
       // Fill vectors for images
       vTRK_EE_[iz_][idx_] += 1.;
     } 
