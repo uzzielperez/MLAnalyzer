@@ -79,7 +79,32 @@ process.hltFilter = cms.EDFilter("HLTHighLevel",
                                           throw = cms.bool(False)
                                           )
 
+### fix a bug in the ECAL-Tracker momentum combination when applying the scale and smearing
+from RecoEgamma.EgammaTools.EgammaPostRecoTools import setupEgammaPostRecoSeq
+setupEgammaPostRecoSeq(process,
+                       runVID=True,
+                       era='2017-Nov17ReReco',
+                       eleIDModules=['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Fall17_94X_V2_cff',
+                                     'RecoEgamma.ElectronIdentification.Identification.heepElectronID_HEEPV70_cff',
+                                     'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Fall17_iso_V2_cff',
+                                     'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Fall17_noIso_V2_cff'],
+                       phoIDModules=['RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Fall17_94X_V2_cff',
+                                     'RecoEgamma.PhotonIdentification.Identification.cutBasedPhotonID_Fall17_94X_V2_cff']
+                       )
+
+### reduce effect of high eta EE noise on the PF MET measurement
+from PhysicsTools.PatUtils.tools.runMETCorrectionsAndUncertainties import runMetCorAndUncFromMiniAOD
+runMetCorAndUncFromMiniAOD (
+        process,
+        isData = False, # false for MC
+        fixEE2017 = True,
+        fixEE2017Params = {'userawPt': True, 'ptThreshold':50.0, 'minEtaThreshold':2.65, 'maxEtaThreshold': 3.139} ,
+        postfix = "ModifiedMET"
+)
+
 process.p = cms.Path(
   process.hltFilter*
+  process.fullPatMetSequenceModifiedMET*
+  process.egammaPostRecoSeq*
   process.fevt
 )

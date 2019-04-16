@@ -20,6 +20,15 @@ void SCRegressor::branchesPhoVars ( TTree* tree, edm::Service<TFileService> &fs 
   tree->Branch("pho_scEta",          &vPho_scEta_);
   tree->Branch("pho_sieip",          &vPho_sieip_);
   tree->Branch("pho_s4",             &vPho_s4_);
+  tree->Branch("pho_rho",            &vPho_rho_);
+
+  tree->Branch("pho_neuIso",         &vPho_neuIso_);
+  tree->Branch("pho_ecalIso",        &vPho_ecalIso_);
+  tree->Branch("pho_trkIso",         &vPho_trkIso_);
+  tree->Branch("pho_hasPxlSeed",     &vPho_hasPxlSeed_);
+  tree->Branch("pho_passEleVeto",    &vPho_passEleVeto_);
+  tree->Branch("pho_phoIsoCorr",     &vPho_phoIsoCorr_);
+  tree->Branch("pho_ecalIsoCorr",    &vPho_ecalIsoCorr_);
 
 } // branchesPhoVars()
 
@@ -29,19 +38,18 @@ void SCRegressor::fillPhoVars ( const edm::Event& iEvent, const edm::EventSetup&
 
   EcalClusterLazyTools clusterTools ( iEvent, iSetup, EBRecHitCollectionT_, EERecHitCollectionT_, ESRecHitCollectionT_);
 
-  /*
   edm::Handle<double> rhoH;
   iEvent.getByToken( rhoLabel_, rhoH );
+  float rho = *rhoH;
   //std::cout << "rho:" << *rhoH << std::endl;
   //std::cout << "rho:" << *(rhoH.product()) << std::endl;
-  */
 
   edm::Handle<PhotonCollection> photons;
   iEvent.getByToken(photonCollectionT_, photons);
   /*
   edm::Handle<reco::GenParticleCollection> genParticles;
   iEvent.getByToken(genParticleCollectionT_, genParticles);
-  for ( auto const& mG : mGenPi0_RecoPho ) { 
+  for ( auto const& mG : mGenPi0_RecoPho ) {
     reco::GenParticleRef iGen( genParticles, mG.first );
     std::cout << "mass:" << iGen->mass() << std::endl;
     std::cout << "ptgen:" << iGen->pt() << std::endl;
@@ -54,8 +62,6 @@ void SCRegressor::fillPhoVars ( const edm::Event& iEvent, const edm::EventSetup&
   vPho_E_.clear();
   vPho_eta_.clear();
   vPho_phi_.clear();
-  vPho_r9_.clear();
-  vPho_sieie_.clear();
   for ( int iP : vRegressPhoIdxs_ ) {
 
     PhotonRef iPho( photons, iP );
@@ -65,20 +71,29 @@ void SCRegressor::fillPhoVars ( const edm::Event& iEvent, const edm::EventSetup&
     vPho_eta_.push_back( iPho->eta() );
     vPho_phi_.push_back( iPho->phi() );
   } // photons
-  
-  vPho_r9_.clear(); 
-  vPho_sieie_.clear(); 
-  vPho_phoIso_.clear(); 
-  vPho_chgIso_.clear(); 
-  vPho_chgIsoWrongVtx_.clear(); 
-  vPho_Eraw_.clear(); 
-  vPho_phiWidth_.clear(); 
-  vPho_etaWidth_.clear(); 
-  vPho_scEta_.clear(); 
-  vPho_sieip_.clear(); 
-  vPho_s4_.clear(); 
 
-  //for ( auto const& mG : mGenPi0_RecoPho ) { 
+  vPho_r9_.clear();
+  vPho_sieie_.clear();
+  vPho_phoIso_.clear();
+  vPho_chgIso_.clear();
+  vPho_chgIsoWrongVtx_.clear();
+  vPho_Eraw_.clear();
+  vPho_phiWidth_.clear();
+  vPho_etaWidth_.clear();
+  vPho_scEta_.clear();
+  vPho_sieip_.clear();
+  vPho_s4_.clear();
+  vPho_rho_.clear();
+
+  vPho_neuIso_.clear();
+  vPho_ecalIso_.clear();
+  vPho_trkIso_.clear();
+  vPho_hasPxlSeed_.clear();
+  vPho_passEleVeto_.clear();
+  vPho_phoIsoCorr_.clear();
+  vPho_ecalIsoCorr_.clear();
+
+  //for ( auto const& mG : mGenPi0_RecoPho ) {
   for ( int iP : vRegressPhoIdxs_ ) {
 
     //PhotonRef iPho( photons, mG.second[0] );
@@ -88,16 +103,44 @@ void SCRegressor::fillPhoVars ( const edm::Event& iEvent, const edm::EventSetup&
 
     vPho_r9_.push_back(             iPho->full5x5_r9() );
     vPho_sieie_.push_back(          iPho->full5x5_sigmaIetaIeta() );
-    vPho_phoIso_.push_back(         iPho->photonIso() );
-    vPho_chgIso_.push_back(         iPho->chargedHadronIso() );
-    vPho_chgIsoWrongVtx_.push_back( iPho->chargedHadronIsoWrongVtx() );
+    //vPho_phoIso_.push_back(         iPho->photonIso() );
+    //vPho_chgIso_.push_back(         iPho->chargedHadronIso() );
+    //vPho_chgIsoWrongVtx_.push_back( iPho->chargedHadronIsoWrongVtx() );
+    vPho_phoIso_.push_back(         iPho->userFloat("phoPhotonIsolation") );
+    vPho_chgIso_.push_back(         iPho->userFloat("phoChargedIsolation") );
+    vPho_chgIsoWrongVtx_.push_back( iPho->userFloat("phoWorstChargedIsolation") );
     vPho_Eraw_.push_back(           iSC->rawEnergy() );
     vPho_phiWidth_.push_back(       iSC->phiWidth() );
     vPho_etaWidth_.push_back(       iSC->etaWidth() );
     vPho_scEta_.push_back(          iSC->eta() );
     vPho_sieip_.push_back(          vCov[1] );
     vPho_s4_.push_back(             clusterTools.e2x2( *(iSC->seed()) ) / clusterTools.e5x5( *(iSC->seed()) ) );
+    vPho_rho_.push_back(            rho );
+
+    vPho_neuIso_.push_back(         iPho->userFloat("phoNeutralHadronIsolation") );
+    vPho_ecalIso_.push_back(        iPho->ecalPFClusterIso() );
+    vPho_trkIso_.push_back(         iPho->trkSumPtHollowConeDR03() );
+    vPho_hasPxlSeed_.push_back(     iPho->hasPixelSeed() );
+    vPho_passEleVeto_.push_back(    iPho->passElectronVeto() );
+
+    float EAPho = iPho->eta() < 1.0 ? 0.1113 : 0.0953;
+    vPho_phoIsoCorr_.push_back(     std::max(iPho->userFloat("phoPhotonIsolation") - rho*EAPho, (float)0.) );
+    vPho_ecalIsoCorr_.push_back(    std::max(iPho->ecalPFClusterIso() - rho*EAPho, (float)0.) );
+
     /*
+    std::cout << "HoE:" << iPho->hadTowOverEm() << std::endl;
+    std::cout << "ChgIso:" << iPho->userFloat("phoChargedIsolation") << std::endl;
+    //std::cout << "ChgIsoOld:" << iPho->chargedHadronIso() <<std::endl;
+    std::cout << "PhoIso:" << iPho->userFloat("phoPhotonIsolation") << std::endl;
+    //std::cout << "PhoIsoOld:" << iPho->photonIso() <<std::endl;
+    std::cout << "NeuIso:" << iPho->userFloat("phoNeutralHadronIsolation") << std::endl;
+    std::cout << "ChWorstIso:" << iPho->userFloat("phoWorstChargedIsolation") << std::endl;
+
+    std::cout << "TrkIso:" << iPho->trackIso() << std::endl;
+    std::cout << "trkSumPtHollowConeDR03:" << iPho->trkSumPtHollowConeDR03() << std::endl;
+    std::cout << "ecalPFClusterIso:" << iPho->ecalPFClusterIso() << std::endl;
+    std::cout << "ecalPFClusterIso, rho corr:" << std::max(iPho->ecalPFClusterIso() - rho*EAPho, (float)0.) << std::endl;
+
     std::cout << "pt:" << iPho->pt() << std::endl;
     std::cout << "E:" << iPho->energy() << std::endl;
 
