@@ -27,7 +27,8 @@ SCRegressor::SCRegressor(const edm::ParameterSet& iConfig)
   genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
   genJetCollectionT_ = consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genJetCollection"));
   trackCollectionT_ = consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("trackCollection"));
-  rhoLabel_ = consumes<double>(iConfig.getParameter<edm::InputTag>("rhoLabel")); 
+  rhoLabel_ = consumes<double>(iConfig.getParameter<edm::InputTag>("rhoLabel"));
+  trgResultsT_ = consumes<edm::TriggerResults>(iConfig.getParameter<edm::InputTag>("trgResults"));
 
   //now do what ever initialization is needed
   usesResource("TFileService");
@@ -88,9 +89,9 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //hasPassed = runPiSel ( iEvent, iSetup ); //TODO: add config-level switch
   //hasPassed = runPhotonSel ( iEvent, iSetup );
   hasPassed = runDiPhotonSel ( iEvent, iSetup );
-  if ( !hasPassed ) return; 
+  if ( !hasPassed ) return;
 
-  // Get coordinates of photon supercluster seed 
+  // Get coordinates of photon supercluster seed
   //int nPho = 0;
   nPho = 0;
   int iphi_Emax, ieta_Emax;
@@ -139,7 +140,7 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         ieta_Emax = ieta_;
         pos_Emax = caloGeom->getPosition(ebId);
       }
-      //std::cout << " >> " << iH << ": iphi_,ieta_,E: " << iphi_ << ", " << ieta_ << ", " << iRHit->energy() << std::endl; 
+      //std::cout << " >> " << iH << ": iphi_,ieta_,E: " << iphi_ << ", " << ieta_ << ", " << iRHit->energy() << std::endl;
     } // SC hits
 
     // Apply selection on position of shower seed
@@ -190,7 +191,7 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 
 // ------------ method called once each job just before starting event loop  ------------
-void 
+void
 SCRegressor::beginJob()
 {
   nTotal = 0;
@@ -198,8 +199,8 @@ SCRegressor::beginJob()
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void 
-SCRegressor::endJob() 
+void
+SCRegressor::endJob()
 {
   std::cout << " selected: " << nPassed << "/" << nTotal << std::endl;
 }

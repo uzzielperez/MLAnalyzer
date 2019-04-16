@@ -31,12 +31,15 @@
 #include "DataFormats/EgammaCandidates/interface/Photon.h"
 #include "DataFormats/EgammaCandidates/interface/PhotonFwd.h" // reco::PhotonCollection defined here
 #include "DataFormats/PatCandidates/interface/Photon.h"
+#include "DataFormats/Common/interface/TriggerResults.h"
 
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/Common/interface/TriggerNames.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/InputTag.h"
+#include "FWCore/Utilities/interface/RegexMatch.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "TH1.h"
@@ -92,6 +95,7 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<reco::GenJetCollection> genJetCollectionT_;
     edm::EDGetTokenT<reco::TrackCollection> trackCollectionT_;
     edm::EDGetTokenT<double> rhoLabel_;
+    edm::EDGetTokenT<edm::TriggerResults> trgResultsT_;
 
     static const int nPhotons = 2;
     //static const int nPhotons = 1;
@@ -168,15 +172,15 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
     std::vector<float> vPho_r9_;
     std::vector<float> vPho_sieie_;
-    std::vector<float> vPho_phoIso_; 
-    std::vector<float> vPho_chgIso_; 
-    std::vector<float> vPho_chgIsoWrongVtx_; 
-    std::vector<float> vPho_Eraw_; 
-    std::vector<float> vPho_phiWidth_; 
-    std::vector<float> vPho_etaWidth_; 
-    std::vector<float> vPho_scEta_; 
-    std::vector<float> vPho_sieip_; 
-    std::vector<float> vPho_s4_; 
+    std::vector<float> vPho_phoIso_;
+    std::vector<float> vPho_chgIso_;
+    std::vector<float> vPho_chgIsoWrongVtx_;
+    std::vector<float> vPho_Eraw_;
+    std::vector<float> vPho_phiWidth_;
+    std::vector<float> vPho_etaWidth_;
+    std::vector<float> vPho_scEta_;
+    std::vector<float> vPho_sieip_;
+    std::vector<float> vPho_s4_;
     std::vector<float> vPho_rho_;
 
     std::vector<float> vPho_neuIso_;
@@ -203,6 +207,7 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
     float m0_;
     std::vector<float> vFC_inputs_;
+    int hltAccept_;
 
 };
 

@@ -64,6 +64,7 @@ process.fevt = cms.EDAnalyzer('SCRegressor'
     , genJetCollection = cms.InputTag('ak4GenJets')
     , trackCollection = cms.InputTag("generalTracks")
     , rhoLabel = cms.InputTag("fixedGridRhoFastjetAll")
+    , trgResults = cms.InputTag("TriggerResults","","HLT")
     )
 
 process.TFileService = cms.Service("TFileService",
