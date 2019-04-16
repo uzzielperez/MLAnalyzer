@@ -8,6 +8,7 @@
  <use name="DataFormats/HcalDetId"/>
  <use name="DataFormats/HcalRecHit"/>
  <use name="DataFormats/ParticleFlowCandidate"/>
+ <use name="DataFormats/PatCandidates"/>
  <use name="DQM/HcalCommon"/>
  <use name="Geometry/CaloGeometry"/>
  <use name="Geometry/Records"/>

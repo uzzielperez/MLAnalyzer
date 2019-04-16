@@ -45,7 +45,8 @@ process.source = cms.Source("PoolSource",
     , skipEvents = cms.untracked.uint32(options.skipEvents)
     )
 
-process.GlobalTag.globaltag = cms.string('80X_dataRun2_HLT_v12')
+#process.GlobalTag.globaltag = cms.string('80X_dataRun2_HLT_v12')
+process.GlobalTag.globaltag = cms.string('94X_mc2017_realistic_v17')
 process.es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
 
 process.fevt = cms.EDAnalyzer('SCRegressor'
@@ -78,5 +79,7 @@ process.hltFilter = cms.EDFilter("HLTHighLevel",
                                           throw = cms.bool(False)
                                           )
 
-#process.p = cms.Path(process.fevt)
-process.p = cms.Path(process.hltFilter*process.fevt)
+process.p = cms.Path(
+  process.hltFilter*
+  process.fevt
+)
