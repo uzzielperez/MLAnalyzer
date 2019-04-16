@@ -45,7 +45,8 @@ SCRegressor::SCRegressor(const edm::ParameterSet& iConfig)
 
   //branchesPiSel ( RHTree, fs );
   //branchesPhotonSel ( RHTree, fs );
-  branchesDiPhotonSel ( RHTree, fs );
+  //branchesDiPhotonSel ( RHTree, fs );
+  branchesH2aaSel ( RHTree, fs );
   branchesSC     ( RHTree, fs );
   branchesEB     ( RHTree, fs );
   //branchesTracksAtEBEE     ( RHTree, fs );
@@ -88,7 +89,8 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   nTotal += nPhotons;
   //hasPassed = runPiSel ( iEvent, iSetup ); //TODO: add config-level switch
   //hasPassed = runPhotonSel ( iEvent, iSetup );
-  hasPassed = runDiPhotonSel ( iEvent, iSetup );
+  //hasPassed = runDiPhotonSel ( iEvent, iSetup );
+  hasPassed = runH2aaSel ( iEvent, iSetup );
   if ( !hasPassed ) return;
 
   // Get coordinates of photon supercluster seed
@@ -104,6 +106,7 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   int iphi_, ieta_; // rows:ieta, cols:iphi
   for ( unsigned int i = 0; i < vPreselPhoIdxs_.size(); i++ ) {
 
+    /*
     PhotonRef iPho( photons, vPreselPhoIdxs_[i] );
 
     // Get underlying super cluster
@@ -147,10 +150,11 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //std::cout << " >> Found: iphi_Emax,ieta_Emax: " << iphi_Emax << ", " << ieta_Emax << std::endl;
     if ( Emax <= zs ) continue;
     if ( ieta_Emax > 169 - 15 || ieta_Emax < 15 ) continue;
-    vRegressPhoIdxs_.push_back( vPreselPhoIdxs_[i] );
     vIphi_Emax_.push_back( iphi_Emax );
     vIeta_Emax_.push_back( ieta_Emax );
     vPos_Emax.push_back( pos_Emax );
+    */
+    vRegressPhoIdxs_.push_back( vPreselPhoIdxs_[i] );
     //std::cout << " >> Found: iphi_Emax,ieta_Emax: " << iphi_Emax << ", " << ieta_Emax << std::endl;
     nPho++;
 
@@ -164,11 +168,12 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   //fillPiSel ( iEvent, iSetup );
   //fillPhotonSel ( iEvent, iSetup );
-  fillDiPhotonSel ( iEvent, iSetup );
-  fillSC     ( iEvent, iSetup );
-  fillEB     ( iEvent, iSetup );
+  //fillDiPhotonSel ( iEvent, iSetup );
+  fillH2aaSel ( iEvent, iSetup );
+  //fillSC     ( iEvent, iSetup );
+  //fillEB     ( iEvent, iSetup );
   //fillTracksAtEBEE     ( iEvent, iSetup );
-  fillPhoVars     ( iEvent, iSetup );
+  //fillPhoVars     ( iEvent, iSetup );
 
   eventId_ = iEvent.id().event();
   runId_ = iEvent.id().run();

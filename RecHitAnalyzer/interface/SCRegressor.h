@@ -135,12 +135,15 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     void branchesPiSel       ( TTree*, edm::Service<TFileService>& );
     void branchesPhotonSel   ( TTree*, edm::Service<TFileService>& );
     void branchesDiPhotonSel ( TTree*, edm::Service<TFileService>& );
+    void branchesH2aaSel     ( TTree*, edm::Service<TFileService>& );
     bool runPiSel        ( const edm::Event&, const edm::EventSetup& );
     bool runPhotonSel    ( const edm::Event&, const edm::EventSetup& );
     bool runDiPhotonSel  ( const edm::Event&, const edm::EventSetup& );
+    bool runH2aaSel      ( const edm::Event&, const edm::EventSetup& );
     void fillPiSel       ( const edm::Event&, const edm::EventSetup& );
     void fillPhotonSel   ( const edm::Event&, const edm::EventSetup& );
     void fillDiPhotonSel ( const edm::Event&, const edm::EventSetup& );
+    void fillH2aaSel     ( const edm::Event&, const edm::EventSetup& );
 
     std::map<unsigned int, std::vector<unsigned int>> mGenPi0_RecoPho;
     std::vector<int> vPreselPhoIdxs_;
@@ -194,6 +197,13 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<float> vSC_mass_;
     std::vector<float> vSC_DR_;
     std::vector<float> vSC_pT_;
+
+    std::vector<float> vA_pT_;
+    std::vector<float> vA_eta_;
+    std::vector<float> vA_phi_;
+    std::vector<float> vA_mass_;
+    std::vector<float> vA_DR_;
+    float mHgen_;
 
     int nTotal, nPassed;
 
