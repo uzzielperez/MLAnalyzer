@@ -1,17 +1,18 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/SCRegressor.h"
 
+struct pho_obj {
+  unsigned int idx;
+  double pt;
+};
+
 // Initialize branches _____________________________________________________//
 void SCRegressor::branchesDiPhotonSel ( TTree* tree, edm::Service<TFileService> &fs )
 {
   tree->Branch("m0",        &m0_);
   tree->Branch("FC_inputs", &vFC_inputs_);
   tree->Branch("hltAccept", &hltAccept_);
+  tree->Branch("nRecoPho",  &nRecoPho_);
 }
-
-struct pho_obj {
-  unsigned int idx;
-  double pt;
-};
 
 // Run event selection ___________________________________________________________________//
 bool SCRegressor::runDiPhotonSel ( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
@@ -30,9 +31,11 @@ bool SCRegressor::runDiPhotonSel ( const edm::Event& iEvent, const edm::EventSet
     if ( std::abs(iPho->pt()) < 5. ) continue;
     vRecoPhoIdxs.push_back( iP );
   }
-  if ( vRecoPhoIdxs.size() != 2 ) return false;
+  if ( vRecoPhoIdxs.size() < 2 ) return false;
+  //if ( vRecoPhoIdxs.size() != 2 ) return false;
   //if ( vRecoPhoIdxs.size() > 3 ) return false;
   if ( debug ) std::cout << " Reco pho size:" << vRecoPhoIdxs.size() << std::endl;
+  nRecoPho_ = vRecoPhoIdxs.size();
 
   // Ensure two presel photons
   //std::vector<int> vPhoIdxs;
@@ -45,7 +48,7 @@ bool SCRegressor::runDiPhotonSel ( const edm::Event& iEvent, const edm::EventSet
     if ( std::abs(iPho->pt()) <= 18. ) continue;
     if ( std::abs(iPho->eta()) >= 1.442 ) continue;
 
-    ///*
+    /*
     if ( iPho->full5x5_r9() <= 0.5 ) continue;
     if ( iPho->hadTowOverEm() >= 0.08 ) continue;
     //if ( iPho->hasPixelSeed() == true ) continue;
@@ -58,7 +61,7 @@ bool SCRegressor::runDiPhotonSel ( const edm::Event& iEvent, const edm::EventSet
       if ( iPho->trkSumPtHollowConeDR03() >= 6. ) continue;
       //if ( iPho->trackIso() >= 6. ) continue;
     }
-    //*/
+    */
     if ( debug ) std::cout << " >> pT:" << iPho->pt() << " eta:" << iPho->eta() << " phi: " << iPho->phi() << " E:" << iPho->energy() << std::endl;
 
     //vDiPho += iPho->p4();
@@ -124,6 +127,7 @@ bool SCRegressor::runDiPhotonSel ( const edm::Event& iEvent, const edm::EventSet
   if ( debug ) std::cout << " Reco pho size:" << vPhos.size() << std::endl;
   if ( debug ) std::cout << " >> Passed selection. " << std::endl;
 
+  /*
   edm::Handle<edm::TriggerResults> trgs;
   iEvent.getByToken( trgResultsT_, trgs );
 
@@ -152,6 +156,7 @@ bool SCRegressor::runDiPhotonSel ( const edm::Event& iEvent, const edm::EventSet
     }
   }
   hltAccept_ = hltAccept;
+  */
 
   return true;
 }

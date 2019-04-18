@@ -191,6 +191,7 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<float> vPho_trkIso_;
     std::vector<float> vPho_hasPxlSeed_;
     std::vector<float> vPho_passEleVeto_;
+    std::vector<float> vPho_HoE_;
     std::vector<float> vPho_phoIsoCorr_;
     std::vector<float> vPho_ecalIsoCorr_;
 
@@ -218,6 +219,7 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     float m0_;
     std::vector<float> vFC_inputs_;
     int hltAccept_;
+    unsigned int nRecoPho_;
 
 };
 

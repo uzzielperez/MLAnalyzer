@@ -50,7 +50,7 @@ bool SCRegressor::runH2aaSel ( const edm::Event& iEvent, const edm::EventSetup& 
   std::sort( vAs.begin(), vAs.end(), [](auto const &a, auto const &b) { return a.pt > b.pt; } );
 
   vGenAIdxs.clear();
-  vPreselPhoIdxs_.clear();
+  //vPreselPhoIdxs_.clear();
   //bool keepEvt = true;
   //float ptomcut[2] = { 125./3., 125./4. };
   for ( unsigned int iG = 0; iG < vAs.size(); iG++ ) {
@@ -59,7 +59,7 @@ bool SCRegressor::runH2aaSel ( const edm::Event& iEvent, const edm::EventSetup& 
     //if ( std::abs(iGen->eta()) > 1.21 ) keepEvt = false;
     //if ( std::abs(iGen->pt()) < ptomcut[iG] ) keepEvt = false;
     //if ( reco::deltaR(iGen->daughter(0)->eta(),iGen->daughter(0)->phi(), iGen->daughter(1)->eta(),iGen->daughter(1)->phi()) > 0.15 ) keepEvt = false;
-    vPreselPhoIdxs_.push_back( vAs[iG].idx );
+    //vPreselPhoIdxs_.push_back( vAs[iG].idx );
     vGenAIdxs.push_back( vAs[iG].idx );
   }
   //if (keepEvt == false) return false;

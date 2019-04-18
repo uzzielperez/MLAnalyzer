@@ -27,6 +27,7 @@ void SCRegressor::branchesPhoVars ( TTree* tree, edm::Service<TFileService> &fs 
   tree->Branch("pho_trkIso",         &vPho_trkIso_);
   tree->Branch("pho_hasPxlSeed",     &vPho_hasPxlSeed_);
   tree->Branch("pho_passEleVeto",    &vPho_passEleVeto_);
+  tree->Branch("pho_HoE",            &vPho_HoE_);
   tree->Branch("pho_phoIsoCorr",     &vPho_phoIsoCorr_);
   tree->Branch("pho_ecalIsoCorr",    &vPho_ecalIsoCorr_);
 
@@ -90,6 +91,7 @@ void SCRegressor::fillPhoVars ( const edm::Event& iEvent, const edm::EventSetup&
   vPho_trkIso_.clear();
   vPho_hasPxlSeed_.clear();
   vPho_passEleVeto_.clear();
+  vPho_HoE_.clear();
   vPho_phoIsoCorr_.clear();
   vPho_ecalIsoCorr_.clear();
 
@@ -122,6 +124,7 @@ void SCRegressor::fillPhoVars ( const edm::Event& iEvent, const edm::EventSetup&
     vPho_trkIso_.push_back(         iPho->trkSumPtHollowConeDR03() );
     vPho_hasPxlSeed_.push_back(     iPho->hasPixelSeed() );
     vPho_passEleVeto_.push_back(    iPho->passElectronVeto() );
+    vPho_HoE_.push_back(            iPho->hadTowOverEm() );
 
     float EAPho = iPho->eta() < 1.0 ? 0.1113 : 0.0953;
     vPho_phoIsoCorr_.push_back(     std::max(iPho->userFloat("phoPhotonIsolation") - rho*EAPho, (float)0.) );
