@@ -77,13 +77,24 @@ bool SCRegressor::runPhotonSel ( const edm::Event& iEvent, const edm::EventSetup
 
     PhotonRef iPho( photons, vRecoPhoIdxs_[i] );
 
-    if ( iPho->pt() < ptCut ) continue;
-    if ( std::abs(iPho->eta()) > etaCut ) continue;
+    if ( std::abs(iPho->pt()) <= ptCut ) continue;
+    if ( std::abs(iPho->eta()) >= etaCut ) continue;
     if ( debug ) std::cout << " >> pT: " << iPho->pt() << " eta: " << iPho->eta() << std::endl;
-    if ( iPho->full5x5_r9() < 0.5 ) continue;
-    if ( iPho->hadTowOverEm() > 0.07 ) continue;
-    if ( iPho->full5x5_sigmaIetaIeta() > 0.0105 ) continue;
+
+    ///*
+    if ( iPho->full5x5_r9() <= 0.5 ) continue;
+    if ( iPho->hadTowOverEm() >= 0.08 ) continue;
     if ( iPho->hasPixelSeed() == true ) continue;
+    //if ( iPho->passElectronVeto() == true ) continue;
+    //if ( iPho->userFloat("phoChargedIsolation")/std::abs(iPho->pt()) > 0.3 ) continue;
+
+    if ( iPho->full5x5_r9() <= 0.85 ) {
+      if ( iPho->full5x5_sigmaIetaIeta() >= 0.015 ) continue;
+      if ( iPho->userFloat("phoPhotonIsolation") >= 4.0 ) continue;
+      if ( iPho->trkSumPtHollowConeDR03() >= 6. ) continue;
+      //if ( iPho->trackIso() >= 6. ) continue;
+    }
+    //*/
 
     ///*
     // Ensure pre-sel photons are isolated

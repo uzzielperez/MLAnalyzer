@@ -1,6 +1,7 @@
 <use name="FWCore/Framework"/>
 <use name="FWCore/PluginManager"/>
 <use name="FWCore/ParameterSet"/>
+<use name="FWCore/Common"/>
 <flags EDM_PLUGIN="1"/>
  <use name="DataFormats/TrackReco"/>
  <use name="DataFormats/TrackingRecHit"/>
@@ -8,6 +9,8 @@
  <use name="DataFormats/HcalDetId"/>
  <use name="DataFormats/HcalRecHit"/>
  <use name="DataFormats/ParticleFlowCandidate"/>
+ <use name="DataFormats/PatCandidates"/>
+ <use name="DataFormats/Common"/>
  <use name="DQM/HcalCommon"/>
  <use name="Geometry/CaloGeometry"/>
  <use name="Geometry/Records"/>

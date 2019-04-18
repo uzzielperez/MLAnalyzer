@@ -27,7 +27,8 @@ SCRegressor::SCRegressor(const edm::ParameterSet& iConfig)
   genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
   genJetCollectionT_ = consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genJetCollection"));
   trackCollectionT_ = consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("trackCollection"));
-  rhoLabel_ = consumes<double>(iConfig.getParameter<edm::InputTag>("rhoLabel")); 
+  rhoLabel_ = consumes<double>(iConfig.getParameter<edm::InputTag>("rhoLabel"));
+  trgResultsT_ = consumes<edm::TriggerResults>(iConfig.getParameter<edm::InputTag>("trgResults"));
 
   //now do what ever initialization is needed
   usesResource("TFileService");
@@ -45,8 +46,9 @@ SCRegressor::SCRegressor(const edm::ParameterSet& iConfig)
   //branchesPiSel ( RHTree, fs );
   //branchesPhotonSel ( RHTree, fs );
   branchesDiPhotonSel ( RHTree, fs );
+  branchesH2aaSel ( RHTree, fs );
   branchesSC     ( RHTree, fs );
-  branchesEB     ( RHTree, fs );
+  //branchesEB     ( RHTree, fs );
   //branchesTracksAtEBEE     ( RHTree, fs );
   branchesPhoVars     ( RHTree, fs );
 
@@ -88,10 +90,11 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //hasPassed = runPiSel ( iEvent, iSetup ); //TODO: add config-level switch
   //hasPassed = runPhotonSel ( iEvent, iSetup );
   hasPassed = runDiPhotonSel ( iEvent, iSetup );
-  if ( !hasPassed ) return; 
+  //hasPassed = runH2aaSel ( iEvent, iSetup );
+  if ( !hasPassed ) return;
+  bool runGen = runH2aaSel ( iEvent, iSetup );
 
-  // Get coordinates of photon supercluster seed 
-  //int nPho = 0;
+  // Get coordinates of photon supercluster seed
   nPho = 0;
   int iphi_Emax, ieta_Emax;
   float Emax;
@@ -103,6 +106,7 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   int iphi_, ieta_; // rows:ieta, cols:iphi
   for ( unsigned int i = 0; i < vPreselPhoIdxs_.size(); i++ ) {
 
+    ///*
     PhotonRef iPho( photons, vPreselPhoIdxs_[i] );
 
     // Get underlying super cluster
@@ -139,18 +143,19 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         ieta_Emax = ieta_;
         pos_Emax = caloGeom->getPosition(ebId);
       }
-      //std::cout << " >> " << iH << ": iphi_,ieta_,E: " << iphi_ << ", " << ieta_ << ", " << iRHit->energy() << std::endl; 
+      //std::cout << " >> " << iH << ": iphi_,ieta_,E: " << iphi_ << ", " << ieta_ << ", " << iRHit->energy() << std::endl;
     } // SC hits
 
     // Apply selection on position of shower seed
     //std::cout << " >> Found: iphi_Emax,ieta_Emax: " << iphi_Emax << ", " << ieta_Emax << std::endl;
     if ( Emax <= zs ) continue;
     if ( ieta_Emax > 169 - 15 || ieta_Emax < 15 ) continue;
-    vRegressPhoIdxs_.push_back( vPreselPhoIdxs_[i] );
     vIphi_Emax_.push_back( iphi_Emax );
     vIeta_Emax_.push_back( ieta_Emax );
     vPos_Emax.push_back( pos_Emax );
+    vRegressPhoIdxs_.push_back( vPreselPhoIdxs_[i] );
     //std::cout << " >> Found: iphi_Emax,ieta_Emax: " << iphi_Emax << ", " << ieta_Emax << std::endl;
+    //*/
     nPho++;
 
   } // Photons
@@ -164,8 +169,9 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //fillPiSel ( iEvent, iSetup );
   //fillPhotonSel ( iEvent, iSetup );
   fillDiPhotonSel ( iEvent, iSetup );
+  fillH2aaSel ( iEvent, iSetup );
   fillSC     ( iEvent, iSetup );
-  fillEB     ( iEvent, iSetup );
+  //fillEB     ( iEvent, iSetup );
   //fillTracksAtEBEE     ( iEvent, iSetup );
   fillPhoVars     ( iEvent, iSetup );
 
@@ -190,7 +196,7 @@ SCRegressor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 
 // ------------ method called once each job just before starting event loop  ------------
-void 
+void
 SCRegressor::beginJob()
 {
   nTotal = 0;
@@ -198,8 +204,8 @@ SCRegressor::beginJob()
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void 
-SCRegressor::endJob() 
+void
+SCRegressor::endJob()
 {
   std::cout << " selected: " << nPassed << "/" << nTotal << std::endl;
 }

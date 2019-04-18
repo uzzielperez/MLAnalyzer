@@ -31,12 +31,15 @@
 #include "DataFormats/EgammaCandidates/interface/Photon.h"
 #include "DataFormats/EgammaCandidates/interface/PhotonFwd.h" // reco::PhotonCollection defined here
 #include "DataFormats/PatCandidates/interface/Photon.h"
+#include "DataFormats/Common/interface/TriggerResults.h"
 
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/Common/interface/TriggerNames.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/InputTag.h"
+#include "FWCore/Utilities/interface/RegexMatch.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "TH1.h"
@@ -92,6 +95,7 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<reco::GenJetCollection> genJetCollectionT_;
     edm::EDGetTokenT<reco::TrackCollection> trackCollectionT_;
     edm::EDGetTokenT<double> rhoLabel_;
+    edm::EDGetTokenT<edm::TriggerResults> trgResultsT_;
 
     static const int nPhotons = 2;
     //static const int nPhotons = 1;
@@ -131,12 +135,15 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     void branchesPiSel       ( TTree*, edm::Service<TFileService>& );
     void branchesPhotonSel   ( TTree*, edm::Service<TFileService>& );
     void branchesDiPhotonSel ( TTree*, edm::Service<TFileService>& );
+    void branchesH2aaSel     ( TTree*, edm::Service<TFileService>& );
     bool runPiSel        ( const edm::Event&, const edm::EventSetup& );
     bool runPhotonSel    ( const edm::Event&, const edm::EventSetup& );
     bool runDiPhotonSel  ( const edm::Event&, const edm::EventSetup& );
+    bool runH2aaSel      ( const edm::Event&, const edm::EventSetup& );
     void fillPiSel       ( const edm::Event&, const edm::EventSetup& );
     void fillPhotonSel   ( const edm::Event&, const edm::EventSetup& );
     void fillDiPhotonSel ( const edm::Event&, const edm::EventSetup& );
+    void fillH2aaSel     ( const edm::Event&, const edm::EventSetup& );
 
     std::map<unsigned int, std::vector<unsigned int>> mGenPi0_RecoPho;
     std::vector<int> vPreselPhoIdxs_;
@@ -165,21 +172,39 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<float> vPho_E_;
     std::vector<float> vPho_eta_;
     std::vector<float> vPho_phi_;
+
     std::vector<float> vPho_r9_;
     std::vector<float> vPho_sieie_;
-    std::vector<float> vPho_phoIso_; 
-    std::vector<float> vPho_chgIso_; 
-    std::vector<float> vPho_chgIsoWrongVtx_; 
-    std::vector<float> vPho_Eraw_; 
-    std::vector<float> vPho_phiWidth_; 
-    std::vector<float> vPho_etaWidth_; 
-    std::vector<float> vPho_scEta_; 
-    std::vector<float> vPho_sieip_; 
-    std::vector<float> vPho_s4_; 
+    std::vector<float> vPho_phoIso_;
+    std::vector<float> vPho_chgIso_;
+    std::vector<float> vPho_chgIsoWrongVtx_;
+    std::vector<float> vPho_Eraw_;
+    std::vector<float> vPho_phiWidth_;
+    std::vector<float> vPho_etaWidth_;
+    std::vector<float> vPho_scEta_;
+    std::vector<float> vPho_sieip_;
+    std::vector<float> vPho_s4_;
+    std::vector<float> vPho_rho_;
+
+    std::vector<float> vPho_neuIso_;
+    std::vector<float> vPho_ecalIso_;
+    std::vector<float> vPho_trkIso_;
+    std::vector<float> vPho_hasPxlSeed_;
+    std::vector<float> vPho_passEleVeto_;
+    std::vector<float> vPho_HoE_;
+    std::vector<float> vPho_phoIsoCorr_;
+    std::vector<float> vPho_ecalIsoCorr_;
 
     std::vector<float> vSC_mass_;
     std::vector<float> vSC_DR_;
     std::vector<float> vSC_pT_;
+
+    std::vector<float> vA_pT_;
+    std::vector<float> vA_eta_;
+    std::vector<float> vA_phi_;
+    std::vector<float> vA_mass_;
+    std::vector<float> vA_DR_;
+    float mHgen_;
 
     int nTotal, nPassed;
 
@@ -193,6 +218,8 @@ class SCRegressor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
     float m0_;
     std::vector<float> vFC_inputs_;
+    int hltAccept_;
+    unsigned int nRecoPho_;
 
 };
 
