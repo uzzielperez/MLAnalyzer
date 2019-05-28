@@ -18,15 +18,11 @@ cfg= cmssw_base + '/src/MLAnalyzer/RecHitAnalyzer/python/ConfFile_cfg.py'
 #inputFiles_='file:../step_AODSIM.root'
 #inputFiles_='/store/group/lpcml/mandrews/AODSIM/SM2gammaj_1j_1M_2016_25ns_Moriond17MC_PoissonOOTPU_AODSIM/180906_154222/0000/step_full_98.root'
 
-#inputFiles_='/store/mc/RunIIFall17DRPremix/ADDGravToGG_NegInt-1_LambdaT-8000_M-2000To4000_TuneCP2_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/40000/205BA2DE-1215-E911-A455-001E67DBE79B.root'
+#------ Diphoton Input
+#inputFiles_='file:'+cmssw_base+'/src/step_all_nopu.root'
+inputFiles_='/store/user/cuperez/AODSIM/PY8_ADD_noPU_AODSIM/190507_032641/0000/step_all_nopu_1.root'
 
-#inputFiles_='/store/mc/RunIIFall17DRPremix/ADDGravToGG_NegInt-1_LambdaT-8000_M-2000To4000_TuneCP2_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/40000/105A03BC-DB14-E911-A662-0025905C548A.root'
-
-inputFiles_='/store/mc/RunIIFall17MiniAODv2/ADDGravToGG_NegInt-1_LambdaT-8000_M-2000To4000_TuneCP2_13TeV-pythia8/MINIAODSIM/PU2017_12Apr2018_94X_mc2017_realistic_v14-v1/40000/58C23153-2A1E-E911-955C-0CC47AFCC372.root'
-
-#inputFiles_='/store/mc/RunIIFall17DRPremix/ADDGravToGG_NegInt-1_LambdaT-8000_M-2000To4000_TuneCP2_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/40000/*.root'
-
-maxEvents_=-1
+maxEvents_=10 # -1 to process all events
 skipEvents_=0#
 
 cmd="cmsRun %s inputFiles=%s maxEvents=%d skipEvents=%d"%(cfg,inputFiles_,maxEvents_,skipEvents_)
