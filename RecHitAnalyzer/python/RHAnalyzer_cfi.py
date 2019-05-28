@@ -1,6 +1,6 @@
 
 
-import FWCore.ParameterSet.Config as cms 
+import FWCore.ParameterSet.Config as cms
 
 fevt = cms.EDAnalyzer('RecHitAnalyzer'
     #, tracks = cms.untracked.InputTag('ctfWithMaterialTracks')
@@ -23,7 +23,10 @@ fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , recoJetsForBTagging = cms.InputTag("ak4PFJetsCHS")
     , jetTagCollection    = cms.InputTag("pfCombinedInclusiveSecondaryVertexV2BJetTags")
     , ipTagInfoCollection = cms.InputTag("pfImpactParameterTagInfos")
-    , mode = cms.string("JetLevel")
+    , mode = cms.string("EventLevel") # EventLevel or JetLevel
+
+    # Event level cfg
+    , isHighMass = cms.bool(True)
 
     # Jet level cfg
     , nJets = cms.int32(-1)

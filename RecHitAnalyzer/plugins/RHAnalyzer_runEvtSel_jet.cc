@@ -53,7 +53,7 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
     hasPassed = runEvtSel_jet_dijet( iEvent, iSetup );
   }
 
-  if ( !hasPassed ) return false; 
+  if ( !hasPassed ) return false;
   std::sort(vJetIdxs.begin(), vJetIdxs.end());
   if ( debug ) {
     for ( int thisJetIdx : vJetIdxs ) {
@@ -85,9 +85,9 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
 
     reco::PFJetRef iJet( jets, thisJetIdx );
 
-    if ( debug ) std::cout << " >> jet[" << thisJetIdx << "]Pt:" << iJet->pt()  << " Eta:" << iJet->eta()  << " Phi:" << iJet->phi() 
+    if ( debug ) std::cout << " >> jet[" << thisJetIdx << "]Pt:" << iJet->pt()  << " Eta:" << iJet->eta()  << " Phi:" << iJet->phi()
 			   << " jetE:" << iJet->energy() << " jetM:" << iJet->mass() << std::endl;
-    
+
     // Get closest HBHE tower to jet position
     // This will not always be the most energetic deposit
     HcalDetId hId( spr::findDetIdHCAL( caloGeom, iJet->eta(), iJet->phi(), false ) );
@@ -118,10 +118,10 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
         if ( iphi_ > HBHE_IPHI_MAX ) {
           iphi_ = iphi_-HBHE_IPHI_MAX;
         } else if ( iphi_ < HBHE_IPHI_MIN ) {
-          iphi_ = HBHE_IPHI_MAX-abs(iphi_); 
+          iphi_ = HBHE_IPHI_MAX-abs(iphi_);
         }
 
-        // Skip non-existent and lower energy towers 
+        // Skip non-existent and lower energy towers
         HcalDetId hId_( subdet_, ieta_, iphi_, 1 );
         HBHERecHitCollection::const_iterator iRHit( HBHERecHitsH_->find(hId_) );
         if ( iRHit == HBHERecHitsH_->end() ) continue;
@@ -131,7 +131,7 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
         seedE = iRHit->energy();
         seedId = hId_;
 
-      } // iphi 
+      } // iphi
     } // ieta
 
     // NOTE: HBHE iphi = 1 does not correspond to EB iphi = 1!
@@ -145,7 +145,7 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
 
     // If the seed is too close to the edge of HE, discard event
     // Required to keep the seed at the image center
-    if ( HBHE_IETA_MAX_HE-1 - ietaAbs_ < image_padding ) { 
+    if ( HBHE_IETA_MAX_HE-1 - ietaAbs_ < image_padding ) {
       if ( debug ) std::cout << " Fail HE edge cut " << std::endl;
       vFailedJetIdx_.push_back(thisJetIdx);
       continue;
@@ -158,11 +158,11 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
     vJetSeed_ieta_.push_back( ieta_ );
     nJet++;
 
-  } // good jets 
+  } // good jets
 
-  
 
-  // Remove jets that failed the Seed cuts 
+
+  // Remove jets that failed the Seed cuts
   for(int failedJetIdx : vFailedJetIdx_)
     vJetIdxs.erase(std::remove(vJetIdxs.begin(),vJetIdxs.end(),failedJetIdx),vJetIdxs.end());
 
@@ -171,7 +171,7 @@ bool RecHitAnalyzer::runEvtSel_jet ( const edm::Event& iEvent, const edm::EventS
     return false;
   }
 
-  
+
   if ( (nJets_ > 0) && nJet != nJets_ ) return false;
   if ( debug ) std::cout << " >> analyze: passed" << std::endl;
 

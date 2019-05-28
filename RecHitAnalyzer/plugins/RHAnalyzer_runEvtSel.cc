@@ -1,10 +1,11 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
 
 // Run event selection ////////////////////////////////
+//const std::string jetSelection = "dijet_gg_qq"; // TODO: put switch at cfg level
 
 TH1F *h_m0;
 TH1F *h_nJet;
-TH1F *h_phoPt; 
+TH1F *h_phoPt;
 TH1F *h_phoE;
 TH1F *h_phoEta;
 TH1F *h_phoR9;
@@ -23,27 +24,34 @@ float diPhoE_;
 float diPhoPt_;
 std::vector<float> vFC_inputs_;
 
+
 float m0cut = 90.;
 //float m0cut = 80.;
+float minPt = 25.;
+
+
+
 
 // Initialize branches _____________________________________________________//
 void RecHitAnalyzer::branchesEvtSel ( TTree* tree, edm::Service<TFileService> &fs ) {
 
-  h_m0     = fs->make<TH1F>("h_m0"    , "m0;m0;Events"         ,  50, m0cut, m0cut+150.);
+    // Default mbandrews selection
 
-  h_phoPt  = fs->make<TH1F>("h_phoPt" , "p_{T};p_{T};Particles", 100,  0., 500.);
-  h_phoE   = fs->make<TH1F>("h_phoE"  , "E;E;Particles"        , 100,  0., 800.);
-  h_phoEta = fs->make<TH1F>("h_phoEta", "#eta;#eta;Particles"  , 100, -5., 5.);
-  h_phoR9  = fs->make<TH1F>("h_phoR9" , "R9;R9;Particles"  , 50, 0., 1.);
-  h_phoSieie  = fs->make<TH1F>("h_phoSieie" , "Sieie;Sieie;Particles"  , 50, 0., 0.1);
-  //h_phoMva = fs->make<TH1F>("h_phoMva", "#mva;#mva;Particles"  , 100, -1., 1.);
-  /*
-  h_jetPt  = fs->make<TH1F>("h_jetPt" , "p_{T};p_{T};Particles", 100,  0., 500.);
-  h_jetE   = fs->make<TH1F>("h_jetE"  , "E;E;Particles"        , 100,  0., 800.);
-  h_jetEta = fs->make<TH1F>("h_jetEta", "#eta;#eta;Particles"  , 100, -5., 5.);
-  h_nJet   = fs->make<TH1F>("h_nJet"  , "nJet;nJet;Events"     ,  10,  0.,  10.);
-  */
+    h_m0     = fs->make<TH1F>("h_m0"    , "m0;m0;Events"         ,  50, m0cut, m0cut+150.);
+    h_phoPt  = fs->make<TH1F>("h_phoPt" , "p_{T};p_{T};Particles", 100,  0., 500.);
+    h_phoE   = fs->make<TH1F>("h_phoE"  , "E;E;Particles"        , 100,  0., 800.);
+    h_phoEta = fs->make<TH1F>("h_phoEta", "#eta;#eta;Particles"  , 100, -5., 5.);
+    h_phoR9  = fs->make<TH1F>("h_phoR9" , "R9;R9;Particles"  , 50, 0., 1.);
+    h_phoSieie  = fs->make<TH1F>("h_phoSieie" , "Sieie;Sieie;Particles"  , 50, 0., 0.1);
+    //h_phoMva = fs->make<TH1F>("h_phoMva", "#mva;#mva;Particles"  , 100, -1., 1.);
+    /*
+    h_jetPt  = fs->make<TH1F>("h_jetPt" , "p_{T};p_{T};Particles", 100,  0., 500.);
+    h_jetE   = fs->make<TH1F>("h_jetE"  , "E;E;Particles"        , 100,  0., 800.);
+    h_jetEta = fs->make<TH1F>("h_jetEta", "#eta;#eta;Particles"  , 100, -5., 5.);
+    h_nJet   = fs->make<TH1F>("h_nJet"  , "nJet;nJet;Events"     ,  10,  0.,  10.);
+    */
 
+  // ExoDiPhoton
   tree->Branch("eventId",        &eventId_);
   tree->Branch("runId",          &runId_);
   tree->Branch("lumiId",         &lumiId_);
@@ -72,7 +80,8 @@ bool RecHitAnalyzer::runEvtSel ( const edm::Event& iEvent, const edm::EventSetup
   for ( unsigned int iP = 0; iP < photons->size(); iP++ ) {
     reco::PhotonRef iPho( photons, iP );
     //pat::PhotonRef iPho( photons, iP );
-    if ( std::abs(iPho->pt()) < 18. ) continue;
+    //if ( std::abs(iPho->pt()) < 18. ) continue;
+    if ( std::abs(iPho->pt()) < minPt ) continue;
     //std::cout << iPho->full5x5_sigmaIetaIeta() << std::endl;
     if ( std::abs(iPho->eta()) > 1.44 ) continue;
     if ( iPho->r9() < 0.5 ) continue;
@@ -83,15 +92,17 @@ bool RecHitAnalyzer::runEvtSel ( const edm::Event& iEvent, const edm::EventSetup
     //if ( std::abs(iPho->eta()) > 1.44 && std::abs(iPho->eta()) < 1.57 ) continue;
     if (debug) std::cout << " >> pT:" << iPho->pt() << " eta:" << iPho->eta() << " phi: " << iPho->phi() << " E:" << iPho->energy() << std::endl;
     nPhoTrg++;
-    if ( std::abs(iPho->pt()) > leadPhoPt ) leadPhoPt = std::abs(iPho->pt()); 
+    if ( std::abs(iPho->pt()) > leadPhoPt ) leadPhoPt = std::abs(iPho->pt());
     vDiPho += iPho->p4();
     vPhoIdxs.push_back( iP );
 
-  } // reco photons 
+  } // reco photons
+
   m0 = vDiPho.mass();
   if ( m0 < m0cut ) return false;
   if ( nPhoTrg != 2 ) return false;
-  if ( leadPhoPt < 30. ) return false;
+  //if ( leadPhoPt < 30. ) return false;
+  if ( leadPhoPt < minPt ) return false;
 
   // Apply selection
   int nPho = 0;
@@ -102,7 +113,7 @@ bool RecHitAnalyzer::runEvtSel ( const edm::Event& iEvent, const edm::EventSetup
     //pat::PhotonRef iPho( photons, vPhoIdxs[iP] );
     // Get leading photon pt
     if ( std::abs(iPho->pt()) > leadPhoPt ) {
-      leadPhoPt = std::abs(iPho->pt()); 
+      leadPhoPt = std::abs(iPho->pt());
       leadPho = iP;
     }
     // Minimum pt/m0 cut
@@ -110,7 +121,7 @@ bool RecHitAnalyzer::runEvtSel ( const edm::Event& iEvent, const edm::EventSetup
     nPho++;
   }
   if ( nPho != 2 ) return false;
-  if ( leadPhoPt < m0/3 ) return false;
+  //if ( leadPhoPt < m0/3 ) return false;
   nPho = nPhoTrg;
   //std::cout << " n:" << nPho << " m0:" << m0 << std::endl;
 
@@ -161,12 +172,12 @@ bool RecHitAnalyzer::runEvtSel ( const edm::Event& iEvent, const edm::EventSetup
   for ( int iP = 0; iP < nPho; iP++ ) {
     reco::PhotonRef iPho( photons, vPhoIdxs[ptOrder[iP]] );
     //pat::PhotonRef iPho( photons, vPhoIdxs[ptOrder[iP]] );
-    h_phoPt->Fill( iPho->pt() ); 
+    h_phoPt->Fill( iPho->pt() );
     h_phoE->Fill( iPho->energy() );
-    h_phoEta->Fill( iPho->eta() ); 
-    h_phoR9->Fill( iPho->r9() ); 
-    h_phoSieie->Fill( iPho->full5x5_sigmaIetaIeta() ); 
-    //h_phoMva->Fill( iPho->pfMVA() ); 
+    h_phoEta->Fill( iPho->eta() );
+    h_phoR9->Fill( iPho->r9() );
+    h_phoSieie->Fill( iPho->full5x5_sigmaIetaIeta() );
+    //h_phoMva->Fill( iPho->pfMVA() );
     //std::cout << iPho->pfMVA() << std::endl;
     diPhoE_  += std::abs( iPho->energy() );
     diPhoPt_ += std::abs( iPho->pt() );
@@ -179,9 +190,9 @@ bool RecHitAnalyzer::runEvtSel ( const edm::Event& iEvent, const edm::EventSetup
   /*
   for ( int iJ = 0; iJ < nJet; iJ++ ) {
     reco::PFJetRef iJet( jets, vJetIdxs[iJ] );
-    h_jetPt->Fill( iJet->pt() ); 
+    h_jetPt->Fill( iJet->pt() );
     h_jetE->Fill( iJet->energy() );
-    h_jetEta->Fill( iJet->eta() ); 
+    h_jetEta->Fill( iJet->eta() );
   }
   */
 

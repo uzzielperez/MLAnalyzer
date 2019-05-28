@@ -117,14 +117,14 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<edm::View<reco::Jet> > recoJetsT_;
     edm::EDGetTokenT<reco::JetTagCollection> jetTagCollectionT_;
     edm::EDGetTokenT<std::vector<reco::CandIPTagInfo> >    ipTagInfoCollectionT_;
-    
+
     typedef std::vector<reco::PFCandidate>  PFCollection;
     edm::EDGetTokenT<PFCollection> pfCollectionT_;
     //edm::InputTag trackTags_; //used to select what tracks to read from configuration file
 
     // Diagnostic histograms
-    //TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES]; 
-    //TH1D * hHBHE_depth; 
+    //TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES];
+    //TH1D * hHBHE_depth;
     TH1F *h_sel;
 
     // Main TTree
@@ -134,7 +134,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     //std::vector<float> vEB_adc_[EcalDataFrame::MAXSAMPLES];
     //std::vector<float> vFC_inputs_;
     //math::PtEtaPhiELorentzVectorD vPho_[2];
-  
+
     // Selection and filling functions
     void branchesEvtSel         ( TTree*, edm::Service<TFileService>& );
     void branchesEvtSel_jet     ( TTree*, edm::Service<TFileService>& );
@@ -180,13 +180,16 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     // Jet level functions
     std::string mode_;  // EventLevel / JetLevel
     bool doJets_;
+    bool doHighMass_;
     int  nJets_;
     double minJetPt_;
     double maxJetEta_;
     double z0PVCut_;
     std::vector<int> vJetIdxs;
+    void branchesEvtSel_highMass      ( TTree*, edm::Service<TFileService>& );
     void branchesEvtSel_jet_dijet      ( TTree*, edm::Service<TFileService>& );
     void branchesEvtSel_jet_dijet_gg_qq( TTree*, edm::Service<TFileService>& );
+    bool runEvtSel_highMass      ( const edm::Event&, const edm::EventSetup& );
     bool runEvtSel_jet_dijet      ( const edm::Event&, const edm::EventSetup& );
     bool runEvtSel_jet_dijet_gg_qq( const edm::Event&, const edm::EventSetup& );
     void fillEvtSel_jet_dijet      ( const edm::Event&, const edm::EventSetup& );

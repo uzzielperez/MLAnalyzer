@@ -1,16 +1,15 @@
-
 import FWCore.ParameterSet.Config as cms
 import FWCore.ParameterSet.VarParsing as VarParsing
 
 options = VarParsing.VarParsing('analysis')
-options.register('skipEvents', 
-    default=0, 
+options.register('skipEvents',
+    default=0,
     mult=VarParsing.VarParsing.multiplicity.singleton,
     mytype=VarParsing.VarParsing.varType.int,
     info = "skipEvents")
 # TODO: put this option in cmsRun scripts
-options.register('processMode', 
-    default='JetLevel', 
+options.register('processMode',
+    default='EventLevel',
     mult=VarParsing.VarParsing.multiplicity.singleton,
     mytype=VarParsing.VarParsing.varType.string,
     info = "process mode: JetLevel or EventLevel")
@@ -28,8 +27,8 @@ process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 process.GlobalTag.globaltag = cms.string('80X_dataRun2_HLT_v12')
 process.es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
 
-process.maxEvents = cms.untracked.PSet( 
-    input = cms.untracked.int32(options.maxEvents) 
+process.maxEvents = cms.untracked.PSet(
+    input = cms.untracked.int32(options.maxEvents)
     )
 
 process.source = cms.Source("PoolSource",
@@ -39,9 +38,6 @@ process.source = cms.Source("PoolSource",
     , skipEvents = cms.untracked.uint32(options.skipEvents)
     )
 print " >> Loaded",len(options.inputFiles),"input files from list."
-
-
-
 
 process.load("MLAnalyzer.RecHitAnalyzer.RHAnalyzer_cfi")
 process.fevt.mode = cms.string(options.processMode)
@@ -56,5 +52,3 @@ process.TFileService = cms.Service("TFileService",
 
 #process.SimpleMemoryCheck = cms.Service( "SimpleMemoryCheck", ignoreTotal = cms.untracked.int32(1) )
 process.p = cms.Path(process.fevt)
-
-

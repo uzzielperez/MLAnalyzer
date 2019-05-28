@@ -1,13 +1,4 @@
-// -*- C++ -*-
-//
-// Package:    MLAnalyzer/RecHitAnalyzer
-// Class:      RecHitAnalyzer
-//
-//
-// Original Author:  Michael Andrews
-//         Created:  Sat, 14 Jan 2017 17:45:54 GMT
-//
-//
+// Uzziel Perez
 
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
 
@@ -43,19 +34,21 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   maxJetEta_ = iConfig.getParameter<double>("maxJetEta");
   z0PVCut_   = iConfig.getParameter<double>("z0PVCut");
 
+  // Default Settings (EvtLevelSel)
+  doHighMass_ = false;
+  doJets_ = false;
+
+  // Override Default if set to other mode
   std::cout << " >> Mode set to " << mode_ << std::endl;
   if ( mode_ == "JetLevel" ) {
     doJets_ = true;
     nJets_ = iConfig.getParameter<int>("nJets");
     std::cout << "\t>> nJets set to " << nJets_ << std::endl;
   } else if ( mode_ == "EventLevel" ) {
-    doJets_ = false;
+    doHighMass_ = iConfig.getParameter<bool>("isHighMass");
   } else {
     std::cout << " >> Assuming EventLevel Config. " << std::endl;
-    doJets_ = false;
   }
-
-
 
   // Initialize file writer
   // NOTE: initializing dynamic-memory histograms outside of TFileService
@@ -71,7 +64,12 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   if ( doJets_ ) {
     branchesEvtSel_jet( RHTree, fs );
   } else {
-    branchesEvtSel( RHTree, fs );
+    if ( doHighMass_ ){
+        branchesEvtSel_highMass( RHTree, fs );
+    }
+    else {
+        branchesEvtSel( RHTree, fs );
+    }
   }
   branchesEB           ( RHTree, fs );
   branchesEE           ( RHTree, fs );
@@ -118,7 +116,12 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   if ( doJets_ ) {
     passedSelection = runEvtSel_jet( iEvent, iSetup );
   } else {
-    passedSelection = runEvtSel( iEvent, iSetup );
+    if ( doHighMass_ ){
+        passedSelection = runEvtSel_highMass( iEvent, iSetup );
+    }
+    else {
+        passedSelection = runEvtSel( iEvent, iSetup );
+    }
   }
 
   if ( !passedSelection ) {
@@ -154,7 +157,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 
 // ------------ method called once each job just before starting event loop  ------------
-void 
+void
 RecHitAnalyzer::beginJob()
 {
   nTotal = 0;
@@ -162,8 +165,8 @@ RecHitAnalyzer::beginJob()
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void 
-RecHitAnalyzer::endJob() 
+void
+RecHitAnalyzer::endJob()
 {
   std::cout << " selected: " << nPassed << "/" << nTotal << std::endl;
 }
@@ -189,7 +192,7 @@ RecHitAnalyzer::getPFCand(edm::Handle<PFCollection> pfCands, float eta, float ph
 
   minDr = 10;
   const reco::PFCandidate* minDRCand = nullptr;
-  
+
   for ( PFCollection::const_iterator iPFC = pfCands->begin();
         iPFC != pfCands->end(); ++iPFC ) {
 
@@ -200,14 +203,14 @@ RecHitAnalyzer::getPFCand(edm::Handle<PFCollection> pfCands, float eta, float ph
     if (debug) std::cout << "\tthisdR: " << thisdR << " " << thisTrk->pt() << " " << iPFC->particleId() << std::endl;
 
     const reco::PFCandidate& thisPFCand = (*iPFC);
-      
+
     if ( (thisdR < 0.01) && (thisdR <minDr) ) {
-      minDr    = thisdR; 
+      minDr    = thisdR;
       minDRCand = &thisPFCand;
     }
   }
 
-  return minDRCand;  
+  return minDRCand;
 }
 
 const reco::Track*
@@ -219,20 +222,20 @@ RecHitAnalyzer::getTrackCand(edm::Handle<reco::TrackCollection> trackCands, floa
 
   for ( reco::TrackCollection::const_iterator iTk = trackCands->begin();
         iTk != trackCands->end(); ++iTk ) {
-    if ( !(iTk->quality(tkQt_)) ) continue;  
+    if ( !(iTk->quality(tkQt_)) ) continue;
 
     float thisdR = reco::deltaR( eta, phi, iTk->eta(),iTk->phi() );
     if (debug) std::cout << "\tthisdR: " << thisdR << " " << iTk->pt() << std::endl;
 
     const reco::Track& thisTrackCand = (*iTk);
-      
+
     if ( (thisdR < 0.01) && (thisdR <minDr) ) {
-      minDr    = thisdR; 
+      minDr    = thisdR;
       minDRCand = &thisTrackCand;
     }
   }
 
-  return minDRCand;  
+  return minDRCand;
 }
 
 
@@ -262,7 +265,7 @@ int RecHitAnalyzer::getTruthLabel(const reco::PFJetRef& recJet, edm::Handle<reco
 
     // Do not want to match to the final particles in the shower
     if ( iGen->status() > 99 ) continue;
-    
+
     // Only want to match to partons/leptons/bosons
     if ( iGen->pdgId() > 25 ) continue;
 
@@ -270,12 +273,12 @@ int RecHitAnalyzer::getTruthLabel(const reco::PFJetRef& recJet, edm::Handle<reco
 
     if ( debug ) std::cout << " \t >> dR " << dR << " id:" << iGen->pdgId() << " status:" << iGen->status() << " nDaught:" << iGen->numberOfDaughters() << " pt:"<< iGen->pt() << " eta:" <<iGen->eta() << " phi:" <<iGen->phi() << " nMoms:" <<iGen->numberOfMothers()<< std::endl;
 
-    if ( dR > dRMatch ) continue; 
+    if ( dR > dRMatch ) continue;
     if ( debug ) std::cout << " Matched pdgID " << iGen->pdgId() << std::endl;
 
     return iGen->pdgId();
 
-  } // gen particles 
+  } // gen particles
 
 
 
@@ -299,12 +302,12 @@ float RecHitAnalyzer::getBTaggingValue(const reco::PFJetRef& recJet, edm::Handle
 
       if(debug) std::cout << "btag discriminator value = " << (*btagCollection)[jetRef] << std::endl;
       return (*btagCollection)[jetRef];
-  
+
     }
 
   if(debug){
     std::cout << "ERROR  No btag match: " << std::endl;
-    
+
     // loop over jets
     for( edm::View<reco::Jet>::const_iterator jetToMatch = recoJetCollection->begin(); jetToMatch != recoJetCollection->end(); ++jetToMatch )
       {
@@ -316,7 +319,7 @@ float RecHitAnalyzer::getBTaggingValue(const reco::PFJetRef& recJet, edm::Handle
 	float dR = reco::deltaR( recJet->eta(),recJet->phi(), thisJet.eta(),thisJet.phi() );
 	std::cout << "dR " << dR << std::endl;
       }
-  }    
+  }
 
   return -99;
 }
@@ -343,7 +346,7 @@ void RecHitAnalyzer::fillFC ( const edm::Event& iEvent, const edm::EventSetup& i
   }
   vFC_inputs_.push_back( TMath::Cos(vPho_[0].Phi()-vPho_[1].Phi()) );
 
-} // fillFC() 
+} // fillFC()
 */
 
 //define this as a plug-in
